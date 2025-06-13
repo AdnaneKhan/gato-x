@@ -30,7 +30,7 @@ class WorkflowNode(Node):
         """Constructor for workflow wrapper."""
 
         # Create a unique ID for this workflow.
-        self.name = f"{repo_name}:{ref}:{workflow_path}"
+        super().__init__(f"{repo_name}:{ref}:{workflow_path}")
         # By default, a workflow node is "uninitialized" until it is processed
         # with the workflow YAML. We sometimes add unititialized nodes to the
         # graph if a workflow references another workflow that has not been
@@ -167,7 +167,7 @@ class WorkflowNode(Node):
 
     def get_tags(self):
         """ """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.uninitialized:
             tags.add("uninitialized")

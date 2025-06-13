@@ -43,7 +43,7 @@ class JobNode(Node):
             workflow_path (str): The path to the workflow file.
         """
         # Create a unique ID for this step.
-        self.name = f"{repo_name}:{ref}:{workflow_path}:{job_name}"
+        super().__init__(f"{repo_name}:{ref}:{workflow_path}:{job_name}")
         self.ref = ref
         self.__workflow_path = workflow_path
         self.params = {}
@@ -198,7 +198,7 @@ class JobNode(Node):
         Returns:
             set: A set containing the class name of the JobNode instance.
         """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.self_hosted:
             tags.add("self-hosted")
