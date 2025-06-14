@@ -34,7 +34,7 @@ class RepoNode(Node):
             repo_wrapper (Repository): The repository object to wrap.
         """
         # Create a unique ID for this repository.
-        self.name = f"{repo_wrapper.name}"
+        super().__init__(f"{repo_wrapper.name}")
 
     def __hash__(self):
         """
@@ -64,8 +64,7 @@ class RepoNode(Node):
         Returns:
             set: A set containing the class name of the RepoNode instance.
         """
-        tags = set([self.__class__.__name__])
-        return tags
+        return super().get_tags()
 
     def get_attrs(self):
         """

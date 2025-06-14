@@ -62,11 +62,11 @@ class StepNode(Node):
 
         # Create a unique ID for this step.
         if "name" in step_data:
-            self.name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:{step_data['name']}_{step_number}"
+            name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:{step_data['name']}_{step_number}"
         else:
-            self.name = (
-                f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
-            )
+            name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
+
+        super().__init__(name)
 
         self.type = self.__get_type(step_data)
         self.is_checkout = False
@@ -261,7 +261,7 @@ class StepNode(Node):
         Returns:
             set: A set containing the class name of the StepNode instance and additional tags.
         """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.is_checkout:
             tags.add("checkout")

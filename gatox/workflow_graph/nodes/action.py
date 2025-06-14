@@ -121,7 +121,7 @@ class ActionNode(Node):
             params (dict): Parameters associated with the action.
         """
         # Create a unique ID for this action.
-        self.name = f"{repo_name}:{ref}:{action_path}:{action_name}"
+        super().__init__(f"{repo_name}:{ref}:{action_path}:{action_name}")
         self.is_sink = False
         self.is_checkout = False
         self.if_condition = ""
@@ -220,7 +220,7 @@ class ActionNode(Node):
         Returns:
             set: A set containing the class name of the ActionNode instance.
         """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.is_checkout:
             tags.add("checkout")

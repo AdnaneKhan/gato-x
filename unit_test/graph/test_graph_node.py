@@ -42,3 +42,10 @@ def test_node_get_tags():
     """Test Node get_tags method"""
     node = Node("test_node")
     assert node.get_tags() == {"Node"}
+
+
+def test_node_extra_tags():
+    """Test Node extra tags"""
+    node = Node("test_node")
+    node.extra_tags.add("extra_tag")
+    assert node.get_tags() == {"Node", "extra_tag"}

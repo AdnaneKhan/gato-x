@@ -83,6 +83,9 @@ def test_step_node_get_tags():
     assert "permission_blocker" not in tags
     assert "permission_check" not in tags
 
+    node.extra_tags.add("extra_tag")
+    assert "extra_tag" in node.get_tags()
+
 
 def test_step_node_get_attrs():
     """Test get_attrs method"""
