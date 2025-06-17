@@ -59,6 +59,30 @@ def test_populate():
     assert job.deployments == ["prod"]
     assert job.get_env_vars() == {"ENV_VAR": "value"}
     assert job.outputs == {"output1": "value1"}
+    assert job.permissions == "default"
+
+
+def test_populate_permissions():
+    """Test populating job node with definition"""
+    job = JobNode("test_job", "main", "org/repo", ".github/workflows/test.yml")
+
+    job_def = {
+        "runs-on": "self-hosted",
+        "with": {"param1": "value1"},
+        "environment": "prod",
+        "env": {"ENV_VAR": "value"},
+        "outputs": {"output1": "value1"},
+        "permissions": "read-all",
+    }
+
+    job.populate(job_def, None)
+
+    assert job.self_hosted is True
+    assert job.params == {"param1": "value1"}
+    assert job.deployments == ["prod"]
+    assert job.get_env_vars() == {"ENV_VAR": "value"}
+    assert job.outputs == {"output1": "value1"}
+    assert job.permissions == "read-all"
 
 
 def test_job_node_equality():

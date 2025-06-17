@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Literal
 from gatox.workflow_graph.nodes.node import Node
 
 from gatox.workflow_parser.utility import (
@@ -26,11 +27,20 @@ from gatox.workflow_parser.utility import (
 class JobNode(Node):
     """
     Wrapper class for a GitHub Actions workflow job.
-
-    Attributes:
-        name (str): A unique identifier for the job node.
-        params (dict): Parameters associated with the job node.
     """
+
+    name: str
+    params: dict
+    needs: list
+    deployments: list
+    self_hosted: bool
+    outputs: dict
+
+    # Job permissions, if none are specified, then the default permissions are in effect identified
+    # by the special string `default`.
+    # An empty dict `{}` is valid and indicate the token has no permissions.
+    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defining-access-for-the-github_token-scopes
+    permissions: Literal["default", "read-all", "write-all"] | dict
 
     def __init__(self, job_name: str, ref: str, repo_name: str, workflow_path: str):
         """
@@ -56,6 +66,7 @@ class JobNode(Node):
         self.__env_vars = {}
         self.self_hosted = False
         self.outputs = {}
+        self.permissions = "default"
 
     def __hash__(self):
         """
@@ -92,7 +103,7 @@ class JobNode(Node):
         return self.wf_reference
 
     def get_env_vars(self):
-        """Returns environemnt variables used by the job in dictionary format."""
+        """Returns environment variables used by the job in dictionary format."""
         return self.__env_vars
 
     def repo_name(self):
@@ -144,6 +155,8 @@ class JobNode(Node):
                 self.if_condition = None
         else:
             self.if_evaluation = True
+
+        self.permissions = job_def.get("permissions", "default")
 
     def __eq__(self, other):
         """

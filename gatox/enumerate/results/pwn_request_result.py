@@ -55,6 +55,23 @@ class PwnRequestResult(AnalysisResult):
             )
         )
 
+    def get_token_permissions(self):
+        """
+        Get the effective permissions of the attack path, stopping at the job
+        if it has permissions, else the workflow will be used.
+        """
+        effective_permissions = "default"
+        for node in reversed(self.__attack_path):
+            if "JobNode" in node.get_tags() and node.permissions != "default":
+                effective_permissions = node.permissions
+                break
+            elif "WorkflowNode" in node.get_tags() and node.permissions != "default":
+                effective_permissions = node.permissions
+                break
+            else:
+                continue
+        return effective_permissions
+
     def filter_triggers(self, triggers):
         """Filter triggers to remove non-relevant ones."""
         RELEVANT_TRIGGERS = {
@@ -81,6 +98,7 @@ class PwnRequestResult(AnalysisResult):
                 if self.confidence_score() == Confidence.HIGH
                 else "Not Detected"
             ),
+            "token_permissions": self.get_token_permissions(),
         }
 
         return result

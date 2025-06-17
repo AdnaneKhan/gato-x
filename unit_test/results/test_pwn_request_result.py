@@ -12,19 +12,27 @@ class TestPwnRequestResult(unittest.TestCase):
         self.start_node = Mock()
         self.start_node.repo_name.return_value = "test/repo"
         self.start_node.get_workflow_name.return_value = "workflow.yml"
+        self.start_node.permissions = "default"
         self.start_node.get_triggers.return_value = [
             "pull_request_target:labeled",
             "push",
             "workflow_run",
         ]
+        self.start_node.get_tags.return_value = ["WorkflowNode"]
+
+        self.job_node = Mock()
+        self.job_node.repo_name.return_value = "test/repo"
+        self.job_node.permissions = "write-all"
+        self.job_node.get_tags.return_value = ["JobNode"]
 
         self.end_node = Mock()
         self.end_node.get_step_data.return_value = {
             "uses": "actions/checkout@v2",
             "with": {"ref": "${{ github.event.pull_request.head.ref }}"},
         }
+        self.end_node.get_tags.return_value = ["ActionNode"]
 
-        self.path = [self.start_node, self.end_node]
+        self.path = [self.start_node, self.job_node, self.end_node]
 
         # Create test instance
         self.result = PwnRequestResult(
@@ -79,6 +87,11 @@ class TestPwnRequestResult(unittest.TestCase):
         self.assertNotIn("push", filtered)
         self.assertNotIn("schedule", filtered)
 
+    def test_get_permissions(self):
+        """Test getting the effective permissions of the attack path"""
+        permissions = self.result.get_token_permissions()
+        self.assertEqual(permissions, "write-all")
+
     def test_to_machine_high_confidence(self):
         """Test machine output format with high confidence"""
         output = self.result.to_machine()
@@ -114,6 +127,7 @@ class TestPwnRequestResult(unittest.TestCase):
             "explanation",
             "path",
             "sink",
+            "token_permissions",
         }
 
         self.assertEqual(set(output.keys()), required_fields)
