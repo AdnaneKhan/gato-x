@@ -139,6 +139,10 @@ class NodeFactory:
             repo_name, path, ref = parse_github_path(callee)
             workflow_name = path.split("/")[-1]
             workflow_path = f".github/workflows/{workflow_name}"
+        else:
+            raise ValueError(
+                f"Invalid callee format: {callee}. Expected format is './path/to/workflow' or 'repo/path@ref'."
+            )
 
         name = f"{repo_name}:{ref}:{workflow_path}"
         if name in NodeFactory.NODE_CACHE:
