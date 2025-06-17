@@ -287,7 +287,7 @@ class PwnRequestVisitor:
                 if paths:
                     all_paths.append(paths)
             except Exception as e:
-                logger.error(f"Error finding paths for pwn request node: {e}")
+                logger.error(f"Error finding paths for pwn request node: {str(e)}")
                 logger.error(f"Node: {cn}")
 
         for path_set in all_paths:
@@ -297,7 +297,7 @@ class PwnRequestVisitor:
                         path, graph, api, rule_cache, results
                     )
                 except Exception as e:
-                    logger.warning(f"Error processing path: {e}")
+                    logger.warning(f"Error processing path: {str(e)}")
                     logger.warning(f"Path: {path}")
 
         return results
