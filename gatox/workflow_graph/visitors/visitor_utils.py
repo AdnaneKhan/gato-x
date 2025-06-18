@@ -96,6 +96,27 @@ class VisitorUtils:
             graph.remove_tags_from_node(node, ["uninitialized"])
 
     @staticmethod
+    def get_node_with_ancestors(node):
+        """Get a node and all its logical ancestors based on naming convention"""
+        ancestors = {node}
+
+        # Extract parts from node name
+        # Format: 'org/repo:ref:workflow:job:step'
+        node_name = str(node)
+        parts = node_name.split(":")
+
+        if len(parts) >= 4:  # Has job context
+            # Add the job node
+            job_node_name = ":".join(parts[:4])
+            ancestors.add(job_node_name)
+
+            # Add the workflow node
+            workflow_node_name = ":".join(parts[:3])
+            ancestors.add(workflow_node_name)
+
+        return ancestors
+
+    @staticmethod
     def check_mutable_ref(ref, start_tags=set()):
         """
         Check if a reference is mutable based on allowed GitHub SHA patterns.

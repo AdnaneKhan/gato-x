@@ -163,11 +163,27 @@ class PwnRequestVisitor:
                         if sinks:
                             path_nodes.update(sinks[0])
 
+                        # Then in your intersection check:
                         has_blocker_in_path = bool(
-                            blocker_nodes.intersection(path_nodes)
+                            path_nodes.intersection(
+                                blocker_nodes.union(
+                                    *[
+                                        VisitorUtils.get_node_with_ancestors(n)
+                                        for n in path_nodes
+                                    ]
+                                )
+                            )
                         )
+
                         has_approval_gate_in_path = bool(
-                            approval_gate_nodes.intersection(path_nodes)
+                            path_nodes.intersection(
+                                approval_gate_nodes.union(
+                                    *[
+                                        VisitorUtils.get_node_with_ancestors(n)
+                                        for n in path_nodes
+                                    ]
+                                )
+                            )
                         )
 
                         # Update approval_gate based on whether approval gate nodes are actually in the path
@@ -212,6 +228,9 @@ class PwnRequestVisitor:
                     break
 
                 if node.soft_gate:
+                    logger.debug(
+                        f"Soft gate found in node {node.name}, setting approval_gate to True"
+                    )
                     approval_gate = True
 
             elif "WorkflowNode" in tags:
