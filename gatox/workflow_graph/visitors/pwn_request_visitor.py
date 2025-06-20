@@ -163,27 +163,20 @@ class PwnRequestVisitor:
                         if sinks:
                             path_nodes.update(sinks[0])
 
-                        # Then in your intersection check:
-                        has_blocker_in_path = bool(
-                            path_nodes.intersection(
-                                blocker_nodes.union(
-                                    *[
-                                        VisitorUtils.get_node_with_ancestors(n)
-                                        for n in path_nodes
-                                    ]
-                                )
+                        # Get all path nodes with their ancestors
+                        extended_path_nodes = set(path_nodes)
+                        for node in path_nodes:
+                            extended_path_nodes.update(
+                                VisitorUtils.get_node_with_ancestors(node)
                             )
+
+                        # Check for intersection with blocker and approval gate nodes
+                        has_blocker_in_path = bool(
+                            extended_path_nodes.intersection(blocker_nodes)
                         )
 
                         has_approval_gate_in_path = bool(
-                            path_nodes.intersection(
-                                approval_gate_nodes.union(
-                                    *[
-                                        VisitorUtils.get_node_with_ancestors(n)
-                                        for n in path_nodes
-                                    ]
-                                )
-                            )
+                            extended_path_nodes.intersection(approval_gate_nodes)
                         )
 
                         # Update approval_gate based on whether approval gate nodes are actually in the path

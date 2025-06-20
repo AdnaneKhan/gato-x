@@ -93,6 +93,8 @@ class ActionNode(Node):
             "prince-chrismc/check-actor-permissions-action",
             "lannonbr/repo-permission-check-action",
             "skjnldsv/check-actor-permission",
+            "github/command",
+            "anthropics/claude-code-action",
         ]
     )
 
@@ -102,6 +104,8 @@ class ActionNode(Node):
             "docker/",
             "octokit/",
             "github/",
+            "google-github-actions/",
+            "aws-actions/",
         ]
     )
 
