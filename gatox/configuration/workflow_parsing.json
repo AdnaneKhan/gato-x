@@ -166,7 +166,9 @@
             "rails assets:precompile",
             "sonar-scanner",
             "stylelint",
-            "webpack"
+            "webpack",
+            "dotnet build",
+            "bun"
         ],
         "SINKS_START": [
             "./",
