@@ -164,6 +164,10 @@ def parse_script(contents: str):
         return_dict["hard_gate"] = True
     if "github.rest.repos.checkCollaborator" in contents:
         return_dict["soft_gate"] = True
+    if "github.rest.orgs.getMembershipForUser" in contents:
+        return_dict["soft_gate"] = True
+    if "rest.repos.listCollaborators" in contents:
+        return_dict["soft_gate"] = True
     if "getCollaboratorPermissionLevel" in contents:
         return_dict["soft_gate"] = True
     if "getMembershipForUserInOrg" in contents:

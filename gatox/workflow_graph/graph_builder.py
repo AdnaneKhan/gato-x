@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import logging
 import traceback
 
@@ -32,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 class WorkflowGraphBuilder:
     _instance = None
+    _action_locks = None
+    _action_locks_lock = None
 
     def __new__(cls):
         """
@@ -40,8 +43,29 @@ class WorkflowGraphBuilder:
         if cls._instance is None:
             cls._instance = super(WorkflowGraphBuilder, cls).__new__(cls)
             cls._instance.graph = TaggedGraph(cls._instance)
+            cls._action_locks = {}
+            cls._action_locks_lock = asyncio.Lock()
 
         return cls._instance
+
+    async def _get_action_lock(self, repo: str, path: str, ref: str) -> asyncio.Lock:
+        """
+        Get or create a lock for a specific action identified by repo, path, and ref.
+
+        Args:
+            repo (str): The repository name.
+            path (str): The path to the action file.
+            ref (str): The reference (e.g., branch or tag).
+
+        Returns:
+            asyncio.Lock: A lock specific to this action.
+        """
+        action_key = f"{repo}:{path}:{ref}"
+
+        async with self._action_locks_lock:
+            if action_key not in self._action_locks:
+                self._action_locks[action_key] = asyncio.Lock()
+            return self._action_locks[action_key]
 
     def build_lone_repo_graph(self, repo_wrapper: Repository):
         """
@@ -93,12 +117,14 @@ class WorkflowGraphBuilder:
             Returns:
                 str: The contents of the action file.
             """
-            contents = CacheManager().get_action(repo, path, ref)
-            if not contents:
-                contents = await api.retrieve_raw_action(repo, path, ref)
-                if contents:
-                    CacheManager().set_action(repo, path, ref, contents)
-            return contents
+            action_lock = await self._get_action_lock(repo, path, ref)
+            async with action_lock:
+                contents = CacheManager().get_action(repo, path, ref)
+                if not contents:
+                    contents = await api.retrieve_raw_action(repo, path, ref)
+                    if contents:
+                        CacheManager().set_action(repo, path, ref, contents)
+                return contents
 
         ref = node.caller_ref if action_metadata["local"] else action_metadata["ref"]
         contents = await get_action_contents(
@@ -139,11 +165,20 @@ class WorkflowGraphBuilder:
                 # Handle nested actions within composite actions
                 if "uses" in step:
                     action_name = step["uses"]
+
+                    # Create usage context for nested action
+                    usage_context = {
+                        "workflow_name": f"composite-{node.name}",
+                        "job_id": "composite",
+                        "step_index": iter,
+                    }
+
                     nested_action_node = NodeFactory.create_action_node(
                         action_name,
                         ref,
                         action_metadata["path"],
                         action_metadata["repo"],
+                        usage_context=usage_context,
                     )
                     self.graph.add_node(
                         nested_action_node, **nested_action_node.get_attrs()
@@ -312,12 +347,21 @@ class WorkflowGraphBuilder:
                 # Handle actions
                 if "uses" in step:
                     action_name = step["uses"]
+
+                    # Create usage context to ensure unique action nodes
+                    usage_context = {
+                        "workflow_name": workflow_wrapper.getPath(),
+                        "job_id": job_name,
+                        "step_index": iter,
+                    }
+
                     action_node = NodeFactory.create_action_node(
                         action_name,
                         workflow_wrapper.branch,
                         workflow_wrapper.getPath(),
                         workflow_wrapper.repo_name,
                         params=step.get("with", {}),
+                        usage_context=usage_context,
                     )
                     self.graph.add_node(action_node, **action_node.get_attrs())
                     self.graph.add_edge(step_node, action_node, relation="uses")

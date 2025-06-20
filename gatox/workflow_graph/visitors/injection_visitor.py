@@ -94,7 +94,7 @@ class InjectionVisitor:
                 if paths:
                     all_paths.append(paths)
             except Exception as e:
-                logger.error(f"Error finding paths for injection node: {e}")
+                logger.error(f"Error finding paths for injection node: {str(e)}")
                 logger.error(f"Node: {cn}")
 
         for path_set in all_paths:

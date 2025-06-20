@@ -93,6 +93,8 @@ class ActionNode(Node):
             "prince-chrismc/check-actor-permissions-action",
             "lannonbr/repo-permission-check-action",
             "skjnldsv/check-actor-permission",
+            "github/command",
+            "anthropics/claude-code-action",
         ]
     )
 
@@ -102,13 +104,21 @@ class ActionNode(Node):
             "docker/",
             "octokit/",
             "github/",
+            "google-github-actions/",
+            "aws-actions/",
         ]
     )
 
     KNOWN_HARD_GATES = set(["dependabot/fetch-metadata"])
 
     def __init__(
-        self, action_name: str, ref: str, action_path: str, repo_name: str, params: dict
+        self,
+        action_name: str,
+        ref: str,
+        action_path: str,
+        repo_name: str,
+        params: dict,
+        usage_context: dict = None,
     ):
         """
         Constructor for the action wrapper.
@@ -119,9 +129,27 @@ class ActionNode(Node):
             action_path (str): The path to the action file.
             repo_name (str): The name of the repository.
             params (dict): Parameters associated with the action.
+            usage_context (dict): Context about where this action is used
+                                (workflow_name, job_id, step_index).
         """
-        # Create a unique ID for this action.
-        super().__init__(f"{repo_name}:{ref}:{action_path}:{action_name}")
+        # Store usage context for unique identification
+        self.usage_context = usage_context or {}
+
+        # Create a unique ID for this action usage that includes context
+        if usage_context:
+            workflow_name = usage_context.get("workflow_name", "unknown")
+            job_id = usage_context.get("job_id", "unknown")
+            step_index = usage_context.get("step_index", 0)
+            super().__init__(
+                f"{repo_name}:{ref}:{action_path}:{workflow_name}:{job_id}:step-{step_index}:{action_name}"
+            )
+        else:
+            # Fallback to old naming for backwards compatibility
+            super().__init__(f"{repo_name}:{ref}:{action_path}:{action_name}")
+
+        # Create a separate cache key for the actual action definition
+        # This allows us to cache action data while keeping nodes unique
+        self.action_cache_key = f"{repo_name}:{ref}:{action_path}:{action_name}"
         self.is_sink = False
         self.is_checkout = False
         self.if_condition = ""
@@ -238,6 +266,31 @@ class ActionNode(Node):
             tags.add("artifact")
 
         return tags
+
+    def get_display_name(self) -> str:
+        """
+        Get a display name that shows the action with its usage context.
+
+        Returns:
+            str: A user-friendly name showing the action and its context.
+        """
+        action_name = self.action_info.get("key", "unknown")
+
+        if self.usage_context:
+            job_id = self.usage_context.get("job_id", "unknown")
+            step_index = self.usage_context.get("step_index", 0)
+            return f"{action_name}\n({job_id}/step-{step_index})"
+
+        return action_name
+
+    def get_cache_key(self) -> str:
+        """
+        Get the cache key for this action's definition (not the unique node ID).
+
+        Returns:
+            str: The cache key for retrieving action definition from cache.
+        """
+        return self.action_cache_key
 
     def get_attrs(self) -> dict:
         """

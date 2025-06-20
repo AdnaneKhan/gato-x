@@ -163,11 +163,20 @@ class PwnRequestVisitor:
                         if sinks:
                             path_nodes.update(sinks[0])
 
+                        # Get all path nodes with their ancestors
+                        extended_path_nodes = set(path_nodes)
+                        for node in path_nodes:
+                            extended_path_nodes.update(
+                                VisitorUtils.get_node_with_ancestors(node)
+                            )
+
+                        # Check for intersection with blocker and approval gate nodes
                         has_blocker_in_path = bool(
-                            blocker_nodes.intersection(path_nodes)
+                            extended_path_nodes.intersection(blocker_nodes)
                         )
+
                         has_approval_gate_in_path = bool(
-                            approval_gate_nodes.intersection(path_nodes)
+                            extended_path_nodes.intersection(approval_gate_nodes)
                         )
 
                         # Update approval_gate based on whether approval gate nodes are actually in the path
@@ -212,6 +221,9 @@ class PwnRequestVisitor:
                     break
 
                 if node.soft_gate:
+                    logger.debug(
+                        f"Soft gate found in node {node.name}, setting approval_gate to True"
+                    )
                     approval_gate = True
 
             elif "WorkflowNode" in tags:
@@ -287,7 +299,7 @@ class PwnRequestVisitor:
                 if paths:
                     all_paths.append(paths)
             except Exception as e:
-                logger.error(f"Error finding paths for pwn request node: {e}")
+                logger.error(f"Error finding paths for pwn request node: {str(e)}")
                 logger.error(f"Node: {cn}")
 
         for path_set in all_paths:
@@ -297,7 +309,7 @@ class PwnRequestVisitor:
                         path, graph, api, rule_cache, results
                     )
                 except Exception as e:
-                    logger.warning(f"Error processing path: {e}")
+                    logger.warning(f"Error processing path: {str(e)}")
                     logger.warning(f"Path: {path}")
 
         return results
