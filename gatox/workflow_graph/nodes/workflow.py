@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import logging
+from typing import Literal
 
 from gatox.workflow_graph.nodes.node import Node
 from gatox.workflow_graph.nodes.job import JobNode
@@ -25,6 +26,15 @@ logger = logging.getLogger(__name__)
 
 class WorkflowNode(Node):
     """Workflow node"""
+
+    name: str
+    inputs: dict
+
+    # Workflow permissions, if none are specified, then the default permissions are in effect identified
+    # by the special string `default`.
+    # An empty dict `{}` is valid and indicate the token has no permissions.
+    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defining-access-for-the-github_token-scopes
+    permissions: Literal["default", "read-all", "write-all"] | dict
 
     def __init__(self, ref: str, repo_name: str, workflow_path: str):
         """Constructor for workflow wrapper."""
@@ -43,6 +53,7 @@ class WorkflowNode(Node):
         self.__repo_name = repo_name
         self.__env_vars = {}
         self.inputs = {}
+        self.permissions = "default"
 
     def __hash__(self):
         return hash((self.name, self.__class__.__name__))
@@ -157,6 +168,7 @@ class WorkflowNode(Node):
         """Initialize the Workflow node with the parsed workflow data."""
         self.__triggers = self.__process_triggers(workflow.parsed_yml)
         self.__env_vars = self.__process_envs(workflow.parsed_yml)
+        self.permissions = workflow.parsed_yml.get("permissions", "default")
 
         self.inputs = self.__process_inputs(workflow.parsed_yml)
         self.uninitialized = False
