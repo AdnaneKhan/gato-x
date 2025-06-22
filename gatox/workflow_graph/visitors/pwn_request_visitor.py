@@ -65,35 +65,12 @@ class PwnRequestVisitor:
             tags = node.get_tags()
 
             if "JobNode" in tags:
-                # Check deployment environment rules
-                if (
-                    node.deployments
-                    and await VisitorUtils.check_deployment_approval_gate(
-                        node, rule_cache, api, input_lookup, env_lookup
-                    )
-                ):
-                    approval_gate = True
-                    continue
-
-                paths = await graph.dfs_to_tag(node, "permission_blocker", api)
+                # Exit fast if we hit a blocker
+                paths = await graph.dfs_to_tag(
+                    node, "permission_blocker", api, ignore_depends=True
+                )
                 if paths:
-                    # Memoize the blocker nodes (last node in each path) instead of breaking
-                    for blocker_path in paths:
-                        if blocker_path:
-                            blocker_nodes.add(blocker_path[-1])
-                    logger.debug(
-                        f"Found {len(paths)} permission blocker paths, memoized {len(blocker_nodes)} blocker nodes"
-                    )
-
-                paths = await graph.dfs_to_tag(node, "permission_check", api)
-                if paths:
-                    # Memoize the approval gate nodes (last node in each path)
-                    for gate_path in paths:
-                        if gate_path:
-                            approval_gate_nodes.add(gate_path[-1])
-                    logger.debug(
-                        f"Found {len(paths)} permission check paths, memoized {len(approval_gate_nodes)} approval gate nodes"
-                    )
+                    break
 
                 if node.outputs:
                     for o_key, val in node.outputs.items():
@@ -104,6 +81,22 @@ class PwnRequestVisitor:
                             for key in env_lookup.keys():
                                 if key in val:
                                     flexible_lookup[o_key] = env_lookup[key]
+                # Check deployment environment rules
+                if (
+                    node.deployments
+                    and await VisitorUtils.check_deployment_approval_gate(
+                        node, rule_cache, api, input_lookup, env_lookup
+                    )
+                ):
+                    approval_gate = True
+                    continue
+
+                paths = await graph.dfs_to_tag(
+                    node, "permission_check", api, ignore_depends=True
+                )
+                if paths:
+                    approval_gate = True
+                    continue
 
             elif "StepNode" in tags:
                 if node.is_checkout:
@@ -150,53 +143,22 @@ class PwnRequestVisitor:
                         if sinks:
                             path_nodes.update(sinks[0])
 
-                        # Get all path nodes with their ancestors
-                        extended_path_nodes = set(path_nodes)
-                        for node in path_nodes:
-                            extended_path_nodes.update(
-                                VisitorUtils.get_node_with_ancestors(node)
-                            )
-
-                        # Check for intersection with blocker and approval gate nodes
-                        has_blocker_in_path = bool(
-                            extended_path_nodes.intersection(blocker_nodes)
-                        )
-
-                        has_approval_gate_in_path = bool(
-                            extended_path_nodes.intersection(approval_gate_nodes)
-                        )
-
-                        # Update approval_gate based on whether approval gate nodes are actually in the path
-                        # or if it was set by other conditions (deployments, soft gates, etc.)
-                        effective_approval_gate = (
-                            approval_gate or has_approval_gate_in_path
-                        )
-
                         # Recalculate complexity based on effective approval gate
-                        if effective_approval_gate:
+                        if approval_gate:
                             complexity = Complexity.TOCTOU
                         elif "workflow_run" in path[0].get_tags():
                             complexity = Complexity.PREVIOUS_CONTRIBUTOR
                         else:
                             complexity = Complexity.ZERO_CLICK
 
-                        logger.debug(
-                            f"Path analysis: blocker_nodes={len(blocker_nodes)}, approval_gate_nodes={len(approval_gate_nodes)}, path_nodes={len(path_nodes)}, has_blocker_in_path={has_blocker_in_path}, has_approval_gate_in_path={has_approval_gate_in_path}, effective_approval_gate={effective_approval_gate}"
+                        VisitorUtils._add_results(
+                            path,
+                            results,
+                            IssueType.PWN_REQUEST,
+                            complexity=complexity,
+                            confidence=confidence,
                         )
 
-                        # Only add results if no blocker nodes are found in the path
-                        if not has_blocker_in_path:
-                            VisitorUtils._add_results(
-                                path,
-                                results,
-                                IssueType.PWN_REQUEST,
-                                complexity=complexity,
-                                confidence=confidence,
-                            )
-                        else:
-                            logger.debug(
-                                "Suppressing results due to blocker node found in path"
-                            )
                         break
 
                 if node.outputs:

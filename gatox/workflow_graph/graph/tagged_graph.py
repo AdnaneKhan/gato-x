@@ -37,7 +37,7 @@ class TaggedGraph(nx.DiGraph):
         self.builder = builder
         self.tags = {}  # Dictionary to map tags to sets of nodes
 
-    async def dfs_to_tag(self, start_node, target_tag, api):
+    async def dfs_to_tag(self, start_node, target_tag, api, ignore_depends=False):
         """
         Perform a Depth-First Search (DFS) from the start node to find all paths
         that lead to nodes with the specified target tag.
@@ -54,11 +54,22 @@ class TaggedGraph(nx.DiGraph):
         all_paths = list()
         visited = set()
 
-        await self._dfs(start_node, target_tag, path, all_paths, visited, api)
+        await self._dfs(
+            start_node, target_tag, path, all_paths, visited, api, ignore_depends
+        )
 
         return all_paths
 
-    async def _dfs(self, current_node, target_tag, path, all_paths, visited, api):
+    async def _dfs(
+        self,
+        current_node,
+        target_tag,
+        path,
+        all_paths,
+        visited,
+        api,
+        ignore_depends=False,
+    ):
         """
         Helper method to recursively perform DFS.
 
@@ -69,6 +80,8 @@ class TaggedGraph(nx.DiGraph):
             all_paths (list): The list accumulating all valid paths found.
             visited (set): A set of nodes that have been visited in the current traversal.
             api: An instance of the API wrapper for external interactions.
+            ignore_depends (bool): If True, ignore edges with the "depends" relation. This is useful when trying to check if a job-node in a path can
+            reach a permission check or blocker.
 
         Returns:
             None
@@ -86,6 +99,11 @@ class TaggedGraph(nx.DiGraph):
             all_paths.append(list(path))
         else:
             for neighbor in self.neighbors(current_node):
+                relation = self.get_edge_data(current_node, neighbor).get(
+                    "relation", None
+                )
+                if relation and relation == "depends" and ignore_depends:
+                    continue
                 if neighbor not in visited:
                     await self._dfs(neighbor, target_tag, path, all_paths, visited, api)
 
