@@ -450,6 +450,7 @@ class Enumerator:
                     Recommender.print_repo_secrets(
                         self.user_perms["scopes"], repo.secrets + repo.org_secrets
                     )
+                    Recommender.print_repo_runner_info(repo)
                     organization.set_repository(repo)
         except KeyboardInterrupt:
             Output.warn("Keyboard interrupt detected, exiting enumeration!")
