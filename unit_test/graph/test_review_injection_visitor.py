@@ -87,19 +87,22 @@ async def test_find_injections_job_node_with_deployments(mock_graph, mock_api):
         return_value={"production": {"required_reviewers": 1}}
     )
 
-    # Mock VisitorUtils
-    with patch(
-        "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
-    ) as mock_visitor_utils:
-        mock_visitor_utils.process_context_var.return_value = "production"
+    with (
+        patch(
+            "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils.check_deployment_approval_gate",
+            new_callable=AsyncMock,
+        ) as mock_check_deploy,
+        patch(
+            "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils.process_context_var"
+        ) as mock_process_context_var,
+    ):
+        mock_check_deploy.return_value = True
+        mock_process_context_var.return_value = "production"
 
         result = await ReviewInjectionVisitor.find_injections(mock_graph, mock_api)
 
         # Should not add results due to approval gate being set
         assert result == {}
-        mock_api.get_all_environment_protection_rules.assert_called_once_with(
-            "owner/repo"
-        )
 
 
 @pytest.mark.asyncio

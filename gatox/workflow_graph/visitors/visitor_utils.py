@@ -225,3 +225,41 @@ class VisitorUtils:
 
                     if is_within_last_day(commit_date) and "[bot]" not in author:
                         asyncio.create_task(send_slack_webhook(value))
+
+    @staticmethod
+    def matches_deployment_rule(deployment, rules):
+        """
+        Returns True if any rule string is a substring of the deployment string.
+        Args:
+            deployment (str): The deployment environment name.
+            rules (Iterable[str]): The list of rule strings.
+        Returns:
+            bool: True if any rule is a substring of deployment, else False.
+        """
+        return any(rule in str(deployment) for rule in rules)
+
+    @staticmethod
+    async def check_deployment_approval_gate(
+        node, rule_cache, api, input_lookup, env_lookup
+    ):
+        """
+        Checks if any deployment environment for the node matches a protection rule (substring match).
+        Returns True if approval gate should be set, else False.
+        """
+        # Assumes node.deployments is not None
+        if node.repo_name() in rule_cache:
+            rules = rule_cache[node.repo_name()]
+        else:
+            rules = await api.get_all_environment_protection_rules(node.repo_name())
+            rule_cache[node.repo_name()] = rules
+        for deployment in node.deployments:
+            if isinstance(deployment, dict):
+                deployment = deployment["name"]
+            deployment = VisitorUtils.process_context_var(deployment)
+            if deployment in input_lookup:
+                deployment = input_lookup[deployment]
+            elif deployment in env_lookup:
+                deployment = env_lookup[deployment]
+            if VisitorUtils.matches_deployment_rule(deployment, rules):
+                return True
+        return False

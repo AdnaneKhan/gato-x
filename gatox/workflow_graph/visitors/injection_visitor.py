@@ -110,23 +110,14 @@ class InjectionVisitor:
 
                     if "JobNode" in tags:
                         # Check deployment environment rules
-                        if node.deployments:
-                            if node.repo_name() in rule_cache:
-                                rules = rule_cache[node.repo_name()]
-                            else:
-                                rules = await api.get_all_environment_protection_rules(
-                                    node.repo_name()
-                                )
-                                rule_cache[node.repo_name()] = rules
-                            for deployment in node.deployments:
-                                if isinstance(deployment, dict):
-                                    deployment = deployment["name"]
-                                deployment = VisitorUtils.process_context_var(
-                                    deployment
-                                )
-
-                                if deployment in rules:
-                                    approval_gate = True
+                        if (
+                            node.deployments
+                            and await VisitorUtils.check_deployment_approval_gate(
+                                node, rule_cache, api, input_lookup, env_lookup
+                            )
+                        ):
+                            approval_gate = True
+                            continue
 
                         paths = await graph.dfs_to_tag(node, "permission_check", api)
                         if paths:

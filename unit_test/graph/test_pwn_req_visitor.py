@@ -1002,3 +1002,61 @@ async def test_find_pwn_requests_with_process_path_exception(
         # Should not raise exception, just log warning
         result = await PwnRequestVisitor.find_pwn_requests(mock_graph, mock_api)
         assert result == {}
+
+
+@pytest.mark.asyncio
+async def test_process_single_path_deployment_rule_substring_match(
+    mock_graph, mock_api, mock_cache_manager
+):
+    """Test that deployment matches rule via substring (rule='prod', deployment='production')."""
+    workflow_node = MagicMock()
+    workflow_node.get_tags.return_value = ["WorkflowNode", "pull_request_target"]
+    workflow_node.excluded.return_value = False
+    workflow_node.get_env_vars.return_value = {}
+    workflow_node.repo_name.return_value = "test/repo"
+
+    job_node = MagicMock()
+    job_node.get_tags.return_value = ["JobNode"]
+    job_node.deployments = ["production"]
+    job_node.outputs = None
+    job_node.repo_name.return_value = "test/repo"
+
+    checkout_step = MagicMock()
+    checkout_step.get_tags.return_value = ["StepNode"]
+    checkout_step.is_checkout = True
+    checkout_step.metadata = "refs/heads/main"
+    checkout_step.outputs = None
+    checkout_step.hard_gate = False
+    checkout_step.soft_gate = False
+
+    path = [workflow_node, job_node, checkout_step]
+
+    def mock_dfs_side_effect(node, tag, api):
+        if tag == "permission_blocker":
+            return []
+        elif tag == "permission_check":
+            return []
+        elif tag == "sink":
+            return [[MagicMock()]]
+        return []
+
+    mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
+    # The rule is 'prod', which is a substring of 'production'
+    mock_api.get_all_environment_protection_rules.return_value = ["prod"]
+
+    results = {}
+    rule_cache = {}
+
+    with (
+        patch.object(VisitorUtils, "process_context_var", side_effect=lambda x: x),
+        patch.object(VisitorUtils, "check_mutable_ref", return_value=True),
+        patch.object(VisitorUtils, "append_path"),
+        patch.object(VisitorUtils, "_add_results") as mock_add_results,
+    ):
+        await PwnRequestVisitor._process_single_path(
+            path, mock_graph, mock_api, rule_cache, results
+        )
+        # Should trigger approval gate due to substring match and set TOCTOU complexity
+        mock_add_results.assert_called_once()
+        call_args = mock_add_results.call_args
+        assert call_args[1]["complexity"] == Complexity.TOCTOU
