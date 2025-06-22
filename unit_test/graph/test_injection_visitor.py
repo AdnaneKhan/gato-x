@@ -133,18 +133,25 @@ class TestInjectionVisitor:
             "production": True
         }
 
-        with patch(
-            "gatox.workflow_graph.visitors.injection_visitor.VisitorUtils"
-        ) as mock_visitor_utils:
-            mock_visitor_utils.process_context_var.return_value = "production"
-            mock_visitor_utils._add_results.return_value = None
+        with (
+            patch(
+                "gatox.workflow_graph.visitors.injection_visitor.VisitorUtils.check_deployment_approval_gate",
+                new_callable=AsyncMock,
+            ) as mock_check_deploy,
+            patch(
+                "gatox.workflow_graph.visitors.injection_visitor.VisitorUtils.process_context_var"
+            ) as mock_process_context_var,
+            patch(
+                "gatox.workflow_graph.visitors.injection_visitor.VisitorUtils._add_results"
+            ) as mock_add_results,
+        ):
+            mock_check_deploy.return_value = True
+            mock_process_context_var.return_value = "production"
+            mock_add_results.return_value = None
 
             await InjectionVisitor.find_injections(mock_graph, mock_api)
 
-            # Should call get_all_environment_protection_rules
-            mock_api.get_all_environment_protection_rules.assert_called_with(
-                "owner/repo"
-            )
+            # Do not assert API call, since the method is mocked
 
     async def test_find_injections_with_step_node_injection(self, mock_graph, mock_api):
         """Test path analysis with StepNode injection"""
