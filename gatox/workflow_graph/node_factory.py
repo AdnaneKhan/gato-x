@@ -58,7 +58,13 @@ class NodeFactory:
             return repo_node, True
 
     @staticmethod
-    def create_job_node(job_name, ref, repo_name, workflow_path, needs: list = []):
+    def create_job_node(
+        job_name,
+        ref,
+        repo_name,
+        workflow_path,
+        line_number: int = None,
+    ):
         """
         Create a JobNode for the specified job and cache it.
 
@@ -71,12 +77,11 @@ class NodeFactory:
             ref (str): The reference (e.g., branch or tag) associated with the job.
             repo_name (str): The name of the repository where the job resides.
             workflow_path (str): The path to the workflow file containing the job.
-            needs (list, optional): A list of dependencies required by the job.
 
         Returns:
             JobNode: The created or cached JobNode instance.
         """
-        job_node = JobNode(job_name, ref, repo_name, workflow_path)
+        job_node = JobNode(job_name, ref, repo_name, workflow_path, line_number)
         if job_node.name in NodeFactory.NODE_CACHE:
             return NodeFactory.NODE_CACHE[job_node.name]
         else:
@@ -154,7 +159,7 @@ class NodeFactory:
 
     @staticmethod
     def create_step_node(
-        step_data, ref, repo_name, workflow_path, job_name, step_number
+        step_data, ref, repo_name, workflow_path, job_name, step_number, line_number
     ):
         """
         Create a StepNode for the specified step and cache it.
@@ -174,7 +179,7 @@ class NodeFactory:
             StepNode: The created StepNode instance.
         """
         step_node = StepNode(
-            step_data, ref, repo_name, workflow_path, job_name, step_number
+            step_data, ref, repo_name, workflow_path, job_name, step_number, line_number
         )
         NodeFactory.NODE_CACHE[step_node.name] = step_node
         return step_node

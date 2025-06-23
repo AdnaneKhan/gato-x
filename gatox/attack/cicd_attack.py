@@ -1,4 +1,4 @@
-import yaml
+from ruamel.yaml import YAML
 
 
 class CICDAttack:
@@ -30,4 +30,4 @@ class CICDAttack:
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return yaml.dump(yaml_file, sort_keys=False)
+        return YAML(typ=["rt", "string"]).dump_to_string(yaml_file)

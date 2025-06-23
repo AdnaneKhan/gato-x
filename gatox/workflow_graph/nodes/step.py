@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from collections import OrderedDict
+from typing import Optional
 from gatox.workflow_parser.utility import parse_script, getTokens, filter_tokens
 from gatox.workflow_graph.nodes.node import Node
 
@@ -45,6 +47,7 @@ class StepNode(Node):
         workflow_path: str,
         job_name: str,
         step_number: int,
+        line: Optional[int] = None,
     ):
         """
         Constructor for the step wrapper.
@@ -66,7 +69,7 @@ class StepNode(Node):
         else:
             name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
 
-        super().__init__(name)
+        super().__init__(name, line)
 
         self.type = self.__get_type(step_data)
         self.is_checkout = False

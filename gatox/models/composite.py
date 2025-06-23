@@ -1,9 +1,11 @@
-import yaml
 import logging
+from collections import OrderedDict
 
-from yaml import CSafeLoader
+from ruamel.yaml.parser import ParserError
+from ruamel.yaml import YAML
 
 logger = logging.getLogger(__name__)
+yaml_loader = YAML()
 
 
 class Composite:
@@ -20,25 +22,25 @@ class Composite:
         """
         self.composite = False
         self.parsed_yml = None
+        self.invalid = False
+
         try:
-            self.parsed_yml = yaml.load(
-                action_yml.replace("\t", "  "), Loader=CSafeLoader
+            self.parsed_yml = yaml_loader.load(action_yml)
+        except ParserError as e:
+            logger.warning(
+                f"Received a parser error while parsing action contents: {str(e)}"
             )
-        except (
-            yaml.parser.ParserError,
-            yaml.scanner.ScannerError,
-            yaml.constructor.ConstructorError,
-        ):
-            self.invalid = True
-        except ValueError:
             self.invalid = True
         except Exception as parse_error:
-            logging.error(
+            logger.error(
                 f"Received an exception while parsing action contents: {str(parse_error)}"
             )
             self.invalid = True
 
-        if not self.parsed_yml or type(self.parsed_yml) is not dict:
+        if not self.parsed_yml or not isinstance(self.parsed_yml, OrderedDict):
+            logger.warning(
+                f"Received an invalid action contents, expected OrderedDict, got {type(self.parsed_yml)}"
+            )
             self.invalid = True
         else:
             self.composite = self._check_composite()

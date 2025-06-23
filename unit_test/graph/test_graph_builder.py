@@ -1,6 +1,7 @@
 import pytest
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
+from gatox.github.api import Api
 from gatox.models.workflow import Workflow
 from gatox.models.repository import Repository
 from gatox.workflow_graph.nodes.workflow import WorkflowNode
@@ -133,12 +134,11 @@ async def test_invalid_workflow(builder, mock_workflow, mock_repo):
     assert len(builder.graph.nodes) == 0
 
 
-@patch("gatox.workflow_graph.graph_builder.CacheManager")
-async def test_initialize_action_node(mock_cache, builder):
+async def test_initialize_action_node(builder):
     action_node = ActionNode(
         "actions/checkout@v2", "main", "workflow.yml", "test/repo", {}
     )
-    api = Mock()
+    api = AsyncMock(spec=Api)
     api.retrieve_raw_action.return_value = """
     name: 'Test Action'
     runs:

@@ -1,22 +1,12 @@
-from datetime import datetime
-import yaml
 import logging
+from collections import OrderedDict
+from datetime import datetime
 
-from yaml import CSafeLoader
-from yaml.resolver import Resolver
+from ruamel.yaml.parser import ParserError
+from ruamel.yaml import YAML
 
 logger = logging.getLogger(__name__)
-
-# remove resolver entries for On/Off/Yes/No
-for ch in "OoTtFf":
-    if len(Resolver.yaml_implicit_resolvers[ch]) == 1:
-        del Resolver.yaml_implicit_resolvers[ch]
-    else:
-        Resolver.yaml_implicit_resolvers[ch] = [
-            x
-            for x in Resolver.yaml_implicit_resolvers[ch]
-            if x[0] != "tag:yaml.org,2002:bool"
-        ]
+yaml_loader = YAML()
 
 
 class Workflow:
@@ -43,32 +33,29 @@ class Workflow:
         try:
             if type(workflow_contents) is bytes:
                 workflow_contents = workflow_contents.decode("utf-8")
-            self.parsed_yml = yaml.load(
-                workflow_contents.replace("\t", "  "), Loader=CSafeLoader
-            )
 
-            if (
-                "dependabot" in workflow_name
-                and "- package-ecosystem:" in workflow_contents
-            ):
-                self.invalid = True
-
-            if not self.parsed_yml or type(self.parsed_yml) is not dict:
-                self.invalid = True
-
+            self.parsed_yml = yaml_loader.load(workflow_contents)
             self.workflow_contents = workflow_contents
-        except (
-            yaml.parser.ParserError,
-            yaml.scanner.ScannerError,
-            yaml.constructor.ConstructorError,
-        ):
-            self.invalid = True
-        except ValueError:
+        except ParserError as e:
+            logger.warning(
+                f"Received a parser error while parsing workflow contents: {str(e)}"
+            )
             self.invalid = True
         except Exception as parse_error:
             logger.error(
-                "Received an exception while parsing workflow contents: "
-                + str(parse_error)
+                f"Received an exception while parsing workflow contents: {str(parse_error)}"
+            )
+            self.invalid = True
+
+        if (
+            "dependabot" in workflow_name
+            and "- package-ecosystem:" in workflow_contents
+        ):
+            self.invalid = True
+
+        if not self.parsed_yml or not isinstance(self.parsed_yml, OrderedDict):
+            logger.warning(
+                f"Received an invalid workflow contents, expected OrderedDict, got {type(self.parsed_yml)}"
             )
             self.invalid = True
 

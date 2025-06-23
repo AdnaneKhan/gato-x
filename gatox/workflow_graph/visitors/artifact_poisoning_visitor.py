@@ -64,7 +64,6 @@ class ArtifactPoisoningVisitor:
                     # Terminal, we need to dfs to a sink now.
                     sinks = await graph.dfs_to_tag(node, "sink", api)
                     if sinks:
-
                         VisitorUtils.append_path(path, sinks[0])
 
                         VisitorUtils._add_results(
@@ -95,7 +94,6 @@ class ArtifactPoisoningVisitor:
         for path_set in all_paths:
             for path in path_set:
                 try:
-
                     await ArtifactPoisoningVisitor.__process_path(
                         path, graph, api, results
                     )

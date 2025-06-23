@@ -1,4 +1,4 @@
-import yaml
+from ruamel.yaml import YAML
 
 
 class Payloads:
@@ -128,10 +128,13 @@ fi
                 {
                     "name": "Run Tests",
                     "run": run_payload,
-                    "continue-on-error": "true",
+                    "continue-on-error": True,
                 }
             ],
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return yaml.dump(yaml_file, sort_keys=False, default_style="", width=4096)
+        yaml_dumper = YAML(typ=["rt", "string"])
+        yaml_dumper.default_flow_style = False
+        yaml_dumper.width = 4096
+        return yaml_dumper.dump_to_string(yaml_file)

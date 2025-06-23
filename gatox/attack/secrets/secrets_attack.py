@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import yaml
+from ruamel.yaml import YAML
 import string
 import json
 import hashlib
@@ -123,7 +123,7 @@ EOF
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return yaml.dump(yaml_file, sort_keys=False)
+        return YAML(typ=["rt", "string"]).dump_to_string(yaml_file)
 
     @staticmethod
     def __create_private_key():
