@@ -163,5 +163,8 @@ cython_debug/
 .DS_Store
 .DS_Store?
 
+# test json outputs
+*_test.json
+
 # Output Artifacts
 *.zip

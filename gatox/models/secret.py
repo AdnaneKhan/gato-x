@@ -41,7 +41,7 @@ class Secret:
             "name": self.name,
             "updated_at": self.secret_data["updated_at"],
             "created_at": self.secret_data["created_at"],
-            "visibiliy": self.visibility,
+            "visibility": self.visibility,
             "repo_level": self.is_repo_level(),
         }
 
