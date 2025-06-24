@@ -389,7 +389,7 @@ async def test_check_org():
     test_pat = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     mock_client = AsyncMock()
 
-    mock_response = MagicMock()
+    MagicMock()
     mock_client.get.side_effect = [
         MagicMock(
             status_code=200,
@@ -792,6 +792,47 @@ async def test_workflow_ymls():
     assert ymls[0].workflow_contents == "FooBarBaz"
 
 
+async def test_workflow_ymls_ref():
+    """Test retrieving workflow yml files from a specific ref."""
+    test_pat = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    mock_client = AsyncMock()
+
+    test_return = [
+        {
+            "name": "integration.yaml",
+            "path": ".github/workflows/integration.yaml",
+            "sha": "a38970d0b6a86e1ac108854979d47ec412789708",
+            "size": 2095,
+            "url": "https://api.github.com/repos/praetorian-inc/gato/contents/.github/workflows/integration.yaml?ref=main",
+            "html_url": "https://github.com/praetorian-inc/gato/blob/main/.github/workflows/integration.yaml",
+            "git_url": "https://api.github.com/repos/praetorian-inc/gato/git/blobs/a38970d0b6a86e1ac108854979d47ec412789708",
+            "download_url": "https://raw.githubusercontent.com/praetorian-inc/gato/main/.github/workflows/integration.yaml",
+            "type": "file",
+            "_links": {
+                "self": "https://api.github.com/repos/praetorian-inc/gato/contents/.github/workflows/integration.yaml?ref=main",
+                "git": "https://api.github.com/repos/praetorian-inc/gato/git/blobs/a38970d0b6a86e1ac108854979d47ec412789708",
+                "html": "https://github.com/praetorian-inc/gato/blob/main/.github/workflows/integration.yaml",
+            },
+        }
+    ]
+
+    base64_enc = base64.b64encode(b"FooBarBaz")
+    test_file_content = {"content": base64_enc}
+
+    mock_response = MagicMock()
+    mock_client.get.side_effect = [mock_response, mock_response]
+    mock_response.status_code = 200
+    mock_response.json.side_effect = [test_return, test_file_content]
+
+    api = Api(test_pat, "2022-11-28", client=mock_client)
+    sha = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    ymls = await api.retrieve_workflow_ymls_ref("testOrg/testRepo", sha)
+
+    assert len(ymls) == 1
+    assert ymls[0].workflow_name == "integration.yaml"
+    assert ymls[0].workflow_contents == "FooBarBaz"
+
+
 async def test_get_secrets():
     """Test getting repo secret names."""
     test_pat = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -1188,7 +1229,7 @@ async def test_get_own_repos_multiple_pages():
     test_pat = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     mock_client = AsyncMock()
 
-    mock_response = MagicMock()
+    MagicMock()
 
     def generate_repo_list():
         """

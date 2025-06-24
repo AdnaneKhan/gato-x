@@ -22,7 +22,6 @@ from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.issue_type import IssueType
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
-from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
 from gatox.github.api import Api
 from gatox.workflow_parser.utility import CONTEXT_REGEX
@@ -78,7 +77,7 @@ class DispatchTOCTOUVisitor:
                 if paths:
                     all_paths.append(paths)
             except Exception as e:
-                logger.error(f"Error finding paths for dispatch node: {e}")
+                logger.error(f"Error finding paths for dispatch node: {str(e)}")
                 logger.warning(f"Node: {cn}")
 
         for path_set in all_paths:
@@ -120,7 +119,6 @@ class DispatchTOCTOUVisitor:
         # Workflow dispatch jobs inherently have an approval gate,
         # so only TOCTOU issues can be exploited.
         input_lookup = {}
-        approval_gate = True
         env_lookup = {}
         flexible_lookup = {}
 
@@ -152,21 +150,26 @@ class DispatchTOCTOUVisitor:
                         break
 
                     pr_num_found = False
+                    sha_found = False
                     # Process inputs to determine if any contain a PR number.
                     # This is a heuristic to identify workflows that are taking a PR number
                     # or mutable reference.
                     for key, val in node.inputs.items():
                         if "sha" in key.lower():
-                            break
+                            if isinstance(val, dict):
+                                # Suppress if sha is required
+                                if "required" in val:
+                                    if val["required"]:
+                                        sha_found = True
+
                         elif re.search(
                             r"(?:^|[\b_])(pr|pull|pull_request|pr_number)(?:[\b_]|$)",
                             key,
                             re.IGNORECASE,
                         ):
                             pr_num_found = True
-                            break
 
-                    if not pr_num_found:
+                    if not pr_num_found or (pr_num_found and sha_found):
                         break
 
                     # Check workflow environment variables for GitHub event references

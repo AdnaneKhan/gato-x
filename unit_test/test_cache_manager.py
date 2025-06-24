@@ -1,8 +1,6 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from gatox.caching.cache_manager import CacheManager
-from gatox.models.repository import Repository
-from gatox.models.workflow import Workflow
 
 
 def test_init_cache():
@@ -39,7 +37,7 @@ def test_set_empty_and_cached():
     """Test if setting the repo"""
     CacheManager().set_empty("testOrg/testRepoEmpty")
 
-    assert CacheManager().is_repo_cached("testOrg/testRepoEmpty") == True
+    assert CacheManager().is_repo_cached("testOrg/testRepoEmpty")
 
 
 def test_get_workflows():
@@ -92,7 +90,7 @@ def test_get_set_repository_fail():
 
     cache.set_repository(mock_repo)
 
-    assert cache.get_repository("badOrg/BadRepo") == None
+    assert cache.get_repository("badOrg/BadRepo") is None
 
 
 def test_set_get_action():

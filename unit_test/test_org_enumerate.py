@@ -3,7 +3,7 @@ import pathlib
 import pytest
 import json
 
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock
 
 from gatox.models.organization import Organization
 from gatox.enumerate.organization import OrganizationEnum

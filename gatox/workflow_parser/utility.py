@@ -31,7 +31,6 @@ def starts_with_any(value: str, prefixes: list[str]) -> bool:
 def process_matrix(job_def, runs_on):
     """Process case where runner is specified via matrix."""
     try:
-
         matrix_match = MATRIX_KEY_EXTRACTION_REGEX.search(runs_on)
 
         if matrix_match:
@@ -68,9 +67,9 @@ def process_matrix(job_def, runs_on):
                 # list of labels
                 elif type(key) is list:
                     return True
-    except TypeError as e:
-        print("Error processing matrix job")
-        print(job_def)
+    except TypeError:
+        logger.error("Error processing matrix job")
+        logger.debug(job_def)
         return False
 
 
@@ -164,6 +163,10 @@ def parse_script(contents: str):
     if "isCrossRepository" in contents and "GITHUB_OUTPUT" in contents:
         return_dict["hard_gate"] = True
     if "github.rest.repos.checkCollaborator" in contents:
+        return_dict["soft_gate"] = True
+    if "github.rest.orgs.getMembershipForUser" in contents:
+        return_dict["soft_gate"] = True
+    if "rest.repos.listCollaborators" in contents:
         return_dict["soft_gate"] = True
     if "getCollaboratorPermissionLevel" in contents:
         return_dict["soft_gate"] = True

@@ -9,7 +9,6 @@ run_ref = os.environ.get("RUN_REF")
 
 # Quick helper script for integration tests to get add/remove tokens.
 if sys.argv[1] == "remove":
-
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {reg_pat}",
@@ -25,7 +24,6 @@ if sys.argv[1] == "remove":
         command = f"./config.sh remove --token {token} --name ghrunner-test"
         os.system(command)
 elif sys.argv[1] == "register":
-
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {reg_pat}",
@@ -42,7 +40,6 @@ elif sys.argv[1] == "register":
         command = f"./config.sh --url https://github.com/gatoxtest --unattended --token {token} --name ghrunner-test"
         os.system(command)
 elif sys.argv[1] == "dispatch":
-
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {dispatch_pat}",

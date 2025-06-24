@@ -1,27 +1,12 @@
 import pytest
 import os
 import pathlib
-import httpx
 
 from unittest import mock
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 
 from gatox.cli import cli
 from gatox.util.arg_utils import read_file_and_validate_lines, is_valid_directory
-
-
-@pytest.fixture(autouse=True)
-def block_network_calls(monkeypatch):
-    """
-    Fixture to block real network calls during tests,
-    raising an error if any attempt to send a request is made.
-    """
-
-    def mock_request(*args, **kwargs):
-        raise RuntimeError("Blocked a real network call during tests.")
-
-    monkeypatch.setattr(httpx.Client, "send", mock_request)
-    monkeypatch.setattr(httpx.AsyncClient, "send", mock_request)
 
 
 @pytest.fixture(autouse=True)
@@ -36,7 +21,7 @@ def mock_settings_env_vars():
         yield
 
 
-@patch("builtins.input", return_value="")
+@patch("builtins.input", return_value="BAD_TOKEN")
 async def test_cli_no_gh_token(mock_input, capfd):
     """Test case where no GH Token is provided"""
     del os.environ["GH_TOKEN"]
@@ -45,7 +30,7 @@ async def test_cli_no_gh_token(mock_input, capfd):
         await cli.cli(["enumerate", "-t", "test"])
 
     mock_input.assert_called_with(
-        "No 'GH_TOKEN' environment variable set! Please enter a GitHub" " PAT.\n"
+        "No 'GH_TOKEN' environment variable set! Please enter a GitHub PAT.\n"
     )
 
 
@@ -95,7 +80,6 @@ async def test_cli_s2s_token_machine(mock_api, capfd):
     await cli.cli(["enumerate", "-r", "testOrg/testRepo", "--machine"])
     out, _ = capfd.readouterr()
     assert "Allowing the use of a GitHub App token for single repo enumeration" in out
-    assert "Gato-X is using valid a GitHub App installation token" in out
 
 
 async def test_cli_u2s_token(capfd):
@@ -424,7 +408,7 @@ async def test_enum_user(mock_enumerator):
 
 
 @mock.patch("gatox.enumerate.enumerate.Enumerator.enumerate_repos")
-@mock.patch("gatox.util.read_file_and_validate_lines")
+@mock.patch("gatox.cli.cli.read_file_and_validate_lines")
 async def test_enum_repos(mock_read, mock_enumerate):
     """Test enum command using the repo list."""
     curr_path = pathlib.Path(__file__).parent.resolve()
@@ -440,6 +424,23 @@ async def test_enum_repo(mock_enumerate):
     """Test enum command using the organization enumerattion."""
     await cli.cli(["enum", "-r", "testorg/testrepo"])
     mock_enumerate.assert_called_once()
+
+
+@mock.patch("gatox.enumerate.enumerate.Enumerator.enumerate_commit")
+async def test_enum_commit(mock_commit):
+    """Test enum command using commit scanning."""
+    sha = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    await cli.cli(["enum", "-r", "testorg/testrepo", "--commit", sha])
+    mock_commit.assert_called_once_with("testorg/testrepo", sha)
+
+
+async def test_enum_commit_requires_repo(capfd):
+    """Test enum command commit option without repository."""
+    sha = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    with pytest.raises(SystemExit):
+        await cli.cli(["enum", "--commit", sha])
+    out, err = capfd.readouterr()
+    assert "--commit requires --repository" in err
 
 
 @mock.patch("gatox.search.search.Searcher.use_search_api")
@@ -470,9 +471,7 @@ async def test_invalid_repo_name(capfd):
 
     out, err = capfd.readouterr()
 
-    assert (
-        "argument --repository/-r: The argument" " is not in the valid format!" in err
-    )
+    assert "argument --repository/-r: The argument is not in the valid format!" in err
 
 
 @mock.patch("gatox.util.arg_utils.os.access")
@@ -511,3 +510,20 @@ async def test_unwritable_dir(mock_access, capfd):
     out, err = capfd.readouterr()
 
     assert " is not writeable" in err
+
+
+async def test_attack_invalid_c2_repo_format(capfd):
+    """Test attack command with c2-repo that does not match regex."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "-t",
+                "testorg/testrepo",
+                "-w",  # Need to specify an attack type
+                "--c2-repo",
+                "invalid-c2-repo-format",
+            ]
+        )
+    out, err = capfd.readouterr()
+    assert "argument --c2-repo: The argument is not in the valid format!" in err

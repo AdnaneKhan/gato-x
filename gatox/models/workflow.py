@@ -1,9 +1,11 @@
 from datetime import datetime
 import yaml
+import logging
 
 from yaml import CSafeLoader
 from yaml.resolver import Resolver
 
+logger = logging.getLogger(__name__)
 
 # remove resolver entries for On/Off/Yes/No
 for ch in "OoTtFf":
@@ -39,7 +41,7 @@ class Workflow:
 
         # Only save off if it's a valid parse. RAM matters.
         try:
-            if type(workflow_contents) == bytes:
+            if type(workflow_contents) is bytes:
                 workflow_contents = workflow_contents.decode("utf-8")
             self.parsed_yml = yaml.load(
                 workflow_contents.replace("\t", "  "), Loader=CSafeLoader
@@ -51,7 +53,7 @@ class Workflow:
             ):
                 self.invalid = True
 
-            if not self.parsed_yml or type(self.parsed_yml) != dict:
+            if not self.parsed_yml or type(self.parsed_yml) is not dict:
                 self.invalid = True
 
             self.workflow_contents = workflow_contents
@@ -59,12 +61,12 @@ class Workflow:
             yaml.parser.ParserError,
             yaml.scanner.ScannerError,
             yaml.constructor.ConstructorError,
-        ) as parse_error:
+        ):
             self.invalid = True
-        except ValueError as parse_error:
+        except ValueError:
             self.invalid = True
         except Exception as parse_error:
-            print(
+            logger.error(
                 "Received an exception while parsing workflow contents: "
                 + str(parse_error)
             )

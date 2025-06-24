@@ -16,77 +16,34 @@ to follow responsible disclosure if you find vulnerabilities with Gato-X.
 
 **Gato-X is a powerful tool and should only be used for ethical security research purposes.**
 
-## Table of Contents
+## Documentation
 
-- [What is Gato-X?](#what-is-gato-x)
-- [Feature Highlights](#feature-highlights)
-  - [Enumeration for Pwn Requests and Injection](#enumeration-for-github-actions-injection-and-pwn-requests)
-  - [Post Compromise Enumeration](#post-compromise-enumeration)
-  - [Features Coming Soon](#features-coming-soon)
-    - [Automated Pwn Requests](#automated-pwn-requests)
-- [Quick Start](#quick-start)
-  - [Perform Runner Takeover](#perform-self-hosted-runner-takeover)
-  - [Scan for Vulnerabilities](#search-for-github-actions-vulnerabilities-at-github-scale)
-  - [Advanced Attacks](#complex-attacks)
-- [Getting Started](#getting-started)
-  - [Installation](#installation)
-  - [Usage](#usage)
-- [Usage](#usage)
-- [Bugs](#bugs)
-- [Contributing](#contributing)
-- [License](#license)
+For comprehensive documentation, please visit the [Gato-X Documentation](https://adnanekhan.github.io/gato-x/) site.
 
 ## What is Gato-X?
 
-Gato Extreme Edition is a tool designed to help security practitioners identify exploitable vulnerabilities in GitHub Actions workflows. It is not focused on surfacing best-practices or defense in depth measures, but instead provides users with detailed information about how someone could exploit a workflow misconfiguration.
+Gato-X is an offensive security tool designed to identify exploitable GitHub Actions misconfigurations or privilege escalation paths. It focuses on several key areas:
 
+* Self-Hosted Runner enumeration using static analysis of workflow files and analysis of workflow run logs
+* Pwn Request and Actions Injection enumeration using static analysis
+* Post-compromise secrets enumeration and exfiltration
+* Public repository self-hosted runner attacks using Runner-on-Runner (RoR) technique
+* Private repository self-hosted runner attacks using RoR technique
+
+The target audience for Gato-X is Red Teamers, Bug Bounty Hunters, and Security Engineers looking to identify misconfigurations.
 
 ## Feature Highlights
 
-### Enumeration for GitHub Actions Injection and Pwn Requests
+### Fast and Comprehensive Scanning
 
-Gato-X contains a powerful scanning engine for GitHub Actions Injection and
-Pwn Request vulnerabilities. As of writing, Gato-X is one of the fastest tools
-for the task. It is capable of scanning 35-40 *thousand* repositories in 1-2 hours
-using a single GitHub PAT. This is the most sophisticated feature in Gato-X and is the result of countless hours of development and iteration.
+Gato-X contains a powerful scanning engine for GitHub Actions vulnerabilities. It is capable of scanning 35-40 *thousand* repositories in 1-2 hours using a single GitHub PAT. Key capabilities include:
 
 * Reachability Analysis
-* Same and Cross-Repository Transitive Workflow AND Reusable Action Analysis
+* Cross-Repository Transitive Workflow and Reusable Action Analysis
 * Parsing and Simulation of "If Statements"
 * Gate Check Detection (permission checks, etc.)
 * Lightweight Source-Sink Analysis for Variables
-* Priority Guidelines
-
-As an operator facing tool, Gato-X is tuned with a higher false positive rate than a tool designed to generate alerts, but it provides contextual information to quickly 
-determine if something is worth investigating or not. To aid in triage, Gato-X attempts to apply confidence ratings to its reports.
-
-### Automated Self-Hosted Runner Attacks
-
-Gato-X automates the "Runner-on-Runner" (RoR) technique, which essentially means installing _another_ GitHub Actions runner as an implant on an existing runner.
-
-Gato-X supports deploying RoR through fork pull requests. Gato-X also supports
-creating a RoR payload only, which can be used in conjunction with the `push` workflow
-functionality to jump to internal self-hosted runners.
-
-Under the hood, Gato-X will perform the following steps:
-
-* Prepare RoR C2 Repository
-* Prepare payload Gist files
-* Deploy the RoR implantation payload.
-* Confirm successful callback and runner installation.
-* Provide user with an interactive webshell upon successful connection.
-
-From the user's perspective, it's simply: run command, get shell. What more could a hacker want?
-
-### Post Compromise Enumeration
-
-If you ever encounter a GitHub PAT, you can use Gato-X to validate it and identify what it has access to. Gato-X will identify repositories with administrative access and the names of accessible secrets (if the user has write access).
-
-### Features Coming Soon
-
-#### Automated Pwn Requests
-
-Gato-X currently only automates the self-hosted runner attack. It does not contain any features to automate the exploitation process for Pwn Requests and Injection. I plan to add a feature that will perform automated exploitation of simple Pwn Requests and Injection vulnerabilities using flexible attack templates (defined in yaml)
+* MCP Server
 
 ## Quick Start
 
@@ -109,7 +66,6 @@ gato-x e -R checks.txt | tee gatox_output.txt
 
 This will take some time depending on your computer and internet connection speed. Since the results are very long, use `tee` to save them to a file
 for later review. Gato-X also supports JSON output, but that is intended for further machine analysis.
-
 
 ### Perform Self Hosted Runner Takeover
 
@@ -135,23 +91,15 @@ self-hosted runner.
 If the target runner is non-ephemeral, use the `--keep-alive` flag. This will keep the workflow running. GitHub
 Actions allows workflow runs on self-hosted runners to run for up to **5 days** (as of writing, this might change - it was 30 days).
 
+### Dump Secrets
 
-### Complex Attacks
+If you have a PAT with write access to the repository along with the `repo` and `workflow` scopes, you can dump all secrets accessible to the repository with a single command:
 
-These automated attacks only scratch the surface of the kinds of post-compromise attacks paths
-that a red teamer may encounter within large GitHub Enterprise tenants. See the wiki for complex
-cases and how Gato-X may help.
+`gato-x attack --secrets -t targetOrg/targetRepo -d`
 
-#### Examples
+See documentation for additional options such as specifying workflow name, branch name, and more.
 
-* Deploying RoR using custom workflow via the push trigger.
-* Deploying RoR using a PAT that only has the `repo` scope but can obtain execution via `workflow_dispatch` / `push` triggers.
-* Leveraging a `repo` scoped token to bypass external contributor approval requirements, but leveraging Gato-X for RoR infrastructure setup.
-* Using a `GITHUB_TOKEN` with `actions: write` from a Pwn Request to approve a fork PR from an external contributor.
-
-## Getting Started
-
-### Installation
+## Installation
 
 Gato supports OS X and Linux with at least **Python 3.10**.
 
@@ -177,45 +125,11 @@ pipx install .
 
 If you need to make on-the-fly modifications, then install it in editable mode with `pip install -e`.
 
-### Usage
-
-After installing the tool, it can be launched by running `gato-x`.
-
-We recommend viewing the parameters for the base tool using `gato -h`, and the 
-parameters for each of the tool's modules by running the following:
-
-* `gato-x search -h`
-* `gato-x enum -h`
-* `gato-x attack -h`
-
-The tool requires a GitHub classic PAT in order to function. To create one, log
-in to GitHub, go to [GitHub Developer Settings](https://github.com/settings/tokens) 
-and select `Generate New Token` and then `Generate new token (classic)`.
-
-After creating this token set the `GH_TOKEN` environment variable within your 
-shell by running `export GH_TOKEN=<YOUR_CREATED_TOKEN>`. Alternatively, enter it when the application 
-prompts you.
-
-For troubleshooting and additional details, such as installing in developer 
-mode or running unit tests, please see the [wiki](https://github.com/AdnaneKhan/gato-x/wiki).
-
-## Bugs
-
-As an operator facing tool with rapidly developed features, Gato-X will have bugs. 
-Typically, these are related to edge cases with run log formatting or YAML files.
-
-If you believe you have identified a bug within the software, please open an 
-issue containing the tool's output, along with the actions you were trying to
-conduct.
-
 ## Contributing
 
-Contributions are welcome! Please [review](https://github.com/AdnaneKhan/gato-x/wiki/Project-Design) 
-the design methodology before working on a new feature!
+Contributions are welcome! Please [review](https://adnanekhan.github.io/gato-x/contribution-guide/contributions/) the design methodology before working on a new feature!
 
-Additionally, if you are proposing significant changes to the tool, please open 
-an issue [open an issue](https://github.com/AdnaneKhan/gato-x/issues/new) to 
-start a conversation about the motivation for the changes.
+Additionally, if you are proposing significant changes to the tool, please open an issue to start a conversation about the motivation for the changes.
 
 ## License
 

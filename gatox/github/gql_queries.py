@@ -222,7 +222,6 @@ class GqlQueries:
             return queries
 
         for i in range(0, (len(repos) // 100) + 1):
-
             top_len = len(repos) if len(repos) < 100 * (i + 1) else 100 * (i + 1)
             # Use reduce to accumulate node_ids and can_push in a single iteration
             node_ids, can_push = reduce(

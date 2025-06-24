@@ -21,11 +21,9 @@ from gatox.workflow_parser.utility import CONTEXT_REGEX
 from gatox.workflow_parser.utility import (
     getTokens,
     getToken,
-    checkUnsafe,
     prReviewUnsafe,
 )
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
-from gatox.caching.cache_manager import CacheManager
 from gatox.github.api import Api
 
 
@@ -94,23 +92,14 @@ class ReviewInjectionVisitor:
 
                     if "JobNode" in tags:
                         # Check deployment environment rules
-                        if node.deployments:
-                            if node.repo_name() in rule_cache:
-                                rules = rule_cache[node.repo_name()]
-                            else:
-                                rules = await api.get_all_environment_protection_rules(
-                                    node.repo_name()
-                                )
-                                rule_cache[node.repo_name()] = rules
-                            for deployment in node.deployments:
-                                if isinstance(deployment, dict):
-                                    deployment = deployment["name"]
-                                deployment = VisitorUtils.process_context_var(
-                                    deployment
-                                )
-
-                                if deployment in rules:
-                                    approval_gate = True
+                        if (
+                            node.deployments
+                            and await VisitorUtils.check_deployment_approval_gate(
+                                node, rule_cache, api, input_lookup, env_lookup
+                            )
+                        ):
+                            approval_gate = True
+                            continue
 
                         paths = await graph.dfs_to_tag(node, "permission_check", api)
                         if paths:
@@ -144,7 +133,6 @@ class ReviewInjectionVisitor:
 
                             # Now we go and try to resolve variables.
                             for variable in node.contexts:
-
                                 if "inputs." in variable:
                                     if "${{" in variable:
                                         processed_var = CONTEXT_REGEX.findall(variable)
@@ -187,7 +175,7 @@ class ReviewInjectionVisitor:
                                     VisitorUtils._add_results(
                                         path,
                                         results,
-                                        IssueType.PR_REVIEW_INJECTON,
+                                        IssueType.PR_REVIEW_INJECTION,
                                         confidence=conf,
                                     )
                                     break
@@ -198,8 +186,6 @@ class ReviewInjectionVisitor:
                             # Set lookup for input params
                             input_lookup.update(node_params)
                         if index == 0:
-                            repo = CacheManager().get_repository(node.repo_name())
-
                             # Check workflow environment variables.
                             # For env vars that are github.event.*
                             env_vars = node.get_env_vars()

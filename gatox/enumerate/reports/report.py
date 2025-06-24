@@ -40,4 +40,4 @@ class Report:
     @classmethod
     def print_divider(cls):
         """Prints a divider with `=` symbols."""
-        Output.generic(f'{"="*118}')
+        Output.generic(f"{'=' * 118}")

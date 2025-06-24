@@ -33,7 +33,6 @@ class DispatchTOCTOUResult(AnalysisResult):
         confidence_score: Confidence,
         attack_complexity_score: Complexity,
     ):
-
         repository_name = path[0].repo_name()
 
         super().__init__(
@@ -59,12 +58,19 @@ class DispatchTOCTOUResult(AnalysisResult):
             )
         )
 
-    def to_machine(self):
+    def filter_triggers(self, triggers):
+        """Filter triggers to remove non-relevant ones."""
+        RELEVANT_TRIGGERS = {
+            "workflow_dispatch",
+            "repository_dispatch",
+        }
+        return list(set(triggers) & RELEVANT_TRIGGERS)
 
+    def to_machine(self):
         result = {
             "repository_name": self.repo_name(),
             "issue_type": self.issue_type(),
-            "triggers": self.__attack_path[0].get_triggers(),
+            "triggers": self.filter_triggers(self.__attack_path[0].get_triggers()),
             "initial_workflow": self.__attack_path[0].get_workflow_name(),
             "confidence": self.confidence_score(),
             "attack_complexity": self.attack_complexity(),

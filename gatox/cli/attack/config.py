@@ -1,4 +1,4 @@
-from gatox.util.arg_utils import ReadableFile, WriteableDir, StringType
+from gatox.util.arg_utils import ReadableFile, StringType
 from gatox.cli.output import Output
 
 
@@ -155,6 +155,10 @@ def configure_parser_attack(parser):
         "--c2-repo",
         metavar="C2_REPO",
         help="Name of an existing Gato-X C2 repository in Owner/Repo format.",
+        type=StringType(
+            140,
+            regex=r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,39}/[a-zA-Z0-9][a-zA-Z0-9_.-]{1,100}$",
+        ),
     )
 
     parser.add_argument(

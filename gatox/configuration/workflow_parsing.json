@@ -125,7 +125,10 @@
             "npm install",
             "npm run",
             "tox",
+            "pnpm i",
             "pnpm run",
+            "pnpm build",
+            "pnpm test",
             "mvn",
             "pip install -r requirements.txt",
             "pip install .",
@@ -163,7 +166,9 @@
             "rails assets:precompile",
             "sonar-scanner",
             "stylelint",
-            "webpack"
+            "webpack",
+            "dotnet build",
+            "bun"
         ],
         "SINKS_START": [
             "./",

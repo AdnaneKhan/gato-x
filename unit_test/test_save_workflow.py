@@ -1,13 +1,10 @@
 import unittest
 from unittest.mock import patch, mock_open, MagicMock, call
 import os
-import pathlib
 from gatox.cli import cli
-from gatox.caching.cache_manager import CacheManager
 
 
 class TestSaveWorkflowYmls(unittest.TestCase):
-
     @patch("gatox.cli.cli.CacheManager")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)

@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
+
 from gatox.workflow_graph.nodes.node import Node
 from gatox.workflow_graph.nodes.job import JobNode
 from gatox.models.workflow import Workflow
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowNode(Node):
@@ -26,7 +30,7 @@ class WorkflowNode(Node):
         """Constructor for workflow wrapper."""
 
         # Create a unique ID for this workflow.
-        self.name = f"{repo_name}:{ref}:{workflow_path}"
+        super().__init__(f"{repo_name}:{ref}:{workflow_path}")
         # By default, a workflow node is "uninitialized" until it is processed
         # with the workflow YAML. We sometimes add unititialized nodes to the
         # graph if a workflow references another workflow that has not been
@@ -117,7 +121,7 @@ class WorkflowNode(Node):
             else:
                 return {}
         except TypeError:
-            print(workflow_data["on"])
+            logger.error(workflow_data["on"])
 
     def __process_envs(self, workflow_data: dict):
         if "env" in workflow_data:
@@ -163,7 +167,7 @@ class WorkflowNode(Node):
 
     def get_tags(self):
         """ """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.uninitialized:
             tags.add("uninitialized")

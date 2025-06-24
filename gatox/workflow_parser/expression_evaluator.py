@@ -69,7 +69,6 @@ class FlexibleAction:
 
 
 class ExpressionEvaluator:
-
     STANDARD_VARIABLES = {
         "github.event.pull_request.merged": False,
         "github.event.pull_request.head.fork": True,
@@ -95,7 +94,6 @@ class ExpressionEvaluator:
         "github.event.comment.body": Wildcard("github.event.comment.body"),
         "github.event.label.name": False,
         "github.event.issue.pull_request": FlexibleAction([True, False]),
-        "github.event.pull_request.merged": False,
         "github.event.comment.author_association": FlexibleAction(
             ["CONTRIBUTOR", "NONE"]
         ),
@@ -104,10 +102,6 @@ class ExpressionEvaluator:
         "github.event.pull_request.user.login": "".join(
             random.choices(string.ascii_uppercase, k=10)
         ),
-        "github.event.action": FlexibleAction(
-            ["opened", "reopened", "synchronize", "closed"]
-        ),
-        "github.event.comment.author_association": "CONTRIBUTOR",
         "github.event.pull_request.head.repo.full_name": Wildcard(
             "github.event.pull_request.head.repo.full_name"
         ),
@@ -157,7 +151,6 @@ class ExpressionEvaluator:
             # Evaluate logical OR between children
             return self.evaluate(node.children[0]) or self.evaluate(node.children[1])
         elif node.type == "comparison":
-
             # Handle comparison operations
             left = self.evaluate(node.children[0])
             right = self.evaluate(node.children[1])
@@ -190,7 +183,7 @@ class ExpressionEvaluator:
                 # Evaluate the argument
                 json_string = self.evaluate(node.children[0])
                 if (
-                    type(json_string) == str
+                    type(json_string) is str
                     and json_string.startswith("'")
                     and json_string.endswith("'")
                 ):

@@ -28,7 +28,6 @@ def load_cases():
 
 @pytest.mark.parametrize("test_details, test_creds", load_cases())
 def test_gato(test_details, test_creds, capsys):
-
     if not test_creds["PAT_value"]:
         pytest.fail("The PAT was not set!!")
 
@@ -37,7 +36,6 @@ def test_gato(test_details, test_creds, capsys):
     output, error = process_command(test_details["invocation"], capsys)
 
     for assertion in test_details["assertions"]:
-
         print(output)
 
         if assertion["type"] == "stdout":
@@ -49,7 +47,6 @@ def test_gato(test_details, test_creds, capsys):
         validation = test_details["extra_validation"]
 
         if validation["type"] == "file":
-
             with open(validation["filename"]) as file_check:
                 file_contents = file_check.read()
 

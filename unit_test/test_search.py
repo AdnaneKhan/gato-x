@@ -1,6 +1,3 @@
-import pytest
-import httpx
-
 from unittest.mock import patch, MagicMock, AsyncMock
 from gatox.github.search import Search
 from gatox.search.search import Searcher
@@ -8,21 +5,6 @@ from gatox.cli.output import Output
 from gatox.github.api import Api
 
 Output(True)
-
-
-@pytest.fixture(autouse=True)
-def block_network_calls(monkeypatch):
-    """
-    Fixture to block real network calls during tests,
-    raising an error if any attempt to send a request is made.
-    """
-    Output(True)
-
-    def mock_request(*args, **kwargs):
-        raise RuntimeError("Blocked a real network call during tests.")
-
-    monkeypatch.setattr(httpx.Client, "send", mock_request)
-    monkeypatch.setattr(httpx.AsyncClient, "send", mock_request)
 
 
 @patch("gatox.github.search.asyncio.sleep")
@@ -241,7 +223,6 @@ async def test_search(mock_client, mock_time):
 @patch("gatox.github.search.asyncio.sleep")
 @patch("gatox.search.search.Api", return_value=AsyncMock(Api))
 async def test_search_query(mock_client, mock_time, capfd):
-
     mock_client.return_value.transport = None
     mock_client.return_value.call_get.return_value = MagicMock(
         status_code=200,
@@ -258,9 +239,7 @@ async def test_search_query(mock_client, mock_time, capfd):
 
     gh_search_runner = Searcher("ghp_AAAA")
 
-    res = await gh_search_runner.use_search_api(
-        None, query="pull_request_target self-hosted"
-    )
+    await gh_search_runner.use_search_api(None, query="pull_request_target self-hosted")
     out, err = capfd.readouterr()
     assert "GitHub with the following query: pull_request_target self-hosted" in out
 

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from gatox.enumerate.results.injection_result import InjectionResult
 from gatox.enumerate.results.confidence import Confidence

@@ -23,6 +23,8 @@ class Node:
         name (str): The name of the node.
     """
 
+    extra_tags: set[str]
+
     def __init__(self, name):
         """
         Initialize a Node instance.
@@ -31,6 +33,7 @@ class Node:
             name (str): The name of the node.
         """
         self.name = name
+        self.extra_tags = set()
 
     def __repr__(self):
         """
@@ -86,12 +89,11 @@ class Node:
         }
         return value
 
-    def get_tags(self):
+    def get_tags(self) -> set[str]:
         """
         Get the tags associated with the Node instance.
 
         Returns:
             set: A set containing the class name of the Node instance.
         """
-        tags = set([self.__class__.__name__])
-        return tags
+        return {self.__class__.__name__}.union(self.extra_tags)

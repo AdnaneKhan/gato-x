@@ -22,7 +22,6 @@ from gatox.enumerate.results.issue_type import IssueType
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
 from gatox.github.api import Api
-from gatox.workflow_parser.utility import CONTEXT_REGEX
 from gatox.caching.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
@@ -59,41 +58,42 @@ class PwnRequestVisitor:
         env_lookup = {}
         flexible_lookup = {}
         approval_gate = False
+        blocker_nodes = set()  # Memoize blocker nodes found
+        approval_gate_nodes = set()  # Memoize approval gate nodes found
 
         for index, node in enumerate(path):
             tags = node.get_tags()
 
             if "JobNode" in tags:
                 # Check deployment environment rules
-                if node.deployments:
-                    if node.repo_name() in rule_cache:
-                        rules = rule_cache[node.repo_name()]
-                    else:
-                        rules = await api.get_all_environment_protection_rules(
-                            node.repo_name()
-                        )
-                        rule_cache[node.repo_name()] = rules
-                    for deployment in node.deployments:
-                        if isinstance(deployment, dict):
-                            deployment = deployment["name"]
-                        deployment = VisitorUtils.process_context_var(deployment)
-
-                        if deployment in input_lookup:
-                            deployment = input_lookup[deployment]
-                        elif deployment in env_lookup:
-                            deployment = env_lookup[deployment]
-
-                        if deployment in rules:
-                            approval_gate = True
-                            continue
+                if (
+                    node.deployments
+                    and await VisitorUtils.check_deployment_approval_gate(
+                        node, rule_cache, api, input_lookup, env_lookup
+                    )
+                ):
+                    approval_gate = True
+                    continue
 
                 paths = await graph.dfs_to_tag(node, "permission_blocker", api)
                 if paths:
-                    break
+                    # Memoize the blocker nodes (last node in each path) instead of breaking
+                    for blocker_path in paths:
+                        if blocker_path:
+                            blocker_nodes.add(blocker_path[-1])
+                    logger.debug(
+                        f"Found {len(paths)} permission blocker paths, memoized {len(blocker_nodes)} blocker nodes"
+                    )
 
                 paths = await graph.dfs_to_tag(node, "permission_check", api)
                 if paths:
-                    approval_gate = True
+                    # Memoize the approval gate nodes (last node in each path)
+                    for gate_path in paths:
+                        if gate_path:
+                            approval_gate_nodes.add(gate_path[-1])
+                    logger.debug(
+                        f"Found {len(paths)} permission check paths, memoized {len(approval_gate_nodes)} approval gate nodes"
+                    )
 
                 if node.outputs:
                     for o_key, val in node.outputs.items():
@@ -145,13 +145,58 @@ class PwnRequestVisitor:
                         else:
                             confidence = Confidence.UNKNOWN
 
-                        VisitorUtils._add_results(
-                            path,
-                            results,
-                            IssueType.PWN_REQUEST,
-                            complexity=complexity,
-                            confidence=confidence,
+                        # Check if any blocker nodes or approval gate nodes are in the current path
+                        path_nodes = set(path)
+                        if sinks:
+                            path_nodes.update(sinks[0])
+
+                        # Get all path nodes with their ancestors
+                        extended_path_nodes = set(path_nodes)
+                        for node in path_nodes:
+                            extended_path_nodes.update(
+                                VisitorUtils.get_node_with_ancestors(node)
+                            )
+
+                        # Check for intersection with blocker and approval gate nodes
+                        has_blocker_in_path = bool(
+                            extended_path_nodes.intersection(blocker_nodes)
                         )
+
+                        has_approval_gate_in_path = bool(
+                            extended_path_nodes.intersection(approval_gate_nodes)
+                        )
+
+                        # Update approval_gate based on whether approval gate nodes are actually in the path
+                        # or if it was set by other conditions (deployments, soft gates, etc.)
+                        effective_approval_gate = (
+                            approval_gate or has_approval_gate_in_path
+                        )
+
+                        # Recalculate complexity based on effective approval gate
+                        if effective_approval_gate:
+                            complexity = Complexity.TOCTOU
+                        elif "workflow_run" in path[0].get_tags():
+                            complexity = Complexity.PREVIOUS_CONTRIBUTOR
+                        else:
+                            complexity = Complexity.ZERO_CLICK
+
+                        logger.debug(
+                            f"Path analysis: blocker_nodes={len(blocker_nodes)}, approval_gate_nodes={len(approval_gate_nodes)}, path_nodes={len(path_nodes)}, has_blocker_in_path={has_blocker_in_path}, has_approval_gate_in_path={has_approval_gate_in_path}, effective_approval_gate={effective_approval_gate}"
+                        )
+
+                        # Only add results if no blocker nodes are found in the path
+                        if not has_blocker_in_path:
+                            VisitorUtils._add_results(
+                                path,
+                                results,
+                                IssueType.PWN_REQUEST,
+                                complexity=complexity,
+                                confidence=confidence,
+                            )
+                        else:
+                            logger.debug(
+                                "Suppressing results due to blocker node found in path"
+                            )
                         break
 
                 if node.outputs:
@@ -163,6 +208,9 @@ class PwnRequestVisitor:
                     break
 
                 if node.soft_gate:
+                    logger.debug(
+                        f"Soft gate found in node {node.name}, setting approval_gate to True"
+                    )
                     approval_gate = True
 
             elif "WorkflowNode" in tags:
@@ -238,7 +286,7 @@ class PwnRequestVisitor:
                 if paths:
                     all_paths.append(paths)
             except Exception as e:
-                logger.error(f"Error finding paths for pwn request node: {e}")
+                logger.error(f"Error finding paths for pwn request node: {str(e)}")
                 logger.error(f"Node: {cn}")
 
         for path_set in all_paths:
@@ -248,7 +296,7 @@ class PwnRequestVisitor:
                         path, graph, api, rule_cache, results
                     )
                 except Exception as e:
-                    logger.warning(f"Error processing path: {e}")
+                    logger.warning(f"Error processing path: {str(e)}")
                     logger.warning(f"Path: {path}")
 
         return results

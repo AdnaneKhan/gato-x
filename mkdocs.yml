@@ -1,0 +1,58 @@
+site_name: Gato-X Documentation
+site_url: https://adnanekhan.github.io/gato-x/
+repo_url: https://github.com/AdnaneKhan/gato-x
+repo_name: AdnaneKhan/gato-x
+edit_uri: edit/main/docs/
+docs_dir: docs
+nav:
+  - User Guide:
+      - Installation: user-guide/installation.md
+      - Command Reference:
+          - Overview: user-guide/command-reference/index.md
+          - Search Command: user-guide/command-reference/search.md
+          - Enumerate Command: user-guide/command-reference/enumerate.md
+          - Attack Command: user-guide/command-reference/attack.md
+      - MCP Server: user-guide/mcp-server/mcp.md
+      - Use Cases:
+          - Overview: user-guide/use-cases/index.md
+          - Scanning for Vulnerabilities: user-guide/use-cases/scanning.md
+          - Self-Hosted Runner Takeover: user-guide/use-cases/runner-takeover.md
+          - Post-Compromise Enumeration: user-guide/use-cases/post-compromise.md
+      - Advanced Topics:
+          - Overview: user-guide/advanced/index.md
+          - Understanding GitHub Actions Vulnerabilities: user-guide/advanced/vulnerabilities.md
+          - Complex Attack Scenarios: user-guide/advanced/complex-attacks.md
+  - Quick Start: quick-start.md
+  - Contribution Guide:
+      - Overview: contribution-guide/contributions.md
+      - Project Architecture: contribution-guide/architecture.md
+      - Design Guidelines: contribution-guide/design.md
+      - Testing Guidelines: contribution-guide/testing.md
+      - New Features: contribution-guide/new-features.md  
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.emoji
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tasklist
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/AdnaneKhan/gato-x

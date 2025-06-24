@@ -41,9 +41,9 @@ Y88b  d88P  d8888888888     888     Y88b. .d88P         d88P Y88b
 
 
 class Output(metaclass=Singleton):
-
-    def __init__(self, color: bool):
+    def __init__(self, color: bool = True, suppress: bool = False):
         self.color = color
+        self.suppress = suppress
 
         self.red_dash = RED_DASH if color else "[-]"
         self.red_explain = RED_EXCLAIM if color else "[!]"
@@ -64,6 +64,8 @@ class Output(metaclass=Singleton):
         Returns:
             True if successful, false otherwise.
         """
+        if Output().suppress:
+            return True
         if execution_wrapper.user_details:
             with open(output_json, "w") as json_out:
                 json_out.write(json.dumps(execution_wrapper.toJSON(), indent=4))
@@ -76,6 +78,8 @@ class Output(metaclass=Singleton):
         Args:
             message (str): Message to format.
         """
+        if Output().suppress:
+            return
         print(f"{Output().red_dash} {message}")
 
     @classmethod
@@ -85,6 +89,8 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
+        if Output().suppress:
+            return
         print(f"{Output().green_plus} {message}", end=end, flush=flush)
 
     @classmethod
@@ -94,6 +100,8 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
+        if Output().suppress:
+            return
         print(f"    {Output().bright_dash} {message}")
 
     @classmethod
@@ -103,7 +111,9 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
-        print(f"{cls.bright('---')}" f" {message} " f"{cls.bright('---')}")
+        if Output().suppress:
+            return
+        print(f"{cls.bright('---')} {message} {cls.bright('---')}")
 
     @classmethod
     def result(cls, message: str):
@@ -112,11 +122,16 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
+        if Output().suppress:
+            return
         print(f"{Output().green_plus} {message}")
 
     @classmethod
     def generic(cls, message: str):
         """Generic output to print block wrapped text."""
+
+        if Output().suppress:
+            return
 
         def get_length_without_color_codes(text):
             # Use regular expressions to remove ANSI color codes
@@ -133,9 +148,9 @@ class Output(metaclass=Singleton):
             padding = 118 - get_length_without_color_codes(line)
 
             if line[0] not in [" ", "-", "=", "-", "~"]:
-                print(f"| {line}{' '*(padding-1)}|")
+                print(f"| {line}{' ' * (padding - 1)}|")
             else:
-                print(f"|{line}{' '*padding}|")
+                print(f"|{line}{' ' * padding}|")
 
     @classmethod
     def owned(cls, message: str):
@@ -145,6 +160,8 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
+        if Output().suppress:
+            return
         print(f"{Output().green_exclaim} {message}")
 
     @classmethod
@@ -154,7 +171,8 @@ class Output(metaclass=Singleton):
         Args:
             message (str): The message to print.
         """
-
+        if Output().suppress:
+            return
         print(f"{Output().yellow_dash} {message}")
 
     @classmethod
@@ -162,6 +180,8 @@ class Output(metaclass=Singleton):
         """Used to let the user know something that they should not, but
         unlikely to lead to an exploit.
         """
+        if Output().suppress:
+            return
         print(f"{Output().yellow_exclaim} {message}")
 
     @classmethod
@@ -174,7 +194,8 @@ class Output(metaclass=Singleton):
         Returns:
             (str): Highlighted text.
         """
-
+        if Output().suppress:
+            return toformat
         if cls not in cls._instances or Output().color:
             return f"{Style.BRIGHT}{toformat}{Style.RESET_ALL}"
         else:
@@ -190,6 +211,8 @@ class Output(metaclass=Singleton):
         Returns:
             (str)): Formatted message.
         """
+        if Output().suppress:
+            return toformat
         if cls not in cls._instances or Output().color:
             return f"{Fore.YELLOW}{toformat}{Style.RESET_ALL}"
         else:
@@ -205,6 +228,8 @@ class Output(metaclass=Singleton):
         Returns:
             (str)): Formatted message.
         """
+        if Output().suppress:
+            return toformat
         if cls not in cls._instances or Output().color:
             return f"{Fore.CYAN}{toformat}{Style.RESET_ALL}"
         else:
@@ -220,6 +245,8 @@ class Output(metaclass=Singleton):
         Returns:
             (str)): Formatted message.
         """
+        if Output().suppress:
+            return toformat
         if cls not in cls._instances or Output().color:
             return f"{Fore.GREEN}{toformat}{Style.RESET_ALL}"
         else:
@@ -235,6 +262,8 @@ class Output(metaclass=Singleton):
         Returns:
             (str)): Formatted message.
         """
+        if Output().suppress:
+            return toformat
         if cls not in cls._instances or Output().color:
             return f"{Fore.RED}{toformat}{Style.RESET_ALL}"
         else:

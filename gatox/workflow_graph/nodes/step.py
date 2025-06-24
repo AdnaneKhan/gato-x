@@ -34,6 +34,7 @@ class StepNode(Node):
         contexts (list): List of contexts associated with the step.
         metadata (bool): Metadata associated with the step.
         outputs (dict): Outputs of the step.
+        uses (str): The uses of the step if it is an action.
     """
 
     def __init__(
@@ -61,17 +62,17 @@ class StepNode(Node):
 
         # Create a unique ID for this step.
         if "name" in step_data:
-            self.name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:{step_data['name']}_{step_number}"
+            name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:{step_data['name']}_{step_number}"
         else:
-            self.name = (
-                f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
-            )
+            name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
+
+        super().__init__(name)
 
         self.type = self.__get_type(step_data)
         self.is_checkout = False
         self.id = step_data.get("id", None)
         self.if_condition = step_data.get("if", "")
-        if type(self.if_condition) == str:
+        if type(self.if_condition) is str:
             self.if_condition = self.if_condition.replace("\n", "")
         else:
             self.if_condition = None
@@ -93,6 +94,7 @@ class StepNode(Node):
             self.__process_script(step_data["run"])
             self.__step_data = step_data["run"]
         elif self.type == "action":
+            self.uses = step_data["uses"]
             self.__process_action(step_data)
 
     def __get_type(self, step_data: dict):
@@ -145,10 +147,9 @@ class StepNode(Node):
         Args:
             step_data (dict): The data for the step.
         """
-        uses = step_data["uses"]
         self.params = step_data.get("with", {})
 
-        if "/checkout" in uses and self.params and "ref" in self.params:
+        if "/checkout" in self.uses and self.params and "ref" in self.params:
             ref_param = self.params["ref"]
             if isinstance(ref_param, str):
                 ref_param = ref_param.lower()
@@ -171,10 +172,9 @@ class StepNode(Node):
                     else:
                         self.metadata = ref_param
                         self.is_checkout = True
-        elif "github-script" in uses and "script" in self.params:
+        elif "github-script" in self.uses and "script" in self.params:
             contents = self.params["script"]
             self.contexts = filter_tokens(getTokens(contents))
-
             self.__step_data = contents
             insights = parse_script(contents)
 
@@ -186,14 +186,18 @@ class StepNode(Node):
 
             if "require('." in contents:
                 self.is_sink = True
-        elif uses.startswith("./"):
-            self.__step_data = uses
+        elif self.uses.startswith("./"):
+            self.__step_data = self.uses
             self.is_sink = True
-        elif "ruby/setup-ruby" in uses:
+        elif "ruby/setup-ruby" in self.uses:
             self.is_sink = self.params.get("bundler-cache", False)
-        elif "actions/setup-node" in uses:
+        elif "actions/setup-node" in self.uses:
             self.is_sink = self.params.get("cache", False)
-        elif "dependabot/fetch-metadata" in uses:
+            if self.is_sink:
+                self.__step_data = (
+                    f"actions/setup-node with cache: {self.params.get('cache')}"
+                )
+        elif "dependabot/fetch-metadata" in self.uses:
             self.hard_gate = True
 
     def __hash__(self):
@@ -257,7 +261,7 @@ class StepNode(Node):
         Returns:
             set: A set containing the class name of the StepNode instance and additional tags.
         """
-        tags = set([self.__class__.__name__])
+        tags = super().get_tags()
 
         if self.is_checkout:
             tags.add("checkout")

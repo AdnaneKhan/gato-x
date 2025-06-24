@@ -1,10 +1,8 @@
-import asyncio
 import pathlib
 import os
 import pytest
-import subprocess
 
-from unittest.mock import AsyncMock, MagicMock, patch, call, ANY, mock_open
+from unittest.mock import MagicMock, patch
 from gatox.git.git import Git
 from gatox.git.utils import version_check, path_check, sed_check
 

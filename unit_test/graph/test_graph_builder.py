@@ -5,7 +5,6 @@ from gatox.models.workflow import Workflow
 from gatox.models.repository import Repository
 from gatox.workflow_graph.nodes.workflow import WorkflowNode
 from gatox.workflow_graph.nodes.action import ActionNode
-from gatox.workflow_graph.nodes.job import JobNode
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 
 
@@ -101,7 +100,6 @@ async def test_build_graph_from_yaml2(builder, mock_workflow2, mock_repo):
 
 
 async def test_build_graph_from_yaml_invalid(builder, mock_repo):
-
     workflow = Mock(spec=Workflow)
     workflow.repo_name = "test/repo"
     workflow.branch = "main"
@@ -117,7 +115,7 @@ async def test_build_graph_from_yaml_invalid(builder, mock_repo):
         ]
     }
 
-    assert await builder.build_graph_from_yaml(workflow, mock_repo) == False
+    assert not await builder.build_graph_from_yaml(workflow, mock_repo)
 
 
 async def test_build_workflow_jobs(builder, mock_workflow):

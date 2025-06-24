@@ -30,7 +30,7 @@ async def send_slack_webhook(message: str) -> None:
                 try:
                     response = await client.post(webhook, json=payload)
                     break  # Success; exit the retry loop.
-                except httpx.ConnectError as e:
+                except httpx.ConnectError:
                     attempt += 1
                     logging.warning(
                         f"Connection error sending webhook, retrying! Attempt {attempt}/3"

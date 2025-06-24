@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gato-x"
-version = "1.1.1"
+version = "1.2.1"
 description = "GitHub Actions Enumeration and Attack Framework"
 readme = "README.md"
 authors = [
@@ -21,7 +21,8 @@ dependencies = [
     "httpx[socks,http2]",
     "pyyaml",
     "cryptography",
-    "networkx"
+    "networkx",
+    "PyJWT[crypto]"
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,15 @@ test = [
     "pytest",
     "pytest-cov",
     "black",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "ruff"
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material"
+]
+mcp = [
+    "fastmcp"
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -53,3 +62,4 @@ directory = "cov_html"
 [project.scripts]
 gato-x = "gatox.main:entry"
 gatox = "gatox.main:entry"
+gato-x-mcp = "gatox.mcp.mcp_server:entry"

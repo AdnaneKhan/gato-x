@@ -1,17 +1,13 @@
-import json
-
 from gatox.cli.output import Output
 from gatox.models.repository import Repository
 from gatox.models.organization import Organization
 from gatox.models.runner import Runner
 from gatox.models.secret import Secret
 
-from gatox.enumerate.reports.actions import ActionsReport
 from gatox.enumerate.reports.runners import RunnersReport
 
 
 class Recommender:
-
     @staticmethod
     def print_repo_attack_recommendations(scopes: list, repository: Repository):
         """Prints attack recommendations for repositories.

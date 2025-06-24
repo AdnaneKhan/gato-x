@@ -16,6 +16,9 @@ from gatox.workflow_graph.visitors.injection_visitor import InjectionVisitor
 from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
 from gatox.workflow_graph.visitors.runner_visitor import RunnerVisitor
 from gatox.workflow_graph.visitors.dispatch_toctou_visitor import DispatchTOCTOUVisitor
+from gatox.workflow_graph.visitors.artifact_poisoning_visitor import (
+    ArtifactPoisoningVisitor,
+)
 from gatox.workflow_graph.visitors.review_injection_visitor import (
     ReviewInjectionVisitor,
 )
@@ -32,7 +35,7 @@ class Enumerator:
 
     def __init__(
         self,
-        pat: str,
+        pat: str = None,
         socks_proxy: str = None,
         http_proxy: str = None,
         skip_log: bool = False,
@@ -40,6 +43,8 @@ class Enumerator:
         output_json: str = None,
         ignore_workflow_run: bool = False,
         deep_dive: bool = False,
+        app_permisions: list = None,
+        api_client: Api = None,
     ):
         """Initialize enumeration class with arguments sent by user.
 
@@ -53,13 +58,27 @@ class Enumerator:
             downloaded.
             output_json (str, optional): JSON file to output enumeration
             results.
+            ignore_workflow_run (bool, optional): If set, then
+            "workflow_run" triggers will be ignored.
+            deep_dive (bool, optional): If set, then deep dive workflow
+            ingestion will be performed. This will slow down enumeration
+            significantly, but will provide more information about workflows
+            and their runs.
+            app_permissions (list, optional): List of permissions for GitHub App.
+            api_client (Api, optional): An existing Api client instance.
+            Defaults to None.
         """
-        self.api = Api(
-            pat,
-            socks_proxy=socks_proxy,
-            http_proxy=http_proxy,
-            github_url=github_url,
-        )
+        if api_client:
+            self.api = api_client
+        else:
+            if not pat:
+                raise ValueError("A valid GitHub token must be provided!")
+            self.api = Api(
+                pat,
+                socks_proxy=socks_proxy,
+                http_proxy=http_proxy,
+                github_url=github_url,
+            )
 
         self.socks_proxy = socks_proxy
         self.http_proxy = http_proxy
@@ -69,6 +88,7 @@ class Enumerator:
         self.output_json = output_json
         self.deep_dive = deep_dive
         self.ignore_workflow_run = ignore_workflow_run
+        self.app_permissions = app_permisions
 
         self.repo_e = RepositoryEnum(self.api, skip_log)
         self.org_e = OrganizationEnum(self.api)
@@ -81,12 +101,9 @@ class Enumerator:
             if installation_info:
                 count = installation_info["total_count"]
                 if count > 0:
-                    Output.info(
-                        f"Gato-X is using valid a GitHub App installation token!"
-                    )
                     self.user_perms = {
                         "user": "Github App",
-                        "scopes": [],
+                        "scopes": self.app_permissions or [],
                         "name": "GATO-X App Mode",
                     }
 
@@ -101,13 +118,12 @@ class Enumerator:
                 return False
 
             Output.info(
-                "The authenticated user is: "
-                f"{Output.bright(self.user_perms['user'])}"
+                f"The authenticated user is: {Output.bright(self.user_perms['user'])}"
             )
             if len(self.user_perms["scopes"]):
                 Output.info(
                     "The GitHub Classic PAT has the following scopes: "
-                    f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
+                    f"{Output.yellow(', '.join(self.user_perms['scopes']))}"
                 )
             else:
                 Output.warn("The token has no scopes!")
@@ -171,7 +187,7 @@ class Enumerator:
                     "Ensure the repository exists and the user has access."
                 )
 
-    async def enumerate_repo(self, repo_name: str):
+    async def enumerate_repo(self, repo_name: str) -> Repository:
         """Enumerate only a single repository. No checks for org-level
         self-hosted runners will be performed in this case.
 
@@ -189,6 +205,7 @@ class Enumerator:
             repo_data = await self.api.get_repository(repo_name)
             if repo_data:
                 repo = Repository(repo_data)
+                CacheManager().set_repository(repo)
 
         if repo:
             if repo.is_archived():
@@ -214,6 +231,44 @@ class Enumerator:
                 "exist or the user does not have access."
             )
 
+    async def enumerate_commit(self, repo_name: str, sha: str):
+        """Enumerate a single commit of a repository.
+
+        Workflow files from the commit are treated as if they are on the
+        repository's default branch so that default-branch checks apply.
+
+        Args:
+            repo_name (str): Repository in Org/Repo format.
+            sha (str): Commit SHA to analyze.
+
+        Returns:
+            Repository | bool: Repository wrapper populated with results or
+            False on failure.
+        """
+        if not await self.__setup_user_info():
+            return False
+
+        repo_data = await self.api.get_repository(repo_name)
+        if not repo_data:
+            Output.warn(f"Unable to retrieve repository: {Output.bright(repo_name)}")
+            return False
+
+        repo = Repository(repo_data)
+        CacheManager().set_repository(repo)
+
+        workflows = await self.api.retrieve_workflow_ymls_ref(repo.name, sha)
+        for workflow in workflows:
+            # Override the branch to the default to "trick" graph into
+            # thinking commit is merged to default.
+            workflow.branch = repo.repo_data["default_branch"]
+            CacheManager().set_workflow(repo.name, workflow.workflow_name, workflow)
+            await WorkflowGraphBuilder().build_graph_from_yaml(workflow, repo)
+
+        await self.process_graph()
+        await self.repo_e.enumerate_repository(repo)
+
+        return repo
+
     async def __finalize_caches(self, repos: list):
         """Finalizes the caches for the repositories enumerated.
 
@@ -229,7 +284,7 @@ class Enumerator:
         tasks = [asyncio.create_task(sem_retrieve(repo)) for repo in repos]
         await asyncio.gather(*tasks)
 
-    async def validate_only(self):
+    async def validate_only(self) -> Organization:
         """Validates the PAT access and exits."""
         if not await self.__setup_user_info():
             return False
@@ -241,8 +296,7 @@ class Enumerator:
         orgs = await self.api.check_organizations()
 
         Output.info(
-            f'The user { self.user_perms["user"] } belongs to {len(orgs)} '
-            "organizations!"
+            f"The user {self.user_perms['user']} belongs to {len(orgs)} organizations!"
         )
 
         for org in orgs:
@@ -253,7 +307,7 @@ class Enumerator:
             for org in orgs
         ]
 
-    async def self_enumeration(self):
+    async def self_enumeration(self) -> tuple[list[Organization], list[Repository]]:
         """Enumerates all organizations associated with the authenticated user.
 
         Returns:
@@ -276,8 +330,7 @@ class Enumerator:
         orgs = await self.api.check_organizations()
 
         Output.info(
-            f'The user { self.user_perms["user"] } belongs to {len(orgs)} '
-            "organizations!"
+            f"The user {self.user_perms['user']} belongs to {len(orgs)} organizations!"
         )
 
         for org in orgs:
@@ -314,7 +367,7 @@ class Enumerator:
 
         return repo_wrappers
 
-    async def enumerate_organization(self, org: str):
+    async def enumerate_organization(self, org: str) -> Organization:
         """Enumerate an entire organization, and check everything relevant to
         self-hosted runner abuse that that the user has permissions to check.
 
@@ -356,7 +409,7 @@ class Enumerator:
             f"the {organization.name} organization!"
         )
 
-        Output.info(f"Querying and caching workflow YAML files!")
+        Output.info("Querying and caching workflow YAML files!")
         wf_queries = GqlQueries.get_workflow_ymls(enum_list)
         await self.__query_graphql_workflows(wf_queries)
         await self.__finalize_caches(enum_list)
@@ -397,6 +450,7 @@ class Enumerator:
                     Recommender.print_repo_secrets(
                         self.user_perms["scopes"], repo.secrets + repo.org_secrets
                     )
+                    Recommender.print_repo_runner_info(repo)
                     organization.set_repository(repo)
         except KeyboardInterrupt:
             Output.warn("Keyboard interrupt detected, exiting enumeration!")
@@ -414,6 +468,7 @@ class Enumerator:
             (InjectionVisitor, "find_injections"),
             (ReviewInjectionVisitor, "find_injections"),
             (DispatchTOCTOUVisitor, "find_dispatch_misconfigurations"),
+            (ArtifactPoisoningVisitor, "find_artifact_poisoning"),
         ]
 
         # Create tasks for each visitor
@@ -448,7 +503,7 @@ class Enumerator:
         if not self.skip_log:
             await RunnerVisitor.find_runner_workflows(WorkflowGraphBuilder().graph)
 
-    async def enumerate_repos(self, repo_names: list):
+    async def enumerate_repos(self, repo_names: list) -> list[Repository]:
         """Enumerate a list of repositories, each repo must be in Org/Repo name
         format.
 

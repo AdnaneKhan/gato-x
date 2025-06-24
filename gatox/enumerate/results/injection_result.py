@@ -33,7 +33,6 @@ class InjectionResult(AnalysisResult):
         confidence_score: Confidence,
         attack_complexity_score: Complexity,
     ):
-
         repository_name = path[0].repo_name()
 
         super().__init__(
@@ -71,7 +70,6 @@ class InjectionResult(AnalysisResult):
         return list(set(triggers) & RELEVANT_TRIGGERS)
 
     def to_machine(self):
-
         result = {
             "repository_name": self.repo_name(),
             "issue_type": self.issue_type(),

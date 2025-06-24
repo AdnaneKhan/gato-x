@@ -1,5 +1,4 @@
 from typing import List
-from multiprocessing import Process
 
 from gatox.models.organization import Organization
 from gatox.models.repository import Repository
@@ -77,7 +76,6 @@ class OrganizationEnum:
         token has the necessary scopes.
         """
         if organization.org_admin_scopes and organization.org_admin_user:
-
             runners = await self.api.check_org_runners(organization.name)
             if runners:
                 org_runners = [

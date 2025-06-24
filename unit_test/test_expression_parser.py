@@ -83,7 +83,7 @@ def test_parse5():
     if_check = "github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview' && github.event.sender.id == 35613825 && github.event.repository.name == 'dev-portal'"
     expr = ExpressionParser(if_check)
     expr.print_ast()
-    evaluator = ExpressionEvaluator()
+    ExpressionEvaluator()
 
 
 def test_simple_evaluate():

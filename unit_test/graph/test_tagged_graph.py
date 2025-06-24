@@ -1,6 +1,5 @@
-import pytest
 import networkx as nx
-from unittest.mock import AsyncMock, MagicMock, ANY
+from unittest.mock import AsyncMock, MagicMock
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 
 

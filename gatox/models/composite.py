@@ -28,9 +28,9 @@ class Composite:
             yaml.parser.ParserError,
             yaml.scanner.ScannerError,
             yaml.constructor.ConstructorError,
-        ) as parse_error:
+        ):
             self.invalid = True
-        except ValueError as parse_error:
+        except ValueError:
             self.invalid = True
         except Exception as parse_error:
             logging.error(
@@ -38,7 +38,7 @@ class Composite:
             )
             self.invalid = True
 
-        if not self.parsed_yml or type(self.parsed_yml) != dict:
+        if not self.parsed_yml or type(self.parsed_yml) is not dict:
             self.invalid = True
         else:
             self.composite = self._check_composite()

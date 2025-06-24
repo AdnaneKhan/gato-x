@@ -1,28 +1,10 @@
 import re
-import pytest
-import httpx
 
 from unittest.mock import patch
-from gatox.cli.output import Output
 from unittest.mock import MagicMock, AsyncMock
 from gatox.github.api import Api
 
 from gatox.attack.secrets.secrets_attack import SecretsAttack
-
-
-@pytest.fixture(autouse=True)
-def block_network_calls(monkeypatch):
-    """
-    Fixture to block real network calls during tests,
-    raising an error if any attempt to send a request is made.
-    """
-    Output(True)
-
-    def mock_request(*args, **kwargs):
-        raise RuntimeError("Blocked a real network call during tests.")
-
-    monkeypatch.setattr(httpx.Client, "send", mock_request)
-    monkeypatch.setattr(httpx.AsyncClient, "send", mock_request)
 
 
 # From https://stackoverflow.com/questions/14693701/

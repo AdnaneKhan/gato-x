@@ -4,9 +4,7 @@ import re
 
 
 class StringType(object):
-
     def __init__(self, length_cap, regex=None):
-
         self.length_cap = length_cap
         self.regex = regex
 
@@ -33,7 +31,6 @@ class StringType(object):
 
 
 class WriteableDir(object):
-
     def __call__(self, dirpath: str):
         """Checks if the path is of a directory that exists and can be
         written to.
@@ -97,7 +94,6 @@ class WritablePath(object):
 
 
 class ReadableFile(object):
-
     def __call__(self, filepath: str):
         """Argument validation function for file paths.
 
@@ -150,8 +146,7 @@ def read_file_and_validate_lines(filepath: str, regex: str):
             if not match:
                 raise argparse.ArgumentError(
                     None,
-                    f" The line '{line.strip()}' did not match the regular"
-                    f" expression!",
+                    f" The line '{line.strip()}' did not match the regular expression!",
                 )
             lines.append(match.group(0))
     return lines

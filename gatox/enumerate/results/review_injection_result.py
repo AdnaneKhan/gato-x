@@ -33,12 +33,11 @@ class ReviewInjectionResult(AnalysisResult):
         confidence_score: Confidence,
         attack_complexity_score: Complexity,
     ):
-
         repository_name = path[0].repo_name()
 
         super().__init__(
             repository_name,
-            IssueType.PR_REVIEW_INJECTON,
+            IssueType.PR_REVIEW_INJECTION,
             confidence_score,
             attack_complexity_score,
         )
@@ -65,7 +64,6 @@ class ReviewInjectionResult(AnalysisResult):
         return list(set(triggers) & RELEVANT_TRIGGERS)
 
     def to_machine(self):
-
         result = {
             "repository_name": self.repo_name(),
             "issue_type": self.issue_type(),

@@ -5,14 +5,13 @@ from gatox.caching.cache_manager import CacheManager
 
 
 class TestConstructWorkflowCache(unittest.IsolatedAsyncioTestCase):
-
     def setUp(self):
         self.workflow = MagicMock()
         self.repository = MagicMock()
         CacheManager._instance = None
         self.cache_manager = CacheManager()
-        Workflow = MagicMock(return_value=self.workflow)
-        Repository = MagicMock(return_value=self.repository)
+        MagicMock(return_value=self.workflow)
+        MagicMock(return_value=self.repository)
         self.yml_results = [
             {
                 "nameWithOwner": "owner/repo1",

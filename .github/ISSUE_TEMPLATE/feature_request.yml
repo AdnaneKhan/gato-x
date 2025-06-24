@@ -1,0 +1,95 @@
+name: "Feature Request"
+description: "Suggest a new feature or enhancement for Gato-X"
+title: "[Feature Request] "
+labels: ['enhancement', 'feature-request']
+assignees: []
+body:
+- type: markdown
+  attributes:
+    value: |
+      ## Feature Request
+      
+      Thank you for taking the time to suggest a new feature or enhancement for Gato-X!
+      
+      Please provide as much detail as possible to help us understand your request and evaluate its potential implementation.
+
+- type: textarea
+  attributes:
+    label: Problem Statement
+    description: Describe the problem or limitation you're experiencing that this feature would solve.
+    placeholder: "Currently, Gato-X doesn't support... which makes it difficult to..."
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Proposed Solution
+    description: Describe the feature or enhancement you'd like to see implemented.
+    placeholder: "I would like Gato-X to be able to..."
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Use Case
+    description: Describe how you would use this feature and what scenarios it would help with.
+    placeholder: "This feature would help me when..."
+  validations:
+    required: true
+
+- type: dropdown
+  attributes:
+    label: Feature Category
+    description: Which area of Gato-X does this feature relate to?
+    options:
+      - Enumeration
+      - Attack/Exploitation
+      - Reporting
+      - CLI/User Interface
+      - GitHub API Integration
+      - Workflow Analysis
+      - Runner Detection
+      - MCP Server
+      - Other
+  validations:
+    required: true
+
+- type: dropdown
+  attributes:
+    label: Priority
+    description: How important is this feature to you?
+    options:
+      - Low - Nice to have
+      - Medium - Would be helpful
+      - High - Important for my workflow
+      - Critical - Blocking my use case
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Alternative Solutions
+    description: Describe any alternative solutions or workarounds you've considered.
+    placeholder: "I've tried... but it doesn't work well because..."
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Additional Context
+    description: Add any other context, screenshots, examples, or references that would help explain your request.
+    placeholder: "Here are some examples of how other tools handle this..."
+  validations:
+    required: false
+
+- type: checkboxes
+  attributes:
+    label: Contribution
+    description: Would you be interested in contributing to this feature?
+    options:
+      - label: I would be willing to help implement this feature
+        required: false
+      - label: I would be willing to help test this feature
+        required: false
+      - label: I would be willing to help write documentation for this feature
+        required: false

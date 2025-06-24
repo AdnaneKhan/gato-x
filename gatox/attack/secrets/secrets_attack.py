@@ -188,7 +188,6 @@ EOF
             "repo" in self.user_perms["scopes"]
             and "workflow" in self.user_perms["scopes"]
         ):
-
             secret_names = await self.__collect_secret_names(target_repo)
 
             if not secret_names:
@@ -244,5 +243,5 @@ EOF
                     Output.result("Workflow deleted sucesfully!")
         else:
             Output.error(
-                "The user does not have the necessary scopes to conduct this " "attack!"
+                "The user does not have the necessary scopes to conduct this attack!"
             )

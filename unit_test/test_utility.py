@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 from gatox.workflow_parser.utility import (
     decompose_action_ref,
     parse_github_path,
@@ -217,7 +217,7 @@ def test_check_sinks_with_sink_in_script(MockConfigManager):
         "SINKS_START": ["start_dangerous"],
     }
     script = "This script calls dangerous_function"
-    assert check_sinks(script) == True
+    assert check_sinks(script)
 
 
 @patch("gatox.workflow_parser.utility.ConfigurationManager")
@@ -227,7 +227,7 @@ def test_check_sinks_with_sink_start_in_script(MockConfigManager):
         "SINKS_START": ["start_dangerous"],
     }
     script = "start_dangerous_function()"
-    assert check_sinks(script) == True
+    assert check_sinks(script)
 
 
 @patch("gatox.workflow_parser.utility.ConfigurationManager")
@@ -237,7 +237,7 @@ def test_check_sinks_without_sink_in_script(MockConfigManager):
         "SINKS_START": ["start_dangerous"],
     }
     script = "This script is safe"
-    assert check_sinks(script) == False
+    assert not check_sinks(script)
 
 
 def test_parse_github_path_with_ref():
@@ -267,45 +267,45 @@ def test_parse_github_path_with_empty_path():
 def test_check_sus():
     item = "needs.get_ref.outputs.head-ref"
 
-    assert check_sus(item) == True
+    assert check_sus(item)
 
 
 def test_check_sus_false():
     item = "needs.get_permission.allowed"
 
-    assert check_sus(item) == False
+    assert not check_sus(item)
 
 
 def test_unsafe():
     item = "github.event.pull_request.title"
-    assert checkUnsafe(item) == True
+    assert checkUnsafe(item)
 
 
 def test_safe():
     item = "github.event.pull_request.url"
-    assert checkUnsafe(item) == False
+    assert not checkUnsafe(item)
 
 
 def test_process_runner():
     runner = "custom-mac-m1"
-    assert process_runner(runner) == True
+    assert process_runner(runner)
 
 
 def test_rocess_runner_gh_large():
     runner = ["macos-13-xl"]
-    assert process_runner(runner) == False
+    assert not process_runner(runner)
 
 
 def test_rocess_runner_gh_large1():
     runner = ["ubuntu-24.04"]
-    assert process_runner(runner) == False
+    assert not process_runner(runner)
 
 
 def test_process_runner_list():
     runner = ["custom-mac-m1", "x64"]
-    assert process_runner(runner) == True
+    assert process_runner(runner)
 
 
 def test_process_runner_gh():
     runner = "ubuntu-latest"
-    assert process_runner(runner) == False
+    assert not process_runner(runner)

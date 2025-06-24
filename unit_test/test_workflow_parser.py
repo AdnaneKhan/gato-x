@@ -1,11 +1,4 @@
-import pytest
-import os
-import pathlib
-
-from unittest.mock import patch, ANY, mock_open
-
 from gatox.models.workflow import Workflow
-from gatox.workflow_parser.utility import check_sus
 
 TEST_WF = """
 name: 'Test WF'
@@ -275,10 +268,9 @@ updates:
 
 
 def test_parse_workflow_db():
-
     workflow = Workflow("unit_test", DEPENDABOT_FALSE_WF, "main.yml")
 
-    assert workflow.isInvalid() == False
+    assert not workflow.isInvalid()
 
 
 # def test_workflow_write():

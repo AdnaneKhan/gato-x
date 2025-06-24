@@ -1,10 +1,3 @@
-import pytest
-import os
-import pathlib
-
-from unittest.mock import patch, ANY, mock_open
-
-
 TEST_COMPOSITE = """
 name: ci-lint-charts
 description: Lint helm charts

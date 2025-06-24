@@ -1,4 +1,3 @@
-import pytest
 from gatox.workflow_graph.nodes.step import StepNode
 
 
@@ -43,6 +42,7 @@ def test_step_node_init_action():
 
     assert node.type == "action"
     assert not node.is_checkout
+    assert node.uses == "actions/checkout@v2"
     assert node.params == {"ref": "${{ github.event.pull_request.head.ref }}"}
 
 
@@ -82,6 +82,9 @@ def test_step_node_get_tags():
     assert "injectable" not in tags
     assert "permission_blocker" not in tags
     assert "permission_check" not in tags
+
+    node.extra_tags.add("extra_tag")
+    assert "extra_tag" in node.get_tags()
 
 
 def test_step_node_get_attrs():

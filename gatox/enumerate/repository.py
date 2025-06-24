@@ -1,6 +1,5 @@
 import logging
 
-from gatox.caching.cache_manager import CacheManager
 from gatox.enumerate.reports.runners import RunnersReport
 from gatox.cli.output import Output
 from gatox.enumerate.reports.actions import ActionsReport

@@ -50,13 +50,12 @@ class Searcher:
                 return False
 
             Output.info(
-                f"The authenticated user is: "
-                f"{Output.bright(self.user_perms['user'])}"
+                f"The authenticated user is: {Output.bright(self.user_perms['user'])}"
             )
             if len(self.user_perms["scopes"]) > 0:
                 Output.info(
                     f"The GitHub Classic PAT has the following scopes: "
-                    f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
+                    f"{Output.yellow(', '.join(self.user_perms['scopes']))}"
                 )
             else:
                 Output.warn("The token has no scopes!")

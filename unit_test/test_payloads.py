@@ -10,7 +10,6 @@ def test_create_malicious_push_yaml():
 
 
 def test_ror_workflow_default():
-
     workflow = Payloads.create_ror_workflow(
         "foobar",
         "evil",
@@ -22,7 +21,6 @@ def test_ror_workflow_default():
 
 
 def test_ror_workflow_win():
-
     workflow = Payloads.create_ror_workflow(
         "foobar",
         "evil",

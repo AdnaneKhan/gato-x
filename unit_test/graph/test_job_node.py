@@ -1,4 +1,3 @@
-import pytest
 from gatox.workflow_graph.nodes.job import JobNode
 
 

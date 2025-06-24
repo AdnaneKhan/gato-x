@@ -1,4 +1,3 @@
-import pytest
 from gatox.enumerate.results.complexity import Complexity
 
 

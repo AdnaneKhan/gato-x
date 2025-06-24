@@ -26,7 +26,6 @@ class Attacker:
         timeout: int = 30,
         github_url: str = None,
     ):
-
         self.api = Api(
             pat,
             socks_proxy=socks_proxy,
@@ -59,12 +58,11 @@ class Attacker:
                 self.author_name = self.user_perms["user"]
 
             Output.info(
-                "The authenticated user is: "
-                f"{Output.bright(self.user_perms['user'])}"
+                f"The authenticated user is: {Output.bright(self.user_perms['user'])}"
             )
             Output.info(
                 "The GitHub Classic PAT has the following scopes: "
-                f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
+                f"{Output.yellow(', '.join(self.user_perms['scopes']))}"
             )
 
         return True
@@ -199,7 +197,6 @@ class Attacker:
         delete_action: bool,
         yaml_name: str = "sh_cicd_attack",
     ):
-
         await self.setup_user_info()
 
         if not self.user_perms:
@@ -209,7 +206,6 @@ class Attacker:
             "repo" in self.user_perms["scopes"]
             and "workflow" in self.user_perms["scopes"]
         ):
-
             Output.info(
                 f"Will be conducting an attack against {Output.bright(target_repo)} as"
                 f" the user: {Output.bright(self.user_perms['user'])}!"
@@ -254,5 +250,5 @@ class Attacker:
                     Output.result("Workflow deleted sucesfully!")
         else:
             Output.error(
-                "The user does not have the necessary scopes to conduct this " "attack!"
+                "The user does not have the necessary scopes to conduct this attack!"
             )

@@ -2,7 +2,6 @@ import tempfile
 import os
 import subprocess
 import logging
-import hashlib
 import asyncio
 
 from gatox.models.workflow import Workflow

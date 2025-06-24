@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import asyncio
+import logging
 
 from gatox.configuration.configuration_manager import ConfigurationManager
 from gatox.caching.cache_manager import CacheManager
@@ -31,6 +32,8 @@ from gatox.workflow_parser.utility import (
     return_recent,
 )
 from gatox.notifications.send_webhook import send_slack_webhook
+
+logger = logging.getLogger(__name__)
 
 
 class VisitorUtils:
@@ -54,8 +57,12 @@ class VisitorUtils:
             result = ResultFactory.create_pwn_result(path, confidence, complexity)
         elif issue_type == IssueType.DISPATCH_TOCTOU:
             result = ResultFactory.create_toctou_result(path, confidence, complexity)
-        elif issue_type == IssueType.PR_REVIEW_INJECTON:
+        elif issue_type == IssueType.PR_REVIEW_INJECTION:
             result = ResultFactory.create_review_injection_result(
+                path, confidence, complexity
+            )
+        elif issue_type == IssueType.ARTIFACT_POISONING:
+            result = ResultFactory.create_artifact_poisoning_result(
                 path, confidence, complexity
             )
         else:
@@ -84,8 +91,30 @@ class VisitorUtils:
         """
         tags = node.get_tags()
         if "uninitialized" in tags:
-            await WorkflowGraphBuilder()._(node, api)
+            logger.info(f"Initializing action node: {node.name}")
+            await WorkflowGraphBuilder()._initialize_action_node(node, api)
             graph.remove_tags_from_node(node, ["uninitialized"])
+
+    @staticmethod
+    def get_node_with_ancestors(node):
+        """Get a node and all its logical ancestors based on naming convention"""
+        ancestors = {node}
+
+        # Extract parts from node name
+        # Format: 'org/repo:ref:workflow:job:step'
+        node_name = str(node)
+        parts = node_name.split(":")
+
+        if len(parts) >= 4:  # Has job context
+            # Add the job node
+            job_node_name = ":".join(parts[:4])
+            ancestors.add(job_node_name)
+
+            # Add the workflow node
+            workflow_node_name = ":".join(parts[:3])
+            ancestors.add(workflow_node_name)
+
+        return ancestors
 
     @staticmethod
     def check_mutable_ref(ref, start_tags=set()):
@@ -170,7 +199,7 @@ class VisitorUtils:
         for _, flows in data.items():
             for flow in flows:
                 seen_before = flow.get_first_and_last_hash()
-                if not seen_before in seen:
+                if seen_before not in seen:
                     seen.add(seen_before)
                 else:
                     continue
@@ -196,3 +225,41 @@ class VisitorUtils:
 
                     if is_within_last_day(commit_date) and "[bot]" not in author:
                         asyncio.create_task(send_slack_webhook(value))
+
+    @staticmethod
+    def matches_deployment_rule(deployment, rules):
+        """
+        Returns True if any rule string is a substring of the deployment string.
+        Args:
+            deployment (str): The deployment environment name.
+            rules (Iterable[str]): The list of rule strings.
+        Returns:
+            bool: True if any rule is a substring of deployment, else False.
+        """
+        return any(rule in str(deployment) for rule in rules)
+
+    @staticmethod
+    async def check_deployment_approval_gate(
+        node, rule_cache, api, input_lookup, env_lookup
+    ):
+        """
+        Checks if any deployment environment for the node matches a protection rule (substring match).
+        Returns True if approval gate should be set, else False.
+        """
+        # Assumes node.deployments is not None
+        if node.repo_name() in rule_cache:
+            rules = rule_cache[node.repo_name()]
+        else:
+            rules = await api.get_all_environment_protection_rules(node.repo_name())
+            rule_cache[node.repo_name()] = rules
+        for deployment in node.deployments:
+            if isinstance(deployment, dict):
+                deployment = deployment["name"]
+            deployment = VisitorUtils.process_context_var(deployment)
+            if deployment in input_lookup:
+                deployment = input_lookup[deployment]
+            elif deployment in env_lookup:
+                deployment = env_lookup[deployment]
+            if VisitorUtils.matches_deployment_rule(deployment, rules):
+                return True
+        return False

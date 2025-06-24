@@ -43,8 +43,7 @@ class Search:
             query["q"] = custom_query
         else:
             query["q"] = (
-                f"self-hosted org:{organization} language:yaml "
-                "path:.github/workflows"
+                f"self-hosted org:{organization} language:yaml path:.github/workflows"
             )
 
         next_page = (
