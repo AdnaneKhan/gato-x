@@ -1,4 +1,4 @@
-from ruamel.yaml import YAML
+from gatox.workflow_parser.yaml import dump_yaml
 
 
 class CICDAttack:
@@ -30,4 +30,4 @@ class CICDAttack:
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return YAML(typ=["rt", "string"]).dump_to_string(yaml_file)
+        return dump_yaml(yaml_file)

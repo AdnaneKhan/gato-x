@@ -3,10 +3,11 @@ from collections import OrderedDict
 from datetime import datetime
 
 from ruamel.yaml.parser import ParserError
-from ruamel.yaml import YAML
+from ruamel.yaml.scanner import ScannerError
+
+from gatox.workflow_parser.yaml import parse_yaml
 
 logger = logging.getLogger(__name__)
-yaml_loader = YAML()
 
 
 class Workflow:
@@ -22,6 +23,7 @@ class Workflow:
     ):
         self.repo_name = repo_name
         self.invalid = False
+        self.parsed_yml = None
         self.workflow_name = workflow_name
         self.special_path = special_path
         if non_default:
@@ -34,16 +36,16 @@ class Workflow:
             if type(workflow_contents) is bytes:
                 workflow_contents = workflow_contents.decode("utf-8")
 
-            self.parsed_yml = yaml_loader.load(workflow_contents)
+            self.parsed_yml = parse_yaml(workflow_contents)
             self.workflow_contents = workflow_contents
-        except ParserError as e:
+        except (ParserError, ScannerError) as e:
             logger.warning(
-                f"Received a parser error while parsing workflow contents: {str(e)}"
+                f"Parser error for workflow {repo_name}:{workflow_name}: {str(e)}"
             )
             self.invalid = True
-        except Exception as parse_error:
+        except Exception as e:
             logger.error(
-                f"Received an exception while parsing workflow contents: {str(parse_error)}"
+                f"Exception while parsing workflow contents {repo_name}:{workflow_name}: {str(e)}"
             )
             self.invalid = True
 
@@ -53,9 +55,9 @@ class Workflow:
         ):
             self.invalid = True
 
-        if not self.parsed_yml or not isinstance(self.parsed_yml, OrderedDict):
+        if not self.invalid and not isinstance(self.parsed_yml, OrderedDict):
             logger.warning(
-                f"Received an invalid workflow contents, expected OrderedDict, got {type(self.parsed_yml)}"
+                f"Invalid workflow contents for {repo_name}:{workflow_name}, expected OrderedDict, got {type(self.parsed_yml)}"
             )
             self.invalid = True
 

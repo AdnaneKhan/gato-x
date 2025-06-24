@@ -2,10 +2,11 @@ import logging
 from collections import OrderedDict
 
 from ruamel.yaml.parser import ParserError
-from ruamel.yaml import YAML
+from ruamel.yaml.scanner import ScannerError
+
+from gatox.workflow_parser.yaml import parse_yaml
 
 logger = logging.getLogger(__name__)
-yaml_loader = YAML()
 
 
 class Composite:
@@ -13,7 +14,7 @@ class Composite:
     A class to parse GitHub Action ymls.
     """
 
-    def __init__(self, action_yml: str):
+    def __init__(self, action_yml: str, repo: str, path: str):
         """
         Initializes the CompositeParser instance by loading and parsing the provided YAML file.
 
@@ -25,21 +26,19 @@ class Composite:
         self.invalid = False
 
         try:
-            self.parsed_yml = yaml_loader.load(action_yml)
-        except ParserError as e:
-            logger.warning(
-                f"Received a parser error while parsing action contents: {str(e)}"
-            )
+            self.parsed_yml = parse_yaml(action_yml)
+        except (ParserError, ScannerError) as e:
+            logger.warning(f"Parser error for action {repo}/{path}: {str(e)}")
             self.invalid = True
         except Exception as parse_error:
             logger.error(
-                f"Received an exception while parsing action contents: {str(parse_error)}"
+                f"Exception while parsing action {repo}/{path}: {str(parse_error)}"
             )
             self.invalid = True
 
-        if not self.parsed_yml or not isinstance(self.parsed_yml, OrderedDict):
+        if not self.invalid and not isinstance(self.parsed_yml, OrderedDict):
             logger.warning(
-                f"Received an invalid action contents, expected OrderedDict, got {type(self.parsed_yml)}"
+                f"Invalid action contents for {repo}/{path}, expected OrderedDict, got {type(self.parsed_yml)}"
             )
             self.invalid = True
         else:

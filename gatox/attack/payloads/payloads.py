@@ -134,7 +134,7 @@ fi
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        yaml_dumper = YAML(typ=["rt", "string"])
+        yaml_dumper = YAML(typ=["safe", "rt", "string"])
         yaml_dumper.default_flow_style = False
         yaml_dumper.width = 4096
         return yaml_dumper.dump_to_string(yaml_file)

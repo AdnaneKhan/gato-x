@@ -134,7 +134,9 @@ class WorkflowGraphBuilder:
         if not contents:
             return False
 
-        parsed_action = Composite(contents)
+        parsed_action = Composite(
+            contents, action_metadata["repo"], action_metadata["path"]
+        )
         if parsed_action.composite:
             steps = parsed_action.parsed_yml["runs"].get("steps", [])
             if not isinstance(steps, list):
