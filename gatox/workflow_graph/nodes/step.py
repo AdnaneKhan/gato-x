@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from collections import OrderedDict
 from typing import Optional
 from gatox.workflow_parser.utility import parse_script, getTokens, filter_tokens
 from gatox.workflow_graph.nodes.node import Node
