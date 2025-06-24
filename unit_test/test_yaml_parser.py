@@ -29,3 +29,21 @@ def test_dump_yaml():
 
     dumped_yaml = dump_yaml(parsed_yaml)
     assert dumped_yaml == "name: Test"
+
+
+def test_parse_yaml_line_numbers():
+    yaml_str = """
+    name: Test
+    jobs:
+      - name: Test
+        runs-on: ubuntu-latest
+        steps:
+          - name: Run
+            run: echo "Hello, world!"
+    """
+    parsed_yaml = parse_yaml(yaml_str)
+
+    for job in parsed_yaml["jobs"]:
+        assert job.lc.line == 3
+        for step in job["steps"]:
+            assert step.lc.line == 6
