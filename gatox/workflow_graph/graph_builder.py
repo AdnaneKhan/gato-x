@@ -134,22 +134,26 @@ class WorkflowGraphBuilder:
         if not contents:
             return False
 
-        parsed_action = Composite(contents)
+        parsed_action = Composite(
+            contents, action_metadata["repo"], action_metadata["path"]
+        )
         if parsed_action.composite:
             steps = parsed_action.parsed_yml["runs"].get("steps", [])
-            if type(steps) is not list:
+            if not isinstance(steps, list):
                 raise ValueError("Steps must be a list")
 
             prev_step_node = None
             for iter, step in enumerate(steps):
                 calling_name = parsed_action.parsed_yml.get("name", "EMPTY")
+                step_line = step.lc.line + 1 if hasattr(step, "lc") else None
                 step_node = NodeFactory.create_step_node(
-                    step,
+                    dict(step),
                     ref,
                     action_metadata["repo"],
                     action_metadata["path"],
                     calling_name,
                     iter,
+                    step_line,
                 )
 
                 self.graph.add_node(step_node, **step_node.get_attrs())
@@ -247,9 +251,9 @@ class WorkflowGraphBuilder:
             await self.build_workflow_jobs(workflow_wrapper, wf_node)
 
             return True
-        except ValueError:
+        except ValueError as e:
             logger.warning(
-                f"Error building graph from workflow, likely syntax error: {workflow_wrapper.getPath()}, {repo_wrapper.name}"
+                f"Error building graph from workflow, likely syntax error: {workflow_wrapper.getPath()}, {repo_wrapper.name}: {e}"
             )
             # Likely encountered a syntax error in the workflow
             return False
@@ -283,13 +287,16 @@ class WorkflowGraphBuilder:
                 # malformed workflows.
                 raise ValueError("Job definition is empty")
 
+            job_line = job_def.lc.line + 1 if hasattr(job_def, "lc") else None
+
             job_node = NodeFactory.create_job_node(
                 job_name,
                 workflow_wrapper.branch,
                 workflow_wrapper.repo_name,
                 workflow_wrapper.getPath(),
+                job_line,
             )
-            job_node.populate(job_def, wf_node)
+            job_node.populate(dict(job_def), wf_node)
             self.graph.add_node(job_node, **job_node.get_attrs())
 
             # Handle called workflows
@@ -308,7 +315,6 @@ class WorkflowGraphBuilder:
                     workflow_wrapper.branch,
                     workflow_wrapper.repo_name,
                     workflow_wrapper.getPath(),
-                    needs,
                 )
                 job_node.add_needs(need_node)
                 self.graph.add_node(need_node, **need_node.get_attrs())
@@ -326,13 +332,15 @@ class WorkflowGraphBuilder:
             steps = job_def.get("steps", [])
             prev_step_node = None
             for iter, step in enumerate(steps):
+                step_line = step.lc.line + 1 if hasattr(step, "lc") else None
                 step_node = NodeFactory.create_step_node(
-                    step,
+                    dict(step),
                     workflow_wrapper.branch,
                     workflow_wrapper.repo_name,
                     workflow_wrapper.getPath(),
                     job_name,
                     iter,
+                    step_line,
                 )
 
                 self.graph.add_node(step_node, **step_node.get_attrs())

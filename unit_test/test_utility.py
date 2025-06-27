@@ -89,7 +89,24 @@ def test_process_matrix_invalid(mock_config):
 @patch("gatox.workflow_parser.utility.check_sinks")
 def test_parse_script_empty(mock_check_sinks, mock_pattern, mock_config):
     mock_check_sinks.return_value = False
-    result = parse_script("")
+    result, is_script_valid = parse_script("")
+    assert not is_script_valid
+    assert result == {
+        "is_checkout": False,
+        "metadata": None,
+        "is_sink": False,
+        "hard_gate": False,
+        "soft_gate": False,
+    }
+
+
+@patch("gatox.workflow_parser.utility.ConfigurationManager")
+@patch("gatox.workflow_parser.utility.pattern")
+@patch("gatox.workflow_parser.utility.check_sinks")
+def test_parse_script_invalid_type(mock_check_sinks, mock_pattern, mock_config):
+    mock_check_sinks.return_value = False
+    result, is_script_valid = parse_script(123)
+    assert not is_script_valid
     assert result == {
         "is_checkout": False,
         "metadata": None,
@@ -110,7 +127,8 @@ def test_parse_script_checkout(mock_check_sinks, mock_pattern, mock_config):
     mock_config().WORKFLOW_PARSING = {"PR_ISH_VALUES": ["pr", "pull_request"]}
 
     script = "git checkout prBranch"
-    result = parse_script(script)
+    result, is_script_valid = parse_script(script)
+    assert is_script_valid
     assert result["is_checkout"] is True
     assert result["metadata"] == "prBranch"
 
@@ -129,7 +147,8 @@ def test_parse_script_gates_and_sinks(mock_check_sinks, mock_pattern, mock_confi
         "github.rest.repos.checkCollaborator\n"
         "getCollaboratorPermissionLevel\n"
     )
-    result = parse_script(script)
+    result, is_script_valid = parse_script(script)
+    assert is_script_valid
 
     assert result["hard_gate"] is True
     assert result["soft_gate"] is True

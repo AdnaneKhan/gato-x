@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Optional
+
 
 class Node:
     """
@@ -24,8 +26,9 @@ class Node:
     """
 
     extra_tags: set[str]
+    line_number: Optional[int]
 
-    def __init__(self, name):
+    def __init__(self, name, line_number: Optional[int] = None):
         """
         Initialize a Node instance.
 
@@ -34,6 +37,7 @@ class Node:
         """
         self.name = name
         self.extra_tags = set()
+        self.line_number = line_number
 
     def __repr__(self):
         """
@@ -42,7 +46,7 @@ class Node:
         Returns:
             str: A string representation of the Node instance.
         """
-        return f"{self.__class__.__name__}('{self.name}')"
+        return f"{self.__class__.__name__}('{self.name}{f'#L{self.line_number}' if self.line_number else ''}')"
 
     def __hash__(self):
         """
@@ -86,6 +90,7 @@ class Node:
         """
         value = {
             "node": str(self),
+            "line_number": self.line_number,
         }
         return value
 
