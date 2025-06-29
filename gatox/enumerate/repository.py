@@ -96,7 +96,7 @@ class RepositoryEnum:
         else:
             runner_wfs = repository.get_sh_workflow_names()
             if runner_wfs:
-                Output.info(f"Analyzing run logs for {repository.name}")
+                Output.info(f"Analyizing run logs for {repository.name}")
                 runner_detected = await self.perform_runlog_enumeration(
                     repository, runner_wfs
                 )

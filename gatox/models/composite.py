@@ -1,10 +1,7 @@
+import yaml
 import logging
-from collections import OrderedDict
 
-from ruamel.yaml.parser import ParserError
-from ruamel.yaml.scanner import ScannerError
-
-from gatox.workflow_parser.yaml import parse_yaml
+from yaml import CSafeLoader
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +11,7 @@ class Composite:
     A class to parse GitHub Action ymls.
     """
 
-    def __init__(self, action_yml: str, repo: str, path: str):
+    def __init__(self, action_yml: str):
         """
         Initializes the CompositeParser instance by loading and parsing the provided YAML file.
 
@@ -23,23 +20,25 @@ class Composite:
         """
         self.composite = False
         self.parsed_yml = None
-        self.invalid = False
-
         try:
-            self.parsed_yml = parse_yaml(action_yml)
-        except (ParserError, ScannerError) as e:
-            logger.warning(f"Parser error for action {repo}/{path}: {str(e)}")
+            self.parsed_yml = yaml.load(
+                action_yml.replace("\t", "  "), Loader=CSafeLoader
+            )
+        except (
+            yaml.parser.ParserError,
+            yaml.scanner.ScannerError,
+            yaml.constructor.ConstructorError,
+        ):
+            self.invalid = True
+        except ValueError:
             self.invalid = True
         except Exception as parse_error:
-            logger.error(
-                f"Exception while parsing action {repo}/{path}: {str(parse_error)}"
+            logging.error(
+                f"Received an exception while parsing action contents: {str(parse_error)}"
             )
             self.invalid = True
 
-        if not self.invalid and not isinstance(self.parsed_yml, OrderedDict):
-            logger.warning(
-                f"Invalid action contents for {repo}/{path}, expected OrderedDict, got {type(self.parsed_yml)}"
-            )
+        if not self.parsed_yml or type(self.parsed_yml) is not dict:
             self.invalid = True
         else:
             self.composite = self._check_composite()

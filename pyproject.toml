@@ -19,11 +19,10 @@ classifiers = [
 dependencies = [
     "colorama",
     "httpx[socks,http2]",
+    "pyyaml",
     "cryptography",
     "networkx",
-    "PyJWT[crypto]",
-    "ruamel-yaml>=0.18.14",
-    "ruamel-yaml-string>=0.1.1",
+    "PyJWT[crypto]"
 ]
 
 [project.optional-dependencies]

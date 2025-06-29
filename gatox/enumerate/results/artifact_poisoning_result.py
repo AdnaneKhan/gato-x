@@ -33,6 +33,7 @@ class ArtifactPoisoningResult(AnalysisResult):
         confidence_score: Confidence,
         attack_complexity_score: Complexity,
     ):
+
         repository_name = path[0].repo_name()
 
         super().__init__(
