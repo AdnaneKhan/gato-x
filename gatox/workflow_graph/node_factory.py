@@ -58,13 +58,7 @@ class NodeFactory:
             return repo_node, True
 
     @staticmethod
-    def create_job_node(
-        job_name,
-        ref,
-        repo_name,
-        workflow_path,
-        line_number: int = None,
-    ):
+    def create_job_node(job_name, ref, repo_name, workflow_path, needs: list = []):
         """
         Create a JobNode for the specified job and cache it.
 
@@ -77,11 +71,12 @@ class NodeFactory:
             ref (str): The reference (e.g., branch or tag) associated with the job.
             repo_name (str): The name of the repository where the job resides.
             workflow_path (str): The path to the workflow file containing the job.
+            needs (list, optional): A list of dependencies required by the job.
 
         Returns:
             JobNode: The created or cached JobNode instance.
         """
-        job_node = JobNode(job_name, ref, repo_name, workflow_path, line_number)
+        job_node = JobNode(job_name, ref, repo_name, workflow_path)
         if job_node.name in NodeFactory.NODE_CACHE:
             return NodeFactory.NODE_CACHE[job_node.name]
         else:
@@ -159,7 +154,7 @@ class NodeFactory:
 
     @staticmethod
     def create_step_node(
-        step_data, ref, repo_name, workflow_path, job_name, step_number, line_number
+        step_data, ref, repo_name, workflow_path, job_name, step_number
     ):
         """
         Create a StepNode for the specified step and cache it.
@@ -179,7 +174,7 @@ class NodeFactory:
             StepNode: The created StepNode instance.
         """
         step_node = StepNode(
-            step_data, ref, repo_name, workflow_path, job_name, step_number, line_number
+            step_data, ref, repo_name, workflow_path, job_name, step_number
         )
         NodeFactory.NODE_CACHE[step_node.name] = step_node
         return step_node
@@ -212,7 +207,7 @@ class NodeFactory:
             workflow_name = usage_context.get("workflow_name", "unknown")
             job_id = usage_context.get("job_id", "unknown")
             step_index = usage_context.get("step_index", 0)
-            name = f"{repo_name}:{ref}:{action_path}:{workflow_name}:{job_id}:step_{step_index}:{action_name}"
+            name = f"{repo_name}:{ref}:{action_path}:{workflow_name}:{job_id}:step-{step_index}:{action_name}"
         else:
             # Fallback to old naming for backwards compatibility
             name = f"{repo_name}:{ref}:{action_path}:{action_name}"

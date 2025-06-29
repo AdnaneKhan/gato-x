@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import yaml
 import string
 import json
 import hashlib
@@ -29,7 +30,6 @@ from cryptography.hazmat.primitives.ciphers import modes
 
 from gatox.attack.attack import Attacker
 from gatox.cli.output import Output
-from gatox.workflow_parser.yaml import dump_yaml
 
 
 class SecretsAttack(Attacker):
@@ -123,7 +123,7 @@ EOF
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return dump_yaml(yaml_file)
+        return yaml.dump(yaml_file, sort_keys=False)
 
     @staticmethod
     def __create_private_key():

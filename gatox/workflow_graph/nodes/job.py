@@ -32,14 +32,7 @@ class JobNode(Node):
         params (dict): Parameters associated with the job node.
     """
 
-    def __init__(
-        self,
-        job_name: str,
-        ref: str,
-        repo_name: str,
-        workflow_path: str,
-        line_number: int = None,
-    ):
+    def __init__(self, job_name: str, ref: str, repo_name: str, workflow_path: str):
         """
         Constructor for the job wrapper.
 
@@ -50,7 +43,7 @@ class JobNode(Node):
             workflow_path (str): The path to the workflow file.
         """
         # Create a unique ID for this step.
-        super().__init__(f"{repo_name}:{ref}:{workflow_path}:{job_name}", line_number)
+        super().__init__(f"{repo_name}:{ref}:{workflow_path}:{job_name}")
         self.ref = ref
         self.__workflow_path = workflow_path
         self.params = {}

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Optional
 from gatox.workflow_parser.utility import parse_script, getTokens, filter_tokens
 from gatox.workflow_graph.nodes.node import Node
 
@@ -46,7 +45,6 @@ class StepNode(Node):
         workflow_path: str,
         job_name: str,
         step_number: int,
-        line: Optional[int] = None,
     ):
         """
         Constructor for the step wrapper.
@@ -68,7 +66,7 @@ class StepNode(Node):
         else:
             name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
 
-        super().__init__(name, line)
+        super().__init__(name)
 
         self.type = self.__get_type(step_data)
         self.is_checkout = False
@@ -132,16 +130,13 @@ class StepNode(Node):
         if not script:
             return
 
-        insights, is_script_valid = parse_script(script)
+        insights = parse_script(script)
 
         self.is_checkout = insights["is_checkout"]
         self.is_sink = insights["is_sink"]
         self.metadata = insights["metadata"]
         self.hard_gate = insights["hard_gate"]
         self.soft_gate = insights["soft_gate"]
-
-        if not is_script_valid:
-            return
 
         self.contexts = filter_tokens(getTokens(script))
 
@@ -177,13 +172,11 @@ class StepNode(Node):
                     else:
                         self.metadata = ref_param
                         self.is_checkout = True
-        elif (
-            "github-script" in self.uses
-            and "script" in self.params
-            and isinstance(self.params["script"], str)
-        ):
-            script = self.params["script"]
-            insights, is_script_valid = parse_script(script)
+        elif "github-script" in self.uses and "script" in self.params:
+            contents = self.params["script"]
+            self.contexts = filter_tokens(getTokens(contents))
+            self.__step_data = contents
+            insights = parse_script(contents)
 
             self.is_checkout = insights["is_checkout"]
             self.is_sink = insights["is_sink"]
@@ -191,13 +184,7 @@ class StepNode(Node):
             self.hard_gate = insights["hard_gate"]
             self.soft_gate = insights["soft_gate"]
 
-            if not is_script_valid:
-                return
-
-            self.contexts = filter_tokens(getTokens(script))
-            self.__step_data = script
-
-            if "require('." in script:
+            if "require('." in contents:
                 self.is_sink = True
         elif self.uses.startswith("./"):
             self.__step_data = self.uses

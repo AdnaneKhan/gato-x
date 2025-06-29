@@ -1,4 +1,4 @@
-from gatox.workflow_parser.yaml import dump_yaml
+import yaml
 
 
 class CICDAttack:
@@ -30,4 +30,4 @@ class CICDAttack:
         }
         yaml_file["jobs"] = {"testing": test_job}
 
-        return dump_yaml(yaml_file)
+        return yaml.dump(yaml_file, sort_keys=False)

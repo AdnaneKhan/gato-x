@@ -144,7 +144,7 @@ def parse_script(contents: str):
 
     if not contents or not isinstance(contents, str):
         logging.warning("Invalid contents for script parsing:" + str(contents))
-        return return_dict, False
+        return return_dict
 
     if "git checkout" in contents or "pr checkout" in contents:
         match = pattern.search(contents)
@@ -175,7 +175,7 @@ def parse_script(contents: str):
 
     if check_sinks(contents):
         return_dict["is_sink"] = True
-    return return_dict, True
+    return return_dict
 
 
 @staticmethod
