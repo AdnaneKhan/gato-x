@@ -243,7 +243,9 @@ async def test_add_repo_results_extra(monkeypatch):
     )
     monkeypatch.setattr(
         "gatox.workflow_graph.visitors.visitor_utils.ConfigurationManager",
-        lambda: types.SimpleNamespace(NOTIFICATIONS={"SLACK_WEBHOOKS": False}),
+        lambda: types.SimpleNamespace(
+            NOTIFICATIONS={"SLACK_WEBHOOKS": [], "DISCORD_WEBHOOKS": []}
+        ),
     )
     data = {
         "repo": [DummyResult("repo"), DummyResult("repo2")]

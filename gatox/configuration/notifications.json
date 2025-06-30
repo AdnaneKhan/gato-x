@@ -1,6 +1,7 @@
 {
     "name": "NOTIFICATIONS",
     "entries": {
-        "SLACK_WEBHOOKS": []
+        "SLACK_WEBHOOKS": [],
+        "DISCORD_WEBHOOKS": []
     }
 }
