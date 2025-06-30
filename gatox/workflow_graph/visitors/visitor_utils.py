@@ -210,6 +210,7 @@ class VisitorUtils:
 
                 if (
                     ConfigurationManager().NOTIFICATIONS["SLACK_WEBHOOKS"]
+                    or ConfigurationManager().NOTIFICATIONS["DISCORD_WEBHOOKS"]
                     and repo
                     and is_within_last_day(repo.repo_data["pushed_at"])
                 ):
