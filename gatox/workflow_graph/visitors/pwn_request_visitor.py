@@ -58,8 +58,6 @@ class PwnRequestVisitor:
         env_lookup = {}
         flexible_lookup = {}
         approval_gate = False
-        blocker_nodes = set()  # Memoize blocker nodes found
-        approval_gate_nodes = set()  # Memoize approval gate nodes found
 
         for index, node in enumerate(path):
             tags = node.get_tags()
