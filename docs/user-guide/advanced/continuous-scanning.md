@@ -21,12 +21,13 @@ This caching mechanism significantly reduces API usage and improves scan perform
 
 ## Webhook Notifications
 
-Gato-X supports sending notifications to Slack webhooks when it detects vulnerabilities committed within the last 24 hours. This feature is particularly useful for continuous monitoring scenarios where you want immediate alerts about new security issues.
+Gato-X supports sending notifications to both Slack and Discord webhooks when it detects vulnerabilities committed within the last 24 hours. This feature is particularly useful for continuous monitoring scenarios where you want immediate alerts about new security issues.
 
 ### Configuration
 
 To configure webhook notifications, you need to modify the `gatox/configuration/notifications.json` file:
 
+#### Slack Webhooks
 ```json
 {
     "name": "NOTIFICATIONS",
@@ -39,9 +40,55 @@ To configure webhook notifications, you need to modify the `gatox/configuration/
 }
 ```
 
+#### Discord Webhooks
+```json
+{
+    "name": "NOTIFICATIONS", 
+    "entries": {
+        "DISCORD_WEBHOOKS": [
+            "https://discord.com/api/webhooks/123456789/your-webhook-token-here",
+            "https://discord.com/api/webhooks/987654321/another-webhook-token"
+        ]
+    }
+}
+```
+
+#### Combined Configuration
+You can configure both Slack and Discord webhooks simultaneously:
+
+```json
+{
+    "name": "NOTIFICATIONS",
+    "entries": {
+        "SLACK_WEBHOOKS": [
+            "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+        ],
+        "DISCORD_WEBHOOKS": [
+            "https://discord.com/api/webhooks/123456789/your-webhook-token-here"
+        ]
+    }
+}
+```
+
+### Platform-Specific Setup
+
+#### Setting up Slack Webhooks
+1. Go to your Slack workspace settings
+2. Navigate to "Apps" → "Custom Integrations" → "Incoming Webhooks"
+3. Click "Add to Slack" and select your target channel
+4. Copy the provided webhook URL and add it to your configuration
+
+#### Setting up Discord Webhooks
+1. Go to your Discord server settings
+2. Navigate to "Integrations" → "Webhooks"
+3. Click "New Webhook" or "Create Webhook"
+4. Configure the webhook name, avatar, and target channel
+5. Copy the webhook URL and add it to your configuration
+
 ### Features
 
-- **Multiple Webhooks**: Configure multiple Slack webhook URLs for redundancy or different channels
+- **Multi-Platform Support**: Send notifications to both Slack and Discord simultaneously
+- **Multiple Webhooks**: Configure multiple webhook URLs per platform for redundancy or different channels
 - **Automatic Retry**: The webhook sender includes retry logic with exponential backoff
 - **Structured Messages**: Notifications include detailed vulnerability information in JSON format
 - **Recent Vulnerability Filter**: Only notifications for vulnerabilities in commits from the last 24 hours are sent

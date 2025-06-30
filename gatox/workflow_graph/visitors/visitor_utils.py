@@ -32,6 +32,7 @@ from gatox.workflow_parser.utility import (
     return_recent,
 )
 from gatox.notifications.send_webhook import send_slack_webhook
+from gatox.notifications.send_webhook import send_discord_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -223,8 +224,9 @@ class VisitorUtils:
                         # If there is a PR merged, get the most recent.
                         commit_date = return_recent(commit_date, merge_date)
 
-                    if is_within_last_day(commit_date) and "[bot]" not in author:
+                    if is_within_last_day(commit_date):
                         asyncio.create_task(send_slack_webhook(value))
+                        asyncio.create_task(send_discord_webhook(value))
 
     @staticmethod
     def matches_deployment_rule(deployment, rules):
