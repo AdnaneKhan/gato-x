@@ -1,9 +1,10 @@
 import pytest
 import json
+import io
 from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 
-from gatox.notifications.send_webhook import send_slack_webhook, send_discord_webhook
+from gatox.notifications.send_webhook import send_slack_webhook, send_discord_webhook, _create_result_summary
 
 
 @pytest.fixture
@@ -29,6 +30,35 @@ def mock_config_manager():
 def sample_message():
     """Sample message for testing."""
     return "Test notification message"
+
+
+@pytest.fixture
+def long_message():
+    """Long message for testing attachment functionality."""
+    return json.dumps({
+        "repository_name": "TestUser/TestRepo",
+        "issue_type": "PwnRequestResult", 
+        "triggers": ["pull_request_target"],
+        "initial_workflow": "test.yml",
+        "confidence": "High",
+        "attack_complexity": "No Interaction",
+        "explanation": "This is a test vulnerability with a very long explanation that exceeds Discord's 2000 character limit" + "x" * 2000,
+        "paths": [{"nodes": [f"node_{i}" for i in range(100)]} for _ in range(20)]
+    })
+
+
+@pytest.fixture
+def sample_result_data():
+    """Sample result data for summary testing."""
+    return {
+        "repository_name": "AmyJeanes/TARDIS",
+        "issue_type": "PwnRequestResult",
+        "triggers": ["pull_request_target"],
+        "initial_workflow": "generate-files.yml",
+        "confidence": "High",
+        "attack_complexity": "No Interaction",
+        "explanation": "Exploit requires no user interaction, you must still confirm there are no custom permission checks that would prevent the attack."
+    }
 
 
 class TestSlackWebhook:
@@ -203,7 +233,7 @@ class TestDiscordWebhook:
                 assert "json" in kwargs
                 payload = kwargs["json"]
                 assert "content" in payload
-                assert json.dumps(sample_message, indent=4) in payload["content"]
+                assert sample_message in payload["content"]
 
     @pytest.mark.asyncio
     async def test_send_discord_webhook_success_204(
@@ -331,7 +361,7 @@ class TestDiscordWebhook:
 
             await send_discord_webhook("test")
 
-            # Verify timeout is set correctly
+            # Verify timeout is set correctly (should be 10.0 for short messages)
             mock_client.assert_called_once_with(
                 http2=True, follow_redirects=True, timeout=10.0
             )
@@ -434,3 +464,147 @@ class TestWebhookIntegration:
 
             # Should handle unicode without errors
             assert mock_context.post.call_count == 4
+
+    @pytest.mark.asyncio
+    async def test_send_discord_webhook_long_message_with_attachment(
+        self, mock_config_manager, long_message
+    ):
+        """Test Discord webhook with long message that gets split into summary + attachment."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_context = AsyncMock()
+            mock_client.return_value.__aenter__.return_value = mock_context
+            mock_context.post = AsyncMock(return_value=mock_response)
+
+            await send_discord_webhook(long_message)
+
+            # Verify correct number of calls (2 webhooks)
+            assert mock_context.post.call_count == 2
+
+            # Verify multipart payload format
+            calls = mock_context.post.call_args_list
+            for call in calls:
+                args, kwargs = call
+                assert "data" in kwargs
+                assert "files" in kwargs
+                
+                # Check data payload
+                data = kwargs["data"]
+                assert "payload_json" in data
+                payload = json.loads(data["payload_json"])
+                assert "content" in payload
+                assert "Analysis Summary:" in payload["content"]
+                assert "analysis_details.json" in payload["content"]
+                
+                # Check file attachment
+                files = kwargs["files"]
+                assert "files[0]" in files
+                filename, file_obj, content_type = files["files[0]"]
+                assert filename == "analysis_details.json"
+                assert content_type == "application/json"
+                assert isinstance(file_obj, io.BytesIO)
+
+    @pytest.mark.asyncio
+    async def test_send_discord_webhook_long_message_timeout(
+        self, mock_config_manager, long_message
+    ):
+        """Test Discord webhook with long message uses extended timeout."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_context = AsyncMock()
+            mock_client.return_value.__aenter__.return_value = mock_context
+            mock_context.post = AsyncMock(return_value=mock_response)
+
+            await send_discord_webhook(long_message)
+
+            # Verify timeout is set to 30.0 for long messages with attachments
+            mock_client.assert_called_once_with(
+                http2=True, follow_redirects=True, timeout=30.0
+            )
+
+    @pytest.mark.asyncio
+    async def test_send_discord_webhook_short_message_normal_flow(
+        self, mock_config_manager, sample_message
+    ):
+        """Test Discord webhook with short message uses normal JSON flow."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_context = AsyncMock()
+            mock_client.return_value.__aenter__.return_value = mock_context
+            mock_context.post = AsyncMock(return_value=mock_response)
+
+            await send_discord_webhook(sample_message)
+
+            # Verify normal JSON payload
+            calls = mock_context.post.call_args_list
+            for call in calls:
+                args, kwargs = call
+                assert "json" in kwargs
+                assert "data" not in kwargs
+                assert "files" not in kwargs
+                
+                payload = kwargs["json"]
+                assert "content" in payload
+
+
+class TestSummaryGeneration:
+    """Test cases for result summary generation."""
+
+    def test_create_result_summary_complete_data(self, sample_result_data):
+        """Test summary generation with complete result data."""
+        summary = _create_result_summary(sample_result_data)
+        
+        assert '"repository_name": "AmyJeanes/TARDIS"' in summary
+        assert '"issue_type": "PwnRequestResult"' in summary
+        assert '"triggers": ["pull_request_target"]' in summary
+        assert '"initial_workflow": "generate-files.yml"' in summary
+        assert '"confidence": "High"' in summary
+        assert '"attack_complexity": "No Interaction"' in summary
+        assert '"explanation"' in summary
+        
+        # Verify JSON structure
+        assert summary.startswith("{")
+        assert summary.endswith("}")
+        assert summary.count('"repository_name"') == 1
+
+    def test_create_result_summary_partial_data(self):
+        """Test summary generation with partial result data."""
+        partial_data = {
+            "repository_name": "test/repo",
+            "issue_type": "InjectionResult",
+            "confidence": "Medium"
+        }
+        
+        summary = _create_result_summary(partial_data)
+        
+        assert '"repository_name": "test/repo"' in summary
+        assert '"issue_type": "InjectionResult"' in summary
+        assert '"confidence": "Medium"' in summary
+        assert '"triggers"' not in summary
+        assert '"initial_workflow"' not in summary
+
+    def test_create_result_summary_empty_data(self):
+        """Test summary generation with empty result data."""
+        summary = _create_result_summary({})
+        
+        assert summary == "{\n    \n}"
+
+    def test_create_result_summary_special_characters(self):
+        """Test summary generation with special characters in data."""
+        special_data = {
+            "repository_name": "user/repo-with-dashes_and_underscores",
+            "explanation": 'This has "quotes" and \nNewlines\tTabs',
+            "triggers": ["push", "pull_request"]
+        }
+        
+        summary = _create_result_summary(special_data)
+        
+        # Should handle special characters properly
+        assert 'repo-with-dashes_and_underscores' in summary
+        assert '["push", "pull_request"]' in summary
