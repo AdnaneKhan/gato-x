@@ -91,20 +91,28 @@ class TaggedGraph(nx.DiGraph):
             "start_time": start_time,
         }
 
-        await self._dfs(
-            start_node,
-            target_tag,
-            path,
-            all_paths,
-            visited,
-            api,
-            ignore_depends,
-            traversal_stats,
-        )
+        try:
+            await self._dfs(
+                start_node,
+                target_tag,
+                path,
+                all_paths,
+                visited,
+                api,
+                ignore_depends,
+                traversal_stats,
+            )
 
-        # Log traversal completion and check for issues
-        elapsed_time = time.time() - start_time
-        self._log_traversal_completion(traversal_stats, elapsed_time, len(all_paths))
+            # Log traversal completion and check for issues
+            elapsed_time = time.time() - start_time
+            self._log_traversal_completion(
+                traversal_stats, elapsed_time, len(all_paths)
+            )
+        except GraphTraversalTimeoutError as e:
+            logger.error(f"DFS traversal timed out: {e}")
+            # Clear any partial state to ensure clean recovery
+            path.clear()
+            visited.clear()
 
         return all_paths
 
