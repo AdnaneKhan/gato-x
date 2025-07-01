@@ -376,12 +376,12 @@ class WorkflowGraphBuilder:
 
     async def initialize_node(self, node, api):
         tags = node.get_tags()
-        
+
         # Skip nodes that are already marked as non-existent
         if "non_existent" in tags:
             logger.info(f"Skipping initialization of non-existent node: {node.name}")
             return
-            
+
         if "uninitialized" in tags:
             if "ActionNode" in tags:
                 try:
@@ -394,6 +394,6 @@ class WorkflowGraphBuilder:
                 try:
                     await self._initialize_callee_node(node, api)
                 except ValueError as e:
-                    logger.warning(f"Error initializing callee node: {e}")
+                    logger.warning(f"Error initializing callee node: {e}, {node.name}")
                     # Likely encountered a syntax error in the workflow
                     return
