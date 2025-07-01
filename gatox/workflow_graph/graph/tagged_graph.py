@@ -20,10 +20,19 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
+class GraphTraversalLimitExceeded(RuntimeError):
+    """Exception raised when graph traversal exceeds the maximum node visit limit."""
+
+    pass
+
+
 # Traversal monitoring constants
 MAX_TRAVERSAL_TIME_SECONDS = 30  # Warn if traversal takes longer than 30 seconds
 MAX_PATH_LENGTH = 100  # Warn if path length exceeds 100 nodes
-MAX_NODES_VISITED = 1000  # Warn if more than 1000 nodes visited in single traversal
+MAX_NODES_VISITED = (
+    5000  # Raise exception if more than 5000 nodes visited in single traversal
+)
 
 
 class TaggedGraph(nx.DiGraph):
@@ -137,6 +146,9 @@ class TaggedGraph(nx.DiGraph):
 
         Returns:
             list: A list of all paths, where each path is a list of nodes leading to the target tag.
+
+        Raises:
+            GraphTraversalLimitExceeded: If traversal visits more than MAX_NODES_VISITED (5000) nodes.
         """
         start_time = time.time()
 
@@ -227,13 +239,16 @@ class TaggedGraph(nx.DiGraph):
                     f"nodes visited: {traversal_stats['nodes_visited']}, current path length: {len(path)}"
                 )
 
-            # Check for excessive nodes visited
+            # Check for excessive nodes visited - raise exception to prevent runaway traversal
             if traversal_stats["nodes_visited"] > MAX_NODES_VISITED:
-                logger.warning(
-                    f"Graph traversal visited excessive nodes: {traversal_stats['nodes_visited']}. "
+                error_message = (
+                    f"Graph traversal exceeded maximum node limit of {MAX_NODES_VISITED}. "
+                    f"Visited {traversal_stats['nodes_visited']} nodes. "
                     f"This may indicate cycles or very complex graph structure. "
                     f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}"
                 )
+                logger.error(f"TRAVERSAL LIMIT EXCEEDED: {error_message}")
+                raise GraphTraversalLimitExceeded(error_message)
 
         path.append(current_node)
         visited.add(current_node)
@@ -322,12 +337,8 @@ class TaggedGraph(nx.DiGraph):
                 f"nodes visited: {traversal_stats['nodes_visited']}, paths found: {paths_found}"
             )
 
-        if traversal_stats["nodes_visited"] > MAX_NODES_VISITED:
-            logger.warning(
-                f"Graph traversal visited {traversal_stats['nodes_visited']} nodes, "
-                f"which exceeds the recommended threshold of {MAX_NODES_VISITED}. "
-                f"Consider checking for cycles or optimizing graph structure."
-            )
+        # Note: nodes_visited > MAX_NODES_VISITED check not needed here since
+        # an exception would have been raised during traversal if limit was exceeded
 
         if traversal_stats["max_path_length"] > MAX_PATH_LENGTH:
             logger.warning(
