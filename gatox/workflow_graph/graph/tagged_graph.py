@@ -179,6 +179,13 @@ class TaggedGraph(nx.DiGraph):
         if "uninitialized" in current_node.get_tags():
             await self.builder.initialize_node(current_node, api)
 
+        # Stop traversal if current node is non-existent (workflow file doesn't exist)
+        if "non_existent" in current_node.get_tags():
+            logger.debug(f"DFS stopping at non-existent node: {current_node}")
+            path.pop()
+            visited.remove(current_node)
+            return
+
         if target_tag in current_node.get_tags():
             all_paths.append(list(path))
         else:

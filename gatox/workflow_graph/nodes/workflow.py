@@ -77,6 +77,7 @@ class WorkflowNode(Node):
         # graph if a workflow references another workflow that has not been
         # processed yet.
         self.uninitialized = True
+        self.non_existent = False  # True if workflow file doesn't exist
         self.__workflow_path = workflow_path
         self.__triggers = []
         self.__callers = []
@@ -214,6 +215,15 @@ class WorkflowNode(Node):
         self.inputs = self.__process_inputs(workflow.parsed_yml)
         self.uninitialized = False
 
+    def mark_as_non_existent(self):
+        """Mark this workflow as non-existent (file doesn't exist in repository)."""
+        self.uninitialized = False
+        self.non_existent = True
+
+    def is_non_existent(self):
+        """Check if this workflow is marked as non-existent."""
+        return self.non_existent
+
     def get_triggers(self):
         """Retrieve the triggers associated with the Workflow node."""
         return self.__triggers
@@ -222,7 +232,9 @@ class WorkflowNode(Node):
         """ """
         tags = super().get_tags()
 
-        if self.uninitialized:
+        if self.non_existent:
+            tags.add("non_existent")
+        elif self.uninitialized:
             tags.add("uninitialized")
         else:
             tags.add("initialized")
