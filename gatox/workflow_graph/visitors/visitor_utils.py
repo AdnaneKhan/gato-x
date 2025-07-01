@@ -16,6 +16,7 @@ limitations under the License.
 
 import asyncio
 import logging
+import re
 
 from gatox.configuration.configuration_manager import ConfigurationManager
 from gatox.caching.cache_manager import CacheManager
@@ -192,6 +193,46 @@ class VisitorUtils:
         if head and tail and head[-1] == tail[0]:
             head.extend(tail[1:])
         return head
+
+    @staticmethod
+    def has_dispatch_toctou_risk(workflow_inputs):
+        """
+        Check if workflow dispatch inputs indicate potential TOCTOU vulnerability.
+
+        This utility function checks if there's a PR number input without a required SHA,
+        which could lead to Time-Of-Check to Time-Of-Use vulnerabilities.
+
+        Args:
+            workflow_inputs (dict): The workflow dispatch inputs to analyze
+
+        Returns:
+            bool: True if there's TOCTOU risk (PR number without required SHA), False otherwise
+        """
+        if not workflow_inputs:
+            return False
+
+        pr_num_found = False
+        sha_found = False
+
+        # Process inputs to determine if any contain a PR number.
+        # This is a heuristic to identify workflows that are taking a PR number
+        # or mutable reference.
+        for key, val in workflow_inputs.items():
+            if "sha" in key.lower():
+                if isinstance(val, dict):
+                    # Suppress if sha is required
+                    if "required" in val:
+                        if val["required"]:
+                            sha_found = True
+
+            elif re.search(
+                r"(?:^|[\b_])(pr|pull|pull_request|pr_number)(?:[\b_]|$)",
+                key,
+                re.IGNORECASE,
+            ):
+                pr_num_found = True
+
+        return pr_num_found and not sha_found
 
     @staticmethod
     async def add_repo_results(data: dict, api: Api):

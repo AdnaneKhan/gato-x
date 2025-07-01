@@ -4,7 +4,11 @@ import io
 from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 
-from gatox.notifications.send_webhook import send_slack_webhook, send_discord_webhook, _create_result_summary
+from gatox.notifications.send_webhook import (
+    send_slack_webhook,
+    send_discord_webhook,
+    _create_result_summary,
+)
 
 
 @pytest.fixture
@@ -35,16 +39,19 @@ def sample_message():
 @pytest.fixture
 def long_message():
     """Long message for testing attachment functionality."""
-    return json.dumps({
-        "repository_name": "TestUser/TestRepo",
-        "issue_type": "PwnRequestResult", 
-        "triggers": ["pull_request_target"],
-        "initial_workflow": "test.yml",
-        "confidence": "High",
-        "attack_complexity": "No Interaction",
-        "explanation": "This is a test vulnerability with a very long explanation that exceeds Discord's 2000 character limit" + "x" * 2000,
-        "paths": [{"nodes": [f"node_{i}" for i in range(100)]} for _ in range(20)]
-    })
+    return json.dumps(
+        {
+            "repository_name": "TestUser/TestRepo",
+            "issue_type": "PwnRequestResult",
+            "triggers": ["pull_request_target"],
+            "initial_workflow": "test.yml",
+            "confidence": "High",
+            "attack_complexity": "No Interaction",
+            "explanation": "This is a test vulnerability with a very long explanation that exceeds Discord's 2000 character limit"
+            + "x" * 2000,
+            "paths": [{"nodes": [f"node_{i}" for i in range(100)]} for _ in range(20)],
+        }
+    )
 
 
 @pytest.fixture
@@ -57,7 +64,7 @@ def sample_result_data():
         "initial_workflow": "generate-files.yml",
         "confidence": "High",
         "attack_complexity": "No Interaction",
-        "explanation": "Exploit requires no user interaction, you must still confirm there are no custom permission checks that would prevent the attack."
+        "explanation": "Exploit requires no user interaction, you must still confirm there are no custom permission checks that would prevent the attack.",
     }
 
 
@@ -489,7 +496,7 @@ class TestWebhookIntegration:
                 args, kwargs = call
                 assert "data" in kwargs
                 assert "files" in kwargs
-                
+
                 # Check data payload
                 data = kwargs["data"]
                 assert "payload_json" in data
@@ -497,7 +504,7 @@ class TestWebhookIntegration:
                 assert "content" in payload
                 assert "Analysis Summary:" in payload["content"]
                 assert "analysis_details.json" in payload["content"]
-                
+
                 # Check file attachment
                 files = kwargs["files"]
                 assert "files[0]" in files
@@ -548,7 +555,7 @@ class TestWebhookIntegration:
                 assert "json" in kwargs
                 assert "data" not in kwargs
                 assert "files" not in kwargs
-                
+
                 payload = kwargs["json"]
                 assert "content" in payload
 
@@ -559,7 +566,7 @@ class TestSummaryGeneration:
     def test_create_result_summary_complete_data(self, sample_result_data):
         """Test summary generation with complete result data."""
         summary = _create_result_summary(sample_result_data)
-        
+
         assert '"repository_name": "AmyJeanes/TARDIS"' in summary
         assert '"issue_type": "PwnRequestResult"' in summary
         assert '"triggers": ["pull_request_target"]' in summary
@@ -567,7 +574,7 @@ class TestSummaryGeneration:
         assert '"confidence": "High"' in summary
         assert '"attack_complexity": "No Interaction"' in summary
         assert '"explanation"' in summary
-        
+
         # Verify JSON structure
         assert summary.startswith("{")
         assert summary.endswith("}")
@@ -578,11 +585,11 @@ class TestSummaryGeneration:
         partial_data = {
             "repository_name": "test/repo",
             "issue_type": "InjectionResult",
-            "confidence": "Medium"
+            "confidence": "Medium",
         }
-        
+
         summary = _create_result_summary(partial_data)
-        
+
         assert '"repository_name": "test/repo"' in summary
         assert '"issue_type": "InjectionResult"' in summary
         assert '"confidence": "Medium"' in summary
@@ -592,7 +599,7 @@ class TestSummaryGeneration:
     def test_create_result_summary_empty_data(self):
         """Test summary generation with empty result data."""
         summary = _create_result_summary({})
-        
+
         assert summary == "{\n    \n}"
 
     def test_create_result_summary_special_characters(self):
@@ -600,11 +607,11 @@ class TestSummaryGeneration:
         special_data = {
             "repository_name": "user/repo-with-dashes_and_underscores",
             "explanation": 'This has "quotes" and \nNewlines\tTabs',
-            "triggers": ["push", "pull_request"]
+            "triggers": ["push", "pull_request"],
         }
-        
+
         summary = _create_result_summary(special_data)
-        
+
         # Should handle special characters properly
-        assert 'repo-with-dashes_and_underscores' in summary
+        assert "repo-with-dashes_and_underscores" in summary
         assert '["push", "pull_request"]' in summary

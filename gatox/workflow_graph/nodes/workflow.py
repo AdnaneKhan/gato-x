@@ -15,12 +15,53 @@ limitations under the License.
 """
 
 import logging
+import re
 
 from gatox.workflow_graph.nodes.node import Node
 from gatox.workflow_graph.nodes.job import JobNode
 from gatox.models.workflow import Workflow
 
 logger = logging.getLogger(__name__)
+
+
+def _has_dispatch_toctou_risk(workflow_inputs):
+    """
+    Check if workflow dispatch inputs indicate potential TOCTOU vulnerability.
+
+    This utility function checks if there's a PR number input without a required SHA,
+    which could lead to Time-Of-Check to Time-Of-Use vulnerabilities.
+
+    Args:
+        workflow_inputs (dict): The workflow dispatch inputs to analyze
+
+    Returns:
+        bool: True if there's TOCTOU risk (PR number without required SHA), False otherwise
+    """
+    if not workflow_inputs:
+        return False
+
+    pr_num_found = False
+    sha_found = False
+
+    # Process inputs to determine if any contain a PR number.
+    # This is a heuristic to identify workflows that are taking a PR number
+    # or mutable reference.
+    for key, val in workflow_inputs.items():
+        if "sha" in key.lower():
+            if isinstance(val, dict):
+                # Suppress if sha is required
+                if "required" in val:
+                    if val["required"]:
+                        sha_found = True
+
+        elif re.search(
+            r"(?:^|[\b_])(pr|pull|pull_request|pr_number)(?:[\b_]|$)",
+            key,
+            re.IGNORECASE,
+        ):
+            pr_num_found = True
+
+    return pr_num_found and not sha_found
 
 
 class WorkflowNode(Node):
@@ -103,6 +144,18 @@ class WorkflowNode(Node):
                         # forks cannot trigger the workflow.
                         self.__excluded = True
                     else:
+                        extracted_triggers.append(trigger)
+                elif trigger == "workflow_dispatch":
+                    if not trigger_conditions or "inputs" not in trigger_conditions:
+                        # If no inputs are present, then this workflow
+                        # cannot have a dispatch TOCTOU
+                        self.__excluded = True
+                    else:
+                        # Check if workflow has TOCTOU risk (PR number without required SHA)
+                        if not _has_dispatch_toctou_risk(
+                            trigger_conditions.get("inputs", {})
+                        ):
+                            self.__excluded = True
                         extracted_triggers.append(trigger)
                 else:
                     extracted_triggers.append(trigger)
