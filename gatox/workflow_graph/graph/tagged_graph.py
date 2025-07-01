@@ -21,18 +21,17 @@ import time
 logger = logging.getLogger(__name__)
 
 
-class GraphTraversalLimitExceeded(RuntimeError):
-    """Exception raised when graph traversal exceeds the maximum node visit limit."""
+class GraphTraversalTimeoutError(RuntimeError):
+    """Exception raised when graph traversal exceeds the maximum time limit."""
 
     pass
 
 
 # Traversal monitoring constants
-MAX_TRAVERSAL_TIME_SECONDS = 30  # Warn if traversal takes longer than 30 seconds
-MAX_PATH_LENGTH = 100  # Warn if path length exceeds 100 nodes
-MAX_NODES_VISITED = (
-    10000  # Raise exception if more than 5000 nodes visited in single traversal
+MAX_TRAVERSAL_TIME_SECONDS = (
+    10  # Raise exception if traversal takes longer than 10 seconds
 )
+MAX_PATH_LENGTH = 100  # Warn if path length exceeds 100 nodes
 
 
 class TaggedGraph(nx.DiGraph):
@@ -76,7 +75,7 @@ class TaggedGraph(nx.DiGraph):
             list: A list of all paths, where each path is a list of nodes leading to the target tag.
 
         Raises:
-            GraphTraversalLimitExceeded: If traversal visits more than MAX_NODES_VISITED (5000) nodes.
+            GraphTraversalTimeoutError: If traversal takes longer than MAX_TRAVERSAL_TIME_SECONDS (10) seconds.
         """
         start_time = time.time()
         path = list()
@@ -144,27 +143,20 @@ class TaggedGraph(nx.DiGraph):
             traversal_stats["nodes_visited"] += 1
             current_time = time.time()
 
-            # Check for excessive traversal time
+            # Check for excessive traversal time - raise exception to prevent runaway traversal
             if (
                 current_time - traversal_stats["start_time"]
                 > MAX_TRAVERSAL_TIME_SECONDS
             ):
-                logger.warning(
-                    f"Graph traversal taking excessive time: {current_time - traversal_stats['start_time']:.2f}s. "
+                error_message = (
+                    f"Graph traversal exceeded maximum time limit of {MAX_TRAVERSAL_TIME_SECONDS} seconds. "
+                    f"Elapsed time: {current_time - traversal_stats['start_time']:.2f}s. "
+                    f"This may indicate cycles or very complex graph structure. "
                     f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}, "
                     f"nodes visited: {traversal_stats['nodes_visited']}, current path length: {len(path)}"
                 )
-
-            # Check for excessive nodes visited - raise exception to prevent runaway traversal
-            if traversal_stats["nodes_visited"] > MAX_NODES_VISITED:
-                error_message = (
-                    f"Graph traversal exceeded maximum node limit of {MAX_NODES_VISITED}. "
-                    f"Visited {traversal_stats['nodes_visited']} nodes. "
-                    f"This may indicate cycles or very complex graph structure. "
-                    f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}"
-                )
-                logger.error(f"TRAVERSAL LIMIT EXCEEDED: {error_message}")
-                raise GraphTraversalLimitExceeded(error_message)
+                logger.error(f"TRAVERSAL TIMEOUT: {error_message}")
+                raise GraphTraversalTimeoutError(error_message)
 
         path.append(current_node)
         visited.add(current_node)
@@ -241,8 +233,8 @@ class TaggedGraph(nx.DiGraph):
                 f"nodes visited: {traversal_stats['nodes_visited']}, paths found: {paths_found}"
             )
 
-        # Note: nodes_visited > MAX_NODES_VISITED check not needed here since
-        # an exception would have been raised during traversal if limit was exceeded
+        # Note: Time-based timeout check not needed here since
+        # an exception would have been raised during traversal if time limit was exceeded
 
         if traversal_stats["max_path_length"] > MAX_PATH_LENGTH:
             logger.warning(
