@@ -31,7 +31,7 @@ class GraphTraversalLimitExceeded(RuntimeError):
 MAX_TRAVERSAL_TIME_SECONDS = 30  # Warn if traversal takes longer than 30 seconds
 MAX_PATH_LENGTH = 100  # Warn if path length exceeds 100 nodes
 MAX_NODES_VISITED = (
-    5000  # Raise exception if more than 5000 nodes visited in single traversal
+    10000  # Raise exception if more than 5000 nodes visited in single traversal
 )
 
 
