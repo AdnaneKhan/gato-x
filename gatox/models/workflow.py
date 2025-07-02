@@ -2,7 +2,7 @@ from datetime import datetime
 import yaml
 import logging
 
-from yaml import CSafeLoader
+from gatox.workflow_parser.source_map import build_workflow_source_map
 from yaml.resolver import Resolver
 
 logger = logging.getLogger(__name__)
@@ -43,9 +43,11 @@ class Workflow:
         try:
             if type(workflow_contents) is bytes:
                 workflow_contents = workflow_contents.decode("utf-8")
-            self.parsed_yml = yaml.load(
-                workflow_contents.replace("\t", "  "), Loader=CSafeLoader
-            )
+
+            loader = yaml.CSafeLoader(workflow_contents.replace("\t", "  "))
+            node = loader.get_single_node()
+            self.source_map = build_workflow_source_map(node)
+            self.parsed_yml = loader.construct_document(node)
 
             if (
                 "dependabot" in workflow_name
