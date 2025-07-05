@@ -38,6 +38,11 @@ def mock_workflow():
             }
         }
     }
+    workflow.source_map = {
+        "jobs": {
+            "build": {"line": 10, "steps": [{"line": 11}]},
+        }
+    }
     return workflow
 
 

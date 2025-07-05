@@ -45,6 +45,7 @@ class StepNode(Node):
         workflow_path: str,
         job_name: str,
         step_number: int,
+        line_number=None,
     ):
         """
         Constructor for the step wrapper.
@@ -66,7 +67,7 @@ class StepNode(Node):
         else:
             name = f"{repo_name}:{ref}:{workflow_path}:{job_name}:step_{step_number}"
 
-        super().__init__(name)
+        super().__init__(name, line_number)
 
         self.type = self.__get_type(step_data)
         self.is_checkout = False
