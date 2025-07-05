@@ -150,6 +150,7 @@ class WorkflowGraphBuilder:
                     action_metadata["path"],
                     calling_name,
                     iter,
+                    line_number=parsed_action.source_map["steps"][iter],
                 )
 
                 self.graph.add_node(step_node, **step_node.get_attrs())
@@ -288,6 +289,7 @@ class WorkflowGraphBuilder:
                 workflow_wrapper.branch,
                 workflow_wrapper.repo_name,
                 workflow_wrapper.getPath(),
+                line_number=workflow_wrapper.source_map["jobs"][job_name]["line"],
             )
             job_node.populate(job_def, wf_node)
             self.graph.add_node(job_node, **job_node.get_attrs())
@@ -308,7 +310,8 @@ class WorkflowGraphBuilder:
                     workflow_wrapper.branch,
                     workflow_wrapper.repo_name,
                     workflow_wrapper.getPath(),
-                    needs,
+                    needs=needs,
+                    line_number=workflow_wrapper.source_map["jobs"][need]["line"],
                 )
                 job_node.add_needs(need_node)
                 self.graph.add_node(need_node, **need_node.get_attrs())
@@ -333,6 +336,9 @@ class WorkflowGraphBuilder:
                     workflow_wrapper.getPath(),
                     job_name,
                     iter,
+                    line_number=workflow_wrapper.source_map["jobs"][job_name]["steps"][
+                        iter
+                    ],
                 )
 
                 self.graph.add_node(step_node, **step_node.get_attrs())

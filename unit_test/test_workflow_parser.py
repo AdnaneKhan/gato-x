@@ -273,6 +273,13 @@ def test_parse_workflow_db():
     assert not workflow.isInvalid()
 
 
+def test_parse_workflow():
+    workflow = Workflow("unit_test", TEST_WF, "main.yml")
+
+    assert not workflow.isInvalid()
+    assert workflow.source_map["jobs"]["test"]["line"] == 9
+
+
 # def test_workflow_write():
 
 #     workflow = Workflow("unit_test", TEST_WF, "main.yml")

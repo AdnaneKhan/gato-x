@@ -141,7 +141,7 @@ class ActionNode(Node):
             job_id = usage_context.get("job_id", "unknown")
             step_index = usage_context.get("step_index", 0)
             super().__init__(
-                f"{repo_name}:{ref}:{action_path}:{workflow_name}:{job_id}:step-{step_index}:{action_name}"
+                f"{repo_name}:{ref}:{action_path}:{workflow_name}:{job_id}:step_{step_index}:{action_name}"
             )
         else:
             # Fallback to old naming for backwards compatibility
@@ -279,7 +279,7 @@ class ActionNode(Node):
         if self.usage_context:
             job_id = self.usage_context.get("job_id", "unknown")
             step_index = self.usage_context.get("step_index", 0)
-            return f"{action_name}\n({job_id}/step-{step_index})"
+            return f"{action_name}\n({job_id}/step_{step_index})"
 
         return action_name
 
