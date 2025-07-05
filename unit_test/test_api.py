@@ -1310,21 +1310,31 @@ async def test_retrieve_raw_action_private_repo():
     mock_raw_response = MagicMock()
     mock_raw_response.status_code = 404
 
-    # Mock response for the API request
-    mock_api_response = MagicMock()
-    mock_api_response.status_code = 200
-    mock_api_response.json.return_value = {
+    # Mock response for the API request - only action.yml succeeds
+    mock_api_response_success = MagicMock()
+    mock_api_response_success.status_code = 200
+    mock_api_response_success.json.return_value = {
         "content": base64.b64encode(
             b"name: 'Test Action'\ndescription: 'This is a test action'"
-        )
+        ).decode()
     }
+
+    mock_api_response_404 = MagicMock()
+    mock_api_response_404.status_code = 404
 
     # Set up the client mock to return our responses
     def mock_get_side_effect(*args, **kwargs):
-        if "raw.githubusercontent.com" in args[0]:
+        url = args[0]
+        if "raw.githubusercontent.com" in url:
+            # All raw requests fail (private repo)
             return mock_raw_response
-        else:
-            return mock_api_response
+        elif "/contents/" in url:
+            # API requests - action.yml succeeds, action.yaml fails
+            if "action.yml" in url:
+                return mock_api_response_success
+            else:
+                return mock_api_response_404
+        return mock_raw_response
 
     mock_client.get.side_effect = mock_get_side_effect
 
@@ -1335,16 +1345,28 @@ async def test_retrieve_raw_action_private_repo():
         "testorg/testrepo", "actions/test-action", "main"
     )
 
-    # Verify both file paths were tried with raw URL
+    # Verify that calls were made in the expected order
+    calls = mock_client.get.call_args_list
+
+    # Should try both raw URLs first (action.yml, then action.yaml)
+    assert len(calls) >= 3  # At least 2 raw calls + 1 API call
+
+    # First raw URL attempt
     assert (
-        mock_client.get.call_args_list[0][0][0]
-        == "https://raw.githubusercontent.com/testorg/testrepo/main/actions/test-action/action.yml"
+        "https://raw.githubusercontent.com/testorg/testrepo/main/actions/test-action/action.yml"
+        in calls[0][0][0]
     )
 
-    # Verify the API method was called after raw URL failed
+    # Second raw URL attempt
+    assert (
+        "https://raw.githubusercontent.com/testorg/testrepo/main/actions/test-action/action.yaml"
+        in calls[1][0][0]
+    )
+
+    # API call that succeeds
     assert (
         "/repos/testorg/testrepo/contents/actions/test-action/action.yml"
-        in mock_client.get.call_args_list[1][0][0]
+        in calls[2][0][0]
     )
 
     assert result == "name: 'Test Action'\ndescription: 'This is a test action'"

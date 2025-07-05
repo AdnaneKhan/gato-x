@@ -34,29 +34,31 @@ class DataIngestor:
     from GitHub using asyncio.
     """
 
-    __counter = 0
+    __completed_batches = 0
     __lock = asyncio.Lock()
     __rl_lock = asyncio.Lock()
 
     @classmethod
-    async def update_count(cls, batch: int):
+    async def update_count(cls):
         """
-        Update the class-level counter if the provided batch number is greater than the current counter.
-
-        Args:
-            batch (int): The batch number to compare with the current counter.
+        Increment the count of completed batches.
 
         Returns:
             None
         """
         async with cls.__lock:
-            if batch > cls.__counter:
-                cls.__counter = batch
+            cls.__completed_batches += 1
 
     @classmethod
     def check_status(cls):
-        """This method returns the value of the class variable __counter."""
-        return cls.__counter
+        """This method returns the count of completed batches."""
+        return cls.__completed_batches
+
+    @classmethod
+    async def reset_count(cls):
+        """Reset the completed batches counter to 0."""
+        async with cls.__lock:
+            cls.__completed_batches = 0
 
     @classmethod
     async def perform_parallel_repo_ingest(cls, api, org, repo_count):
@@ -146,7 +148,7 @@ class DataIngestor:
                 # Sometimes we don't get a 200, fall back in this case.
                 if result.status_code == 200:
                     json_res = result.json()["data"]
-                    await cls.update_count(batch)
+                    await cls.update_count()
                     if "nodes" in json_res:
                         return result.json()["data"]["nodes"]
                     else:

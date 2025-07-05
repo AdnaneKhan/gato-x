@@ -48,12 +48,11 @@ async def test_find_pwn_requests_with_nodes(mock_graph, mock_api, mock_cache_man
         mock_process.assert_called_once()
 
 
-async def test_process_single_path_with_memoization_logic(
+async def test_process_single_path_with_permission_check(
     mock_graph, mock_api, mock_cache_manager
 ):
     """
-    Test that permission blockers and approval gates are memoized correctly,
-    and results are only suppressed when blocker nodes are actually in the final path.
+    Test that permission checks cause approval gate to be set and path continues.
     """
     # Create mock nodes for the path
     workflow_node = MagicMock()
@@ -76,13 +75,6 @@ async def test_process_single_path_with_memoization_logic(
     checkout_step.hard_gate = False
     checkout_step.soft_gate = False
 
-    # Create mock blocker and approval gate nodes (not in main path)
-    blocker_node = MagicMock()
-    blocker_node.get_tags.return_value = ["permission_blocker"]
-
-    approval_gate_node = MagicMock()
-    approval_gate_node.get_tags.return_value = ["permission_check"]
-
     # Create sink node
     sink_node = MagicMock()
     sink_node.get_tags.return_value = ["sink"]
@@ -90,16 +82,13 @@ async def test_process_single_path_with_memoization_logic(
     # Set up the path
     path = [workflow_node, job_node, checkout_step]
 
-    # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    # Mock the graph DFS calls with ignore_depends parameter
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
-            # Return paths to blocker nodes that are NOT in the main path
-            return [[blocker_node]]
+            return []  # No permission blockers
         elif tag == "permission_check":
-            # Return paths to approval gate nodes that are NOT in the main path
-            return [[approval_gate_node]]
+            return [[MagicMock()]]  # Found permission check
         elif tag == "sink":
-            # Return sink path
             return [[sink_node]]
         return []
 
@@ -123,7 +112,7 @@ async def test_process_single_path_with_memoization_logic(
             path, mock_graph, mock_api, rule_cache, results
         )
 
-        # Verify that results were added (since blocker nodes are not in the main path)
+        # Verify that results were added with TOCTOU complexity due to approval gate
         mock_add_results.assert_called_once()
         call_args = mock_add_results.call_args
 
@@ -132,18 +121,16 @@ async def test_process_single_path_with_memoization_logic(
         assert call_args[0][1] == results
         assert call_args[0][2] == IssueType.PWN_REQUEST
 
-        # Verify complexity and confidence
-        assert (
-            call_args[1]["complexity"] == Complexity.ZERO_CLICK
-        )  # No approval gate in path
+        # Verify complexity is TOCTOU due to approval gate
+        assert call_args[1]["complexity"] == Complexity.TOCTOU
         assert call_args[1]["confidence"] == Confidence.HIGH  # Sink found
 
 
-async def test_process_single_path_blocker_in_path_suppresses_results(
+async def test_process_single_path_blocker_breaks_execution(
     mock_graph, mock_api, mock_cache_manager
 ):
     """
-    Test that results are suppressed when a blocker node is actually in the final path.
+    Test that finding a permission blocker breaks execution immediately.
     """
     # Create mock nodes
     workflow_node = MagicMock()
@@ -158,14 +145,6 @@ async def test_process_single_path_blocker_in_path_suppresses_results(
     job_node.outputs = None
     job_node.repo_name.return_value = "test/repo"
 
-    # This blocker node is part of the main path
-    blocker_step = MagicMock()
-    blocker_step.get_tags.return_value = ["StepNode", "permission_blocker"]
-    blocker_step.is_checkout = False
-    blocker_step.outputs = None
-    blocker_step.hard_gate = False
-    blocker_step.soft_gate = False
-
     checkout_step = MagicMock()
     checkout_step.get_tags.return_value = ["StepNode"]
     checkout_step.is_checkout = True
@@ -174,21 +153,18 @@ async def test_process_single_path_blocker_in_path_suppresses_results(
     checkout_step.hard_gate = False
     checkout_step.soft_gate = False
 
-    sink_node = MagicMock()
-    sink_node.get_tags.return_value = ["sink"]
+    # Set up the path
+    path = [workflow_node, job_node, checkout_step]
 
-    # Path includes the blocker node
-    path = [workflow_node, job_node, blocker_step, checkout_step]
-
-    # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    # Mock the graph DFS calls with ignore_depends parameter
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
-            # Return path that includes the blocker_step (which is in main path)
-            return [[blocker_step]]
+            # Return a blocker path - this should cause immediate break
+            return [[MagicMock()]]
         elif tag == "permission_check":
             return []
         elif tag == "sink":
-            return [[sink_node]]
+            return [[MagicMock()]]
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
@@ -211,7 +187,7 @@ async def test_process_single_path_blocker_in_path_suppresses_results(
             path, mock_graph, mock_api, rule_cache, results
         )
 
-        # Verify that results were NOT added (blocker node is in the path)
+        # Verify that results were NOT added (permission blocker caused break)
         mock_add_results.assert_not_called()
 
 
@@ -257,7 +233,7 @@ async def test_process_single_path_approval_gate_affects_complexity(
     path = [workflow_node, job_node, approval_step, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -325,7 +301,7 @@ async def test_process_single_path_job_node_with_deployments(
     path = [workflow_node, job_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -400,7 +376,7 @@ async def test_process_single_path_job_node_with_outputs_and_env_lookup(
     path = [workflow_node, job_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -460,7 +436,7 @@ async def test_process_single_path_step_node_with_outputs_and_env(
     path = [workflow_node, step_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -591,7 +567,7 @@ async def test_process_single_path_workflow_node_labeled_trigger(
     path = [workflow_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -645,7 +621,7 @@ async def test_process_single_path_workflow_run_trigger(
     path = [workflow_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -749,7 +725,7 @@ async def test_process_single_path_step_node_soft_gate(
     path = [workflow_node, soft_gate_step, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -806,7 +782,7 @@ async def test_process_single_path_action_node_initialization(
     path = [workflow_node, action_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -862,7 +838,7 @@ async def test_process_single_path_checkout_with_env_metadata(
     path = [workflow_node, checkout_step]
 
     # Mock the graph DFS calls
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -914,7 +890,7 @@ async def test_process_single_path_no_sinks_unknown_confidence(
     path = [workflow_node, checkout_step]
 
     # Mock the graph DFS calls - no sinks
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":
@@ -1031,7 +1007,7 @@ async def test_process_single_path_deployment_rule_substring_match(
 
     path = [workflow_node, job_node, checkout_step]
 
-    def mock_dfs_side_effect(node, tag, api):
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
         if tag == "permission_blocker":
             return []
         elif tag == "permission_check":

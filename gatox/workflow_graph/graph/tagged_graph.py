@@ -15,6 +15,23 @@ limitations under the License.
 """
 
 import networkx as nx
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
+
+class GraphTraversalTimeoutError(RuntimeError):
+    """Exception raised when graph traversal exceeds the maximum time limit."""
+
+    pass
+
+
+# Traversal monitoring constants
+MAX_TRAVERSAL_TIME_SECONDS = (
+    10  # Raise exception if traversal takes longer than 10 seconds
+)
+MAX_PATH_LENGTH = 100  # Warn if path length exceeds 100 nodes
 
 
 class TaggedGraph(nx.DiGraph):
@@ -37,7 +54,13 @@ class TaggedGraph(nx.DiGraph):
         self.builder = builder
         self.tags = {}  # Dictionary to map tags to sets of nodes
 
-    async def dfs_to_tag(self, start_node, target_tag, api):
+    async def dfs_to_tag(
+        self,
+        start_node,
+        target_tag,
+        api,
+        ignore_depends=False,
+    ):
         """
         Perform a Depth-First Search (DFS) from the start node to find all paths
         that lead to nodes with the specified target tag.
@@ -46,19 +69,64 @@ class TaggedGraph(nx.DiGraph):
             start_node: The node from which the DFS begins.
             target_tag (str): The tag to search for in reachable nodes.
             api: An instance of the API wrapper to interact with external services if needed.
+            ignore_depends (bool): If True, ignore edges with "depends" relation.
 
         Returns:
             list: A list of all paths, where each path is a list of nodes leading to the target tag.
+
+        Raises:
+            GraphTraversalTimeoutError: If traversal takes longer than MAX_TRAVERSAL_TIME_SECONDS (10) seconds.
         """
+        start_time = time.time()
         path = list()
         all_paths = list()
         visited = set()
 
-        await self._dfs(start_node, target_tag, path, all_paths, visited, api)
+        # Track traversal metrics
+        traversal_stats = {
+            "nodes_visited": 0,
+            "max_path_length": 0,
+            "start_node": start_node,
+            "target_tag": target_tag,
+            "start_time": start_time,
+        }
+
+        try:
+            await self._dfs(
+                start_node,
+                target_tag,
+                path,
+                all_paths,
+                visited,
+                api,
+                ignore_depends,
+                traversal_stats,
+            )
+
+            # Log traversal completion and check for issues
+            elapsed_time = time.time() - start_time
+            self._log_traversal_completion(
+                traversal_stats, elapsed_time, len(all_paths)
+            )
+        except GraphTraversalTimeoutError as e:
+            logger.error(f"DFS traversal timed out: {e}")
+            # Clear any partial state to ensure clean recovery
+            path.clear()
+            visited.clear()
 
         return all_paths
 
-    async def _dfs(self, current_node, target_tag, path, all_paths, visited, api):
+    async def _dfs(
+        self,
+        current_node,
+        target_tag,
+        path,
+        all_paths,
+        visited,
+        api,
+        ignore_depends=False,
+        traversal_stats=None,
+    ):
         """
         Helper method to recursively perform DFS.
 
@@ -69,6 +137,8 @@ class TaggedGraph(nx.DiGraph):
             all_paths (list): The list accumulating all valid paths found.
             visited (set): A set of nodes that have been visited in the current traversal.
             api: An instance of the API wrapper for external interactions.
+            ignore_depends (bool): If True, ignore edges with the "depends" relation.
+            traversal_stats (dict): Dictionary to track traversal metrics.
 
         Returns:
             None
@@ -76,21 +146,117 @@ class TaggedGraph(nx.DiGraph):
         if not all(req in path for req in current_node.get_needs()):
             return
 
+        # Update traversal statistics
+        if traversal_stats:
+            traversal_stats["nodes_visited"] += 1
+            current_time = time.time()
+
+            # Check for excessive traversal time - raise exception to prevent runaway traversal
+            if (
+                current_time - traversal_stats["start_time"]
+                > MAX_TRAVERSAL_TIME_SECONDS
+            ):
+                error_message = (
+                    f"Graph traversal exceeded maximum time limit of {MAX_TRAVERSAL_TIME_SECONDS} seconds. "
+                    f"Elapsed time: {current_time - traversal_stats['start_time']:.2f}s. "
+                    f"This may indicate cycles or very complex graph structure. "
+                    f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}, "
+                    f"nodes visited: {traversal_stats['nodes_visited']}, current path length: {len(path)}"
+                )
+                logger.error(f"TRAVERSAL TIMEOUT: {error_message}")
+                raise GraphTraversalTimeoutError(error_message)
+
         path.append(current_node)
         visited.add(current_node)
 
+        # Update max path length seen
+        if traversal_stats:
+            traversal_stats["max_path_length"] = max(
+                traversal_stats["max_path_length"], len(path)
+            )
+
+            # Check for excessive path length
+            if len(path) > MAX_PATH_LENGTH:
+                logger.warning(
+                    f"Graph traversal path length excessive: {len(path)} nodes. "
+                    f"This may indicate cycles or very deep graph structure. "
+                    f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}, "
+                    f"current node: {current_node}"
+                )
+
         if "uninitialized" in current_node.get_tags():
             await self.builder.initialize_node(current_node, api)
+
+        # Stop traversal if current node is non-existent (workflow file doesn't exist)
+        if "non_existent" in current_node.get_tags():
+            logger.debug(f"DFS stopping at non-existent node: {current_node}")
+            path.pop()
+            visited.remove(current_node)
+            return
 
         if target_tag in current_node.get_tags():
             all_paths.append(list(path))
         else:
             for neighbor in self.neighbors(current_node):
+                relation = self.get_edge_data(current_node, neighbor).get(
+                    "relation", None
+                )
+                if (
+                    relation
+                    and (relation == "depends" or relation == "extra_depends")
+                    and ignore_depends
+                ):
+                    continue
                 if neighbor not in visited:
-                    await self._dfs(neighbor, target_tag, path, all_paths, visited, api)
+                    await self._dfs(
+                        neighbor,
+                        target_tag,
+                        path,
+                        all_paths,
+                        visited,
+                        api,
+                        ignore_depends,
+                        traversal_stats,
+                    )
 
         path.pop()
         visited.remove(current_node)
+
+    def _log_traversal_completion(self, traversal_stats, elapsed_time, paths_found):
+        """
+        Log completion of graph traversal with performance metrics.
+
+        Args:
+            traversal_stats (dict): Dictionary containing traversal metrics
+            elapsed_time (float): Total time taken for traversal in seconds
+            paths_found (int): Number of paths found during traversal
+        """
+        # Log basic completion info
+        logger.debug(
+            f"Graph traversal completed: {elapsed_time:.3f}s, "
+            f"nodes visited: {traversal_stats['nodes_visited']}, "
+            f"max path length: {traversal_stats['max_path_length']}, "
+            f"paths found: {paths_found}"
+        )
+
+        # Log warnings for potentially problematic traversals
+        if elapsed_time > MAX_TRAVERSAL_TIME_SECONDS:
+            logger.warning(
+                f"Graph traversal completed but took excessive time: {elapsed_time:.2f}s. "
+                f"This may indicate graph structure issues. "
+                f"Start node: {traversal_stats['start_node']}, target: {traversal_stats['target_tag']}, "
+                f"nodes visited: {traversal_stats['nodes_visited']}, paths found: {paths_found}"
+            )
+
+        # Note: Time-based timeout check not needed here since
+        # an exception would have been raised during traversal if time limit was exceeded
+
+        if traversal_stats["max_path_length"] > MAX_PATH_LENGTH:
+            logger.warning(
+                f"Graph traversal encountered path length of {traversal_stats['max_path_length']} nodes, "
+                f"which exceeds the recommended threshold of {MAX_PATH_LENGTH}. "
+                f"This may indicate very deep dependencies."
+            )
 
     def add_tag(self, tag, nodes=None):
         """
@@ -181,7 +347,7 @@ class TaggedGraph(nx.DiGraph):
             None
         """
         super().remove_node(node)
-        for tag, nodes in self.tags.items():
+        for _, nodes in self.tags.items():
             nodes.discard(node)
 
     def get_nodes_by_tag(self, tag):

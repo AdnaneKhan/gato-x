@@ -196,6 +196,11 @@ class WorkflowGraphBuilder:
                 if callee_wf:
                     CacheManager().set_workflow(slug, f"{path}:{ref}", callee_wf)
                 else:
+                    # Workflow file doesn't exist - mark as non-existent to prevent re-attempts
+                    logger.warning(f"Workflow file not found: {slug}:{path}:{ref}")
+                    workflow.mark_as_non_existent()
+                    self.graph.remove_tags_from_node(workflow, ["uninitialized"])
+                    self.graph.add_tags_to_node(workflow, ["non_existent"])
                     return
 
             if callee_wf and not callee_wf.isInvalid():
@@ -204,6 +209,7 @@ class WorkflowGraphBuilder:
                 raise ValueError("Invalid callee workflow!")
 
             self.graph.remove_tags_from_node(workflow, ["uninitialized"])
+            self.graph.add_tags_to_node(workflow, ["initialized"])
 
             await self.build_workflow_jobs(callee_wf, workflow)
 
@@ -376,6 +382,12 @@ class WorkflowGraphBuilder:
 
     async def initialize_node(self, node, api):
         tags = node.get_tags()
+
+        # Skip nodes that are already marked as non-existent
+        if "non_existent" in tags:
+            logger.info(f"Skipping initialization of non-existent node: {node.name}")
+            return
+
         if "uninitialized" in tags:
             if "ActionNode" in tags:
                 try:
@@ -388,6 +400,6 @@ class WorkflowGraphBuilder:
                 try:
                     await self._initialize_callee_node(node, api)
                 except ValueError as e:
-                    logger.warning(f"Error initializing callee node: {e}")
+                    logger.warning(f"Error initializing callee node: {e}, {node.name}")
                     # Likely encountered a syntax error in the workflow
                     return

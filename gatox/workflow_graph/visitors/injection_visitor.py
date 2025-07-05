@@ -119,11 +119,15 @@ class InjectionVisitor:
                             approval_gate = True
                             continue
 
-                        paths = await graph.dfs_to_tag(node, "permission_check", api)
+                        paths = await graph.dfs_to_tag(
+                            node, "permission_check", api, ignore_depends=True
+                        )
                         if paths:
                             approval_gate = True
 
-                        paths = await graph.dfs_to_tag(node, "permission_blocker", api)
+                        paths = await graph.dfs_to_tag(
+                            node, "permission_blocker", api, ignore_depends=True
+                        )
                         if paths:
                             break
 

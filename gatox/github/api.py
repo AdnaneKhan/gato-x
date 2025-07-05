@@ -1809,12 +1809,15 @@ class Api:
                 file_path = file_path.replace("//", "/")
             paths = [f"{file_path}action.yml", f"{file_path}action.yaml"]
 
+        # Try the raw request first (no RL)
         for path in paths:
             res = await self.__get_raw_file(repo, path, ref)
 
             if res:
                 return res
 
+        # Then drop to auth if it fails (consumes RL)
+        for path in paths:
             resp = await self.call_get(
                 f"/repos/{repo}/contents/{path}", params={"ref": ref}
             )
