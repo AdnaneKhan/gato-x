@@ -175,9 +175,7 @@ class JobNode(Node):
             value: A dict representation of the Node instance.
         """
 
-        value = {
-            "node": str(self),
-        }
+        value = super().get_repr()
         if self.get_if():
             value["if"] = self.get_if()
             if self.if_evaluation is not None and type(self.if_evaluation) is bool:

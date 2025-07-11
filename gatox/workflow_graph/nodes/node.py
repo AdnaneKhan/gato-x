@@ -90,8 +90,11 @@ class Node:
         """
         value = {
             "node": str(self),
-            "line_number": self.line_number,
         }
+
+        if self.line_number:
+            value["line_number"] = self.line_number
+
         return value
 
     def get_tags(self) -> set[str]:

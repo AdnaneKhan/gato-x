@@ -238,9 +238,7 @@ class StepNode(Node):
         Returns:
             value: A dict representation of the Node instance.
         """
-        value = {
-            "node": str(self),
-        }
+        value = super().get_repr()
 
         if self.get_if():
             value["if"] = self.get_if()
