@@ -3,7 +3,9 @@ from gatox.workflow_graph.nodes.job import JobNode
 
 def test_job_node_init():
     """Test JobNode initialization"""
-    job = JobNode("test_job", "main", "org/repo", ".github/workflows/test.yml")
+    job = JobNode(
+        "test_job", "main", "org/repo", ".github/workflows/test.yml", line_number=42
+    )
 
     assert job.name == "org/repo:main:.github/workflows/test.yml:test_job"
     assert job.ref == "main"
@@ -15,6 +17,8 @@ def test_job_node_init():
     assert job.deployments == []
     assert job.self_hosted is False
     assert job.outputs == {}
+    assert "line_number" in job.get_repr()
+    assert job.get_repr()["line_number"] == 42
 
 
 def test_job_node_hash():

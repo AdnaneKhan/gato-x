@@ -12,6 +12,7 @@ def test_step_node_init_script():
         workflow_path=".github/workflows/test.yml",
         job_name="build",
         step_number=1,
+        line_number=42,
     )
 
     assert node.name == "test/repo:main:.github/workflows/test.yml:build:test step_1"
@@ -21,6 +22,8 @@ def test_step_node_init_script():
     assert not node.metadata
     assert not node.hard_gate
     assert not node.soft_gate
+    assert "line_number" in node.get_repr()
+    assert node.get_repr()["line_number"] == 42
 
 
 def test_step_node_init_action():
