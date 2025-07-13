@@ -52,6 +52,7 @@ class InjectionResult(AnalysisResult):
         return hash(
             (
                 str(self.__attack_path[0]),
+                str(self.__attack_path[-1]),
                 self.attack_complexity(),
                 self.confidence_score(),
             )

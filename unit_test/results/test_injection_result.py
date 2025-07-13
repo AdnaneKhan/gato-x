@@ -56,6 +56,56 @@ class TestInjectionResult(unittest.TestCase):
         )
         self.assertNotEqual(first_hash, different_result.get_first_and_last_hash())
 
+    def test_get_first_and_last_hash_distinguishes_paths(self):
+        """Test that paths with different first and last nodes get different hashes"""
+        # Create a different start node
+        different_start_node = Mock()
+        different_start_node.repo_name.return_value = "test/repo"
+        different_start_node.get_workflow_name.return_value = "different.yml"
+        different_start_node.get_triggers.return_value = ["issue_comment"]
+        
+        # Create a different end node
+        different_end_node = Mock()
+        different_end_node.contexts = ["github.event.discussion.body"]
+        
+        # Create paths with different first and last nodes
+        path_different_first = [different_start_node, self.end_node]
+        path_different_last = [self.start_node, different_end_node]
+        path_different_both = [different_start_node, different_end_node]
+        
+        # Create InjectionResult instances
+        result_different_first = InjectionResult(
+            path=path_different_first,
+            confidence_score=Confidence.HIGH,
+            attack_complexity_score=Complexity.ZERO_CLICK,
+        )
+        
+        result_different_last = InjectionResult(
+            path=path_different_last,
+            confidence_score=Confidence.HIGH,
+            attack_complexity_score=Complexity.ZERO_CLICK,
+        )
+        
+        result_different_both = InjectionResult(
+            path=path_different_both,
+            confidence_score=Confidence.HIGH,
+            attack_complexity_score=Complexity.ZERO_CLICK,
+        )
+        
+        # Get hashes
+        original_hash = self.result.get_first_and_last_hash()
+        different_first_hash = result_different_first.get_first_and_last_hash()
+        different_last_hash = result_different_last.get_first_and_last_hash()
+        different_both_hash = result_different_both.get_first_and_last_hash()
+        
+        # All hashes should be different
+        self.assertNotEqual(original_hash, different_first_hash)
+        self.assertNotEqual(original_hash, different_last_hash)
+        self.assertNotEqual(original_hash, different_both_hash)
+        self.assertNotEqual(different_first_hash, different_last_hash)
+        self.assertNotEqual(different_first_hash, different_both_hash)
+        self.assertNotEqual(different_last_hash, different_both_hash)
+
     def test_filter_triggers(self):
         """Test trigger filtering logic"""
         triggers = ["push", "pull_request_target", "workflow_run", "schedule"]
