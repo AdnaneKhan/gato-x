@@ -238,6 +238,8 @@ class VisitorUtils:
     async def add_repo_results(data: dict, api: Api):
         """Add results to the repository data."""
         seen = set()
+        file_cache = {}  # Cache to track files already checked within the last day
+
         for _, flows in data.items():
             for flow in flows:
                 seen_before = flow.get_first_and_last_hash()
@@ -256,15 +258,34 @@ class VisitorUtils:
                     and is_within_last_day(repo.repo_data["pushed_at"])
                 ):
                     value = flow.to_machine()
-                    commit_date, author, sha = await api.get_file_last_updated(
-                        flow.repo_name(),
-                        ".github/workflows/" + value.get("initial_workflow"),
-                    )
+                    file_path = ".github/workflows/" + value.get("initial_workflow")
+                    cache_key = f"{flow.repo_name()}:{file_path}"
 
-                    merge_date = await api.get_commit_merge_date(flow.repo_name(), sha)
-                    if merge_date:
-                        # If there is a PR merged, get the most recent.
-                        commit_date = return_recent(commit_date, merge_date)
+                    # Check if we've already processed this file
+                    if cache_key in file_cache:
+                        commit_date = file_cache[cache_key]["commit_date"]
+                        logger.debug(f"Using cached result for {cache_key}")
+                    else:
+                        # Make API call and cache the result
+                        commit_date, author, sha = await api.get_file_last_updated(
+                            flow.repo_name(),
+                            file_path,
+                        )
+
+                        merge_date = await api.get_commit_merge_date(
+                            flow.repo_name(), sha
+                        )
+                        if merge_date:
+                            # If there is a PR merged, get the most recent.
+                            commit_date = return_recent(commit_date, merge_date)
+
+                        # Cache the result for future use
+                        file_cache[cache_key] = {
+                            "commit_date": commit_date,
+                            "author": author,
+                            "sha": sha,
+                        }
+                        logger.debug(f"Cached result for {cache_key}")
 
                     if is_within_last_day(commit_date):
                         asyncio.create_task(send_slack_webhook(value))
