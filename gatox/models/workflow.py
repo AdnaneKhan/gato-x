@@ -46,7 +46,6 @@ class Workflow:
 
             loader = yaml.CSafeLoader(workflow_contents.replace("\t", "  "))
             node = loader.get_single_node()
-            self.source_map = build_workflow_source_map(node)
             self.parsed_yml = loader.construct_document(node)
 
             if (
@@ -58,6 +57,8 @@ class Workflow:
             if not self.parsed_yml or type(self.parsed_yml) is not dict:
                 self.invalid = True
 
+            if not self.invalid:
+                self.source_map = build_workflow_source_map(node)
             self.workflow_contents = workflow_contents
         except (
             yaml.parser.ParserError,
