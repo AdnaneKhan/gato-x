@@ -251,3 +251,142 @@ async def test_add_repo_results_extra(monkeypatch):
         "repo": [DummyResult("repo"), DummyResult("repo2")]
     }  # repo2 will be skipped as duplicate hash
     await VisitorUtils.add_repo_results(data, DummyApi())
+
+
+@pytest.mark.asyncio
+async def test_add_repo_results_file_caching(monkeypatch):
+    """Test that file caching prevents duplicate API calls for the same file"""
+
+    # Create a mock API that counts calls
+    api_call_count = {"get_file_last_updated": 0, "get_commit_merge_date": 0}
+
+    class TrackingApi:
+        async def get_file_last_updated(self, repo, file_path):
+            api_call_count["get_file_last_updated"] += 1
+            return ("2025-05-16T12:00:00Z", "author", "sha123")
+
+        async def get_commit_merge_date(self, repo, sha):
+            api_call_count["get_commit_merge_date"] += 1
+            return "2025-05-16T13:00:00Z"
+
+    # Create results that reference the same workflow file
+    class SameFileResult:
+        def __init__(self, repo_name, hash_value):
+            self._repo_name = repo_name
+            self._hash = hash_value
+
+        def repo_name(self):
+            return self._repo_name
+
+        def get_first_and_last_hash(self):
+            return self._hash
+
+        def to_machine(self):
+            return {"initial_workflow": "same-workflow.yml"}
+
+    # Mock necessary dependencies
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.CacheManager",
+        lambda: DummyCacheManager(),
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.ConfigurationManager",
+        lambda: types.SimpleNamespace(
+            NOTIFICATIONS={"SLACK_WEBHOOKS": ["webhook1"], "DISCORD_WEBHOOKS": []}
+        ),
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.is_within_last_day",
+        lambda x: True,  # Always return True for testing
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.return_recent",
+        lambda x, y: y,  # Return the merge date
+    )
+
+    # Create test data with multiple results pointing to the same file
+    data = {
+        "repo1": [
+            SameFileResult("owner/repo1", hash("result1")),
+            SameFileResult("owner/repo1", hash("result2")),  # Different hash, same file
+        ]
+    }
+
+    # Run the function
+    await VisitorUtils.add_repo_results(data, TrackingApi())
+
+    # Verify that API was only called once for the file
+    assert (
+        api_call_count["get_file_last_updated"] == 1
+    ), "API should only be called once per file"
+    assert (
+        api_call_count["get_commit_merge_date"] == 1
+    ), "Merge date API should only be called once per file"
+
+
+@pytest.mark.asyncio
+async def test_add_repo_results_different_files_cache(monkeypatch):
+    """Test that different files result in separate API calls"""
+
+    # Create a mock API that counts calls
+    api_call_count = {"get_file_last_updated": 0}
+
+    class TrackingApi:
+        async def get_file_last_updated(self, repo, file_path):
+            api_call_count["get_file_last_updated"] += 1
+            return ("2025-05-16T12:00:00Z", "author", "sha123")
+
+        async def get_commit_merge_date(self, repo, sha):
+            return "2025-05-16T13:00:00Z"
+
+    # Create results that reference different workflow files
+    class DifferentFileResult:
+        def __init__(self, repo_name, workflow_file, hash_value):
+            self._repo_name = repo_name
+            self._workflow_file = workflow_file
+            self._hash = hash_value
+
+        def repo_name(self):
+            return self._repo_name
+
+        def get_first_and_last_hash(self):
+            return self._hash
+
+        def to_machine(self):
+            return {"initial_workflow": self._workflow_file}
+
+    # Mock necessary dependencies
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.CacheManager",
+        lambda: DummyCacheManager(),
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.ConfigurationManager",
+        lambda: types.SimpleNamespace(
+            NOTIFICATIONS={"SLACK_WEBHOOKS": ["webhook1"], "DISCORD_WEBHOOKS": []}
+        ),
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.is_within_last_day",
+        lambda x: True,
+    )
+    monkeypatch.setattr(
+        "gatox.workflow_graph.visitors.visitor_utils.return_recent",
+        lambda x, y: y,
+    )
+
+    # Create test data with results pointing to different files
+    data = {
+        "repo1": [
+            DifferentFileResult("owner/repo1", "workflow1.yml", hash("result1")),
+            DifferentFileResult("owner/repo1", "workflow2.yml", hash("result2")),
+        ]
+    }
+
+    # Run the function
+    await VisitorUtils.add_repo_results(data, TrackingApi())
+
+    # Verify that API was called for each different file
+    assert (
+        api_call_count["get_file_last_updated"] == 2
+    ), "API should be called once per unique file"

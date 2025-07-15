@@ -280,6 +280,65 @@ def test_parse_workflow():
     assert workflow.source_map["jobs"]["test"]["line"] == 9
 
 
+def test_invalid_workflow_no_source_map():
+    """Test that build_workflow_source_map is not called for invalid workflows"""
+    # Test with invalid YAML syntax
+    invalid_yaml = """
+name: 'Invalid Workflow'
+on:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Test
+      run: echo "test"
+      invalid_key: [unclosed_list
+"""
+
+    workflow = Workflow("unit_test", invalid_yaml, "invalid.yml")
+
+    # Workflow should be marked as invalid
+    assert workflow.isInvalid()
+
+    # source_map should not exist when workflow is invalid
+    assert not hasattr(workflow, "source_map")
+
+
+def test_dependabot_workflow_no_source_map():
+    """Test that dependabot workflows are marked invalid and don't get source maps"""
+    dependabot_workflow = """
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+"""
+
+    workflow = Workflow("unit_test", dependabot_workflow, "dependabot.yml")
+
+    # Dependabot workflows should be marked as invalid
+    assert workflow.isInvalid()
+
+    # source_map should not exist when workflow is invalid
+    assert not hasattr(workflow, "source_map")
+
+
+def test_non_dict_parsed_yml_no_source_map():
+    """Test that workflows with non-dict parsed YAML don't get source maps"""
+    # YAML that parses to a string instead of dict
+    non_dict_yaml = "just a string"
+
+    workflow = Workflow("unit_test", non_dict_yaml, "string.yml")
+
+    # Workflow should be marked as invalid
+    assert workflow.isInvalid()
+
+    # source_map should not exist when workflow is invalid
+    assert not hasattr(workflow, "source_map")
+
+
 # def test_workflow_write():
 
 #     workflow = Workflow("unit_test", TEST_WF, "main.yml")
