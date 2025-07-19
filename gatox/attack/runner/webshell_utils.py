@@ -53,6 +53,7 @@ class WebShellUtils:
             Result of condition_func or None if timeout
         """
         if success_condition is None:
+
             def success_condition(x):
                 return bool(x)
 
