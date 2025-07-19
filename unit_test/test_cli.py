@@ -527,3 +527,149 @@ async def test_attack_invalid_c2_repo_format(capfd):
         )
     out, err = capfd.readouterr()
     assert "argument --c2-repo: The argument is not in the valid format!" in err
+
+
+async def test_ror_attack_missing_target_os(capfd):
+    """Test RoR attack fails when target-os is missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "-t",
+                "testorg/testrepo",
+                "-pr",
+                "--target-arch",
+                "x64",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS and architecture for runner-on-runner attacks!"
+        in err
+    )
+
+
+async def test_ror_attack_missing_target_arch(capfd):
+    """Test RoR attack fails when target-arch is missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "-t",
+                "testorg/testrepo",
+                "-pr",
+                "--target-os",
+                "linux",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS and architecture for runner-on-runner attacks!"
+        in err
+    )
+
+
+async def test_ror_attack_missing_both_target_params(capfd):
+    """Test RoR attack fails when both target-os and target-arch are missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "-t",
+                "testorg/testrepo",
+                "-pr",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS and architecture for runner-on-runner attacks!"
+        in err
+    )
+
+
+async def test_payload_only_missing_target_os(capfd):
+    """Test payload-only fails when target-os is missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "--payload-only",
+                "--target-arch",
+                "x64",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        in err
+    )
+
+
+async def test_payload_only_missing_target_arch(capfd):
+    """Test payload-only fails when target-arch is missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "--payload-only",
+                "--target-os",
+                "linux",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        in err
+    )
+
+
+async def test_payload_only_missing_both_target_params(capfd):
+    """Test payload-only fails when both target-os and target-arch are missing."""
+    with pytest.raises(SystemExit):
+        await cli.cli(
+            [
+                "attack",
+                "--payload-only",
+            ]
+        )
+    _, err = capfd.readouterr()
+    assert (
+        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        in err
+    )
+
+
+@mock.patch("gatox.attack.runner.webshell.WebShell.runner_on_runner")
+async def test_ror_attack_with_valid_target_params(mock_attack):
+    """Test RoR attack succeeds when both target-os and target-arch are provided."""
+    await cli.cli(
+        [
+            "attack",
+            "-t",
+            "testorg/testrepo",
+            "-pr",
+            "--target-os",
+            "linux",
+            "--target-arch",
+            "x64",
+        ]
+    )
+    mock_attack.assert_called_once()
+
+
+@mock.patch("gatox.attack.runner.webshell.WebShell.payload_only")
+async def test_payload_only_with_valid_target_params(mock_payload):
+    """Test payload-only succeeds when both target-os and target-arch are provided."""
+    await cli.cli(
+        [
+            "attack",
+            "--payload-only",
+            "--target-os",
+            "linux",
+            "--target-arch",
+            "x64",
+            "--c2-repo",
+            "testorg/c2repo",
+        ]
+    )
+    mock_payload.assert_called_once()

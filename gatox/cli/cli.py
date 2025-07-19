@@ -197,12 +197,12 @@ async def attack(args, parser):
         args.command = args.command if args.command else "whoami"
         args.name = args.name if args.name else "test"
 
-    if args.runner_on_runner and not (args.target_os or args.target_arch):
+    if args.runner_on_runner and not (args.target_os and args.target_arch):
         parser.error(
             f"{Fore.RED}[!] You must specify a target OS and architecture for runner-on-runner attacks!"
         )
 
-    if args.payload_only and not (args.target_os or args.target_arch):
+    if args.payload_only and not (args.target_os and args.target_arch):
         parser.error(
             f"{Fore.RED}[!] You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
         )
