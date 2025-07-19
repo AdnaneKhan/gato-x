@@ -22,9 +22,16 @@ def mock_api():
     return api
 
 
-async def test_ingest_new_api(mock_repo, mock_api):
+@patch("gatox.enumerate.deep_dive.ingest_non_default.Git")
+@patch("gatox.enumerate.deep_dive.ingest_non_default.WorkflowGraphBuilder")
+async def test_ingest_new_api(mock_builder, mock_git, mock_repo, mock_api):
     IngestNonDefault._tasks = []
     IngestNonDefault._api = None
+
+    # Mock the Git operations to prevent hanging
+    mock_git_instance = AsyncMock()
+    mock_git_instance.get_non_default.return_value = []
+    mock_git.return_value = mock_git_instance
 
     task = await IngestNonDefault.ingest(mock_repo, mock_api)
 
@@ -33,16 +40,29 @@ async def test_ingest_new_api(mock_repo, mock_api):
     assert len(IngestNonDefault._tasks) == 1
     assert task in IngestNonDefault._tasks
 
+    # Ensure proper cleanup of tasks
+    await IngestNonDefault.pool_empty()
 
-async def test_ingest_existing_api(mock_repo, mock_api):
+
+@patch("gatox.enumerate.deep_dive.ingest_non_default.Git")
+@patch("gatox.enumerate.deep_dive.ingest_non_default.WorkflowGraphBuilder")
+async def test_ingest_existing_api(mock_builder, mock_git, mock_repo, mock_api):
     IngestNonDefault._tasks = []
     IngestNonDefault._api = mock_api
+
+    # Mock the Git operations to prevent hanging
+    mock_git_instance = AsyncMock()
+    mock_git_instance.get_non_default.return_value = []
+    mock_git.return_value = mock_git_instance
 
     task = await IngestNonDefault.ingest(mock_repo, mock_api)
 
     assert isinstance(task, asyncio.Task)
     assert len(IngestNonDefault._tasks) == 1
     assert task in IngestNonDefault._tasks
+
+    # Ensure proper cleanup of tasks
+    await IngestNonDefault.pool_empty()
 
 
 @patch("gatox.enumerate.deep_dive.ingest_non_default.Git")
