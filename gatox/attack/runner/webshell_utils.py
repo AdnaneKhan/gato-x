@@ -53,7 +53,8 @@ class WebShellUtils:
             Result of condition_func or None if timeout
         """
         if success_condition is None:
-            success_condition = lambda x: bool(x)
+            def success_condition(x):
+                return bool(x)
 
         for _ in range(timeout):
             result = await condition_func()
