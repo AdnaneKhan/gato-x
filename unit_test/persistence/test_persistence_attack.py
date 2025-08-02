@@ -18,7 +18,7 @@ async def test_invite_collaborators_success(mock_output, persistence_attacker):
     persistence_attacker.api.invite_collaborator = AsyncMock(return_value=True)
 
     result = await persistence_attacker.invite_collaborators(
-        "test/repo", ["user1", "user2"]
+        "test/repo", ["user1", "user2"], "push"
     )
 
     assert result is True
@@ -35,7 +35,7 @@ async def test_invite_collaborators_partial_success(mock_output, persistence_att
     persistence_attacker.api.invite_collaborator = AsyncMock(side_effect=[True, False])
 
     result = await persistence_attacker.invite_collaborators(
-        "test/repo", ["user1", "user2"]
+        "test/repo", ["user1", "user2"], "push"
     )
 
     assert result is True  # Should still return True if at least one succeeds
@@ -47,7 +47,7 @@ async def test_invite_collaborators_setup_failure(mock_output, persistence_attac
     """Test failure due to setup issues."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=False)
 
-    result = await persistence_attacker.invite_collaborators("test/repo", ["user1"])
+    result = await persistence_attacker.invite_collaborators("test/repo", ["user1"], "push")
 
     assert result is False
 

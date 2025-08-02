@@ -28,12 +28,13 @@ logger = logging.getLogger(__name__)
 class PersistenceAttack(Attacker):
     """Class containing methods for deploying persistence in GitHub repositories."""
 
-    async def invite_collaborators(self, target_repo: str, collaborators: list):
+    async def invite_collaborators(self, target_repo: str, collaborators: list, permission: str = "admin"):
         """Invite outside collaborators to the repository.
 
         Args:
             target_repo (str): Repository to target (org/repo format)
             collaborators (list): List of GitHub usernames to invite
+            permission (str): Permission level for the invitations
 
         Returns:
             bool: True if successful, False otherwise
@@ -47,7 +48,7 @@ class PersistenceAttack(Attacker):
         for collaborator in collaborators:
             Output.info(f"Inviting collaborator: {collaborator}")
 
-            result = await self.api.invite_collaborator(target_repo, collaborator)
+            result = await self.api.invite_collaborator(target_repo, collaborator, permission)
             if result:
                 Output.result(f"Successfully invited {collaborator} to {target_repo}")
                 success_count += 1

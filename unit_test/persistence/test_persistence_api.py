@@ -12,22 +12,22 @@ def api():
 @pytest.mark.asyncio
 async def test_invite_collaborator_success(api):
     """Test successful collaborator invitation API call."""
-    api.call_post = AsyncMock()
-    api.call_post.return_value.status_code = 201
+    api.call_put = AsyncMock()
+    api.call_put.return_value.status_code = 201
 
     result = await api.invite_collaborator("test/repo", "username")
 
     assert result is True
-    api.call_post.assert_called_once_with(
-        "/repos/test/repo/collaborators/username", params={"permission": "push"}
+    api.call_put.assert_called_once_with(
+        "/repos/test/repo/collaborators/username", params={"permission": "admin"}
     )
 
 
 @pytest.mark.asyncio
 async def test_invite_collaborator_already_invited(api):
     """Test collaborator invitation when user is already invited."""
-    api.call_post = AsyncMock()
-    api.call_post.return_value.status_code = 204
+    api.call_put = AsyncMock()
+    api.call_put.return_value.status_code = 204
 
     result = await api.invite_collaborator("test/repo", "username")
 
@@ -37,8 +37,8 @@ async def test_invite_collaborator_already_invited(api):
 @pytest.mark.asyncio
 async def test_invite_collaborator_failure(api):
     """Test failed collaborator invitation."""
-    api.call_post = AsyncMock()
-    api.call_post.return_value.status_code = 403
+    api.call_put = AsyncMock()
+    api.call_put.return_value.status_code = 403
 
     result = await api.invite_collaborator("test/repo", "username")
 

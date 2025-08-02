@@ -83,3 +83,12 @@ def configure_parser_persistence(parser):
         metavar="PATH",
         type=StringType(256),
     )
+
+    parser.add_argument(
+        "--permission",
+        help="Permission level for collaborator invitations (pull, triage, push, maintain, admin).\n"
+        "Defaults to 'admin'.",
+        choices=["pull", "triage", "push", "maintain", "admin"],
+        default="admin",
+        metavar="LEVEL",
+    )

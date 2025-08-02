@@ -517,7 +517,7 @@ async def persistence(args, parser):
     try:
         if args.collaborator:
             await gh_persistence_runner.invite_collaborators(
-                args.target, args.collaborator
+                args.target, args.collaborator, args.permission
             )
         elif args.deploy_key:
             await gh_persistence_runner.create_deploy_key(

