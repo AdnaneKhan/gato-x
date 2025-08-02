@@ -1951,7 +1951,7 @@ class Api:
         branch: str,
         filename: str,
         content: str,
-        commit_message: str = "Add workflow",
+        commit_message: str = "[skip ci] Workflow",
     ):
         """Create a workflow file on a specific branch.
 
@@ -1990,17 +1990,16 @@ class Api:
         await self.call_post(f"/repos/{repo}/git/refs", params=create_branch_params)
         # Don't check status code here - branch might already exist
 
+        await asyncio.sleep(1)
         # Create the workflow file
         workflow_path = f".github/workflows/{filename}"
-        encoded_content = base64.b64encode(content.encode()).decode()
 
-        params = {
-            "message": commit_message,
-            "content": encoded_content,
-            "branch": branch,
-        }
-
-        response = await self.call_post(
-            f"/repos/{repo}/contents/{workflow_path}", params=params
+        commit_sha = await self.commit_file(
+            repo_name=repo,
+            branch_name=branch,
+            file_path=workflow_path,
+            file_content=content.encode(),
+            message=commit_message,
         )
-        return response.status_code == 201
+
+        return commit_sha

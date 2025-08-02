@@ -156,7 +156,7 @@ class PersistenceAttack(Attacker):
             branch_name,
             "pwn-request.yml",
             workflow_content,
-            commit_message="Add test workflow",
+            commit_message="[skip ci] Add test workflow",
         )
 
         if result:

