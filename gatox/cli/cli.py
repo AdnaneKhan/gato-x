@@ -498,6 +498,11 @@ async def app(args, parser):
 
 async def persistence(args, parser):
     """Handler for the persistence command."""
+    # Validate deploy key requirements
+    if args.deploy_key and not args.key_path:
+        Output.error("--key-path is required when using --deploy-key")
+        return
+
     parser = parser.choices["persistence"]
 
     gh_persistence_runner = PersistenceAttack(
@@ -515,7 +520,9 @@ async def persistence(args, parser):
                 args.target, args.collaborator
             )
         elif args.deploy_key:
-            await gh_persistence_runner.create_deploy_key(args.target, args.key_title)
+            await gh_persistence_runner.create_deploy_key(
+                args.target, args.key_title, args.key_path
+            )
         elif args.pwn_request:
             await gh_persistence_runner.create_pwn_request_workflow(
                 args.target, args.branch_name

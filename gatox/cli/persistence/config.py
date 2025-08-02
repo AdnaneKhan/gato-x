@@ -75,3 +75,11 @@ def configure_parser_persistence(parser):
         metavar="TITLE",
         type=StringType(100),
     )
+
+    parser.add_argument(
+        "--key-path",
+        "-p",
+        help="Path to save the private key file (required for --deploy-key).",
+        metavar="PATH",
+        type=StringType(256),
+    )

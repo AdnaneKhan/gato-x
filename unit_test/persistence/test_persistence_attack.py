@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, mock_open
 from gatox.attack.persistence.persistence_attack import PersistenceAttack
 
 
@@ -54,12 +54,15 @@ async def test_invite_collaborators_setup_failure(mock_output, persistence_attac
 
 @pytest.mark.asyncio
 @patch("gatox.attack.persistence.persistence_attack.Output")
+@patch("builtins.open", mock_open())
 async def test_create_deploy_key_success(mock_output, persistence_attacker):
     """Test successful deploy key creation."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=True)
     persistence_attacker.api.create_deploy_key = AsyncMock(return_value=True)
 
-    result = await persistence_attacker.create_deploy_key("test/repo")
+    result = await persistence_attacker.create_deploy_key(
+        "test/repo", "Test Key", "/tmp/test_key.pem"
+    )
 
     assert result is True
     persistence_attacker.api.create_deploy_key.assert_called_once()
@@ -72,9 +75,23 @@ async def test_create_deploy_key_failure(mock_output, persistence_attacker):
     persistence_attacker.setup_user_info = AsyncMock(return_value=True)
     persistence_attacker.api.create_deploy_key = AsyncMock(return_value=False)
 
-    result = await persistence_attacker.create_deploy_key("test/repo")
+    result = await persistence_attacker.create_deploy_key(
+        "test/repo", "Test Key", "/tmp/test_key.pem"
+    )
 
     assert result is False
+
+
+@pytest.mark.asyncio
+@patch("gatox.attack.persistence.persistence_attack.Output")
+async def test_create_deploy_key_no_path(mock_output, persistence_attacker):
+    """Test deploy key creation failure when no key path is provided."""
+    persistence_attacker.setup_user_info = AsyncMock(return_value=True)
+
+    result = await persistence_attacker.create_deploy_key("test/repo", "Test Key", None)
+
+    assert result is False
+    mock_output.error.assert_called_with("Key path is required for deploy key creation")
 
 
 @pytest.mark.asyncio

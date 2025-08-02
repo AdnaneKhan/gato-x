@@ -63,12 +63,15 @@ class PersistenceAttack(Attacker):
             Output.error("Failed to invite any collaborators")
             return False
 
-    async def create_deploy_key(self, target_repo: str, key_title: str = None):
+    async def create_deploy_key(
+        self, target_repo: str, key_title: str = None, key_path: str = None
+    ):
         """Create a read/write deploy key for the repository.
 
         Args:
             target_repo (str): Repository to target (org/repo format)
             key_title (str): Title for the deploy key
+            key_path (str): Path to save the private key file
 
         Returns:
             bool: True if successful, False otherwise
@@ -78,6 +81,10 @@ class PersistenceAttack(Attacker):
 
         if not key_title:
             key_title = "Gato-X Deploy Key"
+
+        if not key_path:
+            Output.error("Key path is required for deploy key creation")
+            return False
 
         Output.info(f"Creating deploy key for {target_repo}")
 
@@ -105,10 +112,16 @@ class PersistenceAttack(Attacker):
             target_repo, key_title, ssh_public_key, read_only=False
         )
         if result:
-            Output.result(f"Successfully created deploy key for {target_repo}")
-            Output.info("Private key (save this securely):")
-            print(private_key_pem)
-            return True
+            try:
+                # Save private key to specified file
+                with open(key_path, "w") as f:
+                    f.write(private_key_pem)
+                Output.result(f"Successfully created deploy key for {target_repo}")
+                Output.info(f"Private key saved to: {key_path}")
+                return True
+            except Exception as e:
+                Output.error(f"Failed to save private key to {key_path}: {str(e)}")
+                return False
         else:
             Output.error(f"Failed to create deploy key for {target_repo}")
             return False
