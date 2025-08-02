@@ -1,5 +1,4 @@
 from gatox.util.arg_utils import StringType
-from gatox.cli.output import Output
 
 
 def configure_parser_persistence(parser):
