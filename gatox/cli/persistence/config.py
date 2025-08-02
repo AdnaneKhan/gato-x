@@ -75,5 +75,3 @@ def configure_parser_persistence(parser):
         metavar="TITLE",
         type=StringType(100),
     )
-
-
