@@ -1907,21 +1907,21 @@ class Api:
         return None
 
     async def invite_collaborator(
-        self, repo: str, username: str, permission: str = "push"
+        self, repo: str, username: str, permission: str = "admin"
     ):
         """Invite a collaborator to a repository.
 
         Args:
             repo (str): Repository in org/repo format
             username (str): GitHub username to invite
-            permission (str): Permission level (pull, push, admin, maintain, triage)
+            permission (str): Permission level (pull, triage, push, maintain, admin)
 
         Returns:
             bool: True if successful, False otherwise
         """
         params = {"permission": permission}
 
-        response = await self.call_post(
+        response = await self.call_put(
             f"/repos/{repo}/collaborators/{username}", params=params
         )
         return response.status_code in [201, 204]
