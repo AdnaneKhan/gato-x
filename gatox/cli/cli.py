@@ -514,11 +514,15 @@ async def persistence(args, parser):
 
     try:
         if args.collaborator:
-            await gh_persistence_runner.invite_collaborators(args.target, args.collaborator)
+            await gh_persistence_runner.invite_collaborators(
+                args.target, args.collaborator
+            )
         elif args.deploy_key:
             await gh_persistence_runner.create_deploy_key(args.target, args.key_title)
         elif args.pwn_request:
-            await gh_persistence_runner.create_pwn_request_workflow(args.target, args.branch_name)
+            await gh_persistence_runner.create_pwn_request_workflow(
+                args.target, args.branch_name
+            )
     except Exception as e:
         Output.error(f"Persistence attack failed: {str(e)}")
 

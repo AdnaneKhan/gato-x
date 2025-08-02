@@ -30,11 +30,9 @@ async def test_invite_collaborators_success(mock_output, persistence_attacker):
 async def test_invite_collaborators_partial_success(mock_output, persistence_attacker):
     """Test partial success in collaborator invitation."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=True)
-    
+
     # Mock first invite success, second failure
-    persistence_attacker.api.invite_collaborator = AsyncMock(
-        side_effect=[True, False]
-    )
+    persistence_attacker.api.invite_collaborator = AsyncMock(side_effect=[True, False])
 
     result = await persistence_attacker.invite_collaborators(
         "test/repo", ["user1", "user2"]
@@ -49,9 +47,7 @@ async def test_invite_collaborators_setup_failure(mock_output, persistence_attac
     """Test failure due to setup issues."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=False)
 
-    result = await persistence_attacker.invite_collaborators(
-        "test/repo", ["user1"]
-    )
+    result = await persistence_attacker.invite_collaborators("test/repo", ["user1"])
 
     assert result is False
 
@@ -96,7 +92,9 @@ async def test_create_pwn_request_workflow_success(mock_output, persistence_atta
 
 @pytest.mark.asyncio
 @patch("gatox.attack.persistence.persistence_attack.Output")
-async def test_create_pwn_request_workflow_custom_branch(mock_output, persistence_attacker):
+async def test_create_pwn_request_workflow_custom_branch(
+    mock_output, persistence_attacker
+):
     """Test pwn request workflow creation with custom branch."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=True)
     persistence_attacker.api.create_workflow_on_branch = AsyncMock(return_value=True)

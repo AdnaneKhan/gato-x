@@ -37,7 +37,7 @@ def configure_parser_persistence(parser):
 
     # Persistence technique options - these are mutually exclusive
     technique_group = parser.add_mutually_exclusive_group(required=True)
-    
+
     technique_group.add_argument(
         "--collaborator",
         help="Invite outside collaborators to the repository.\n"

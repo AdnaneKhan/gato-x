@@ -19,8 +19,7 @@ async def test_invite_collaborator_success(api):
 
     assert result is True
     api.call_post.assert_called_once_with(
-        "/repos/test/repo/collaborators/username",
-        params={"permission": "push"}
+        "/repos/test/repo/collaborators/username", params={"permission": "push"}
     )
 
 
@@ -59,11 +58,7 @@ async def test_create_deploy_key_success(api):
     assert result is True
     api.call_post.assert_called_once_with(
         "/repos/test/repo/keys",
-        params={
-            "title": "Test Key",
-            "key": "ssh-rsa AAAA...",
-            "read_only": False
-        }
+        params={"title": "Test Key", "key": "ssh-rsa AAAA...", "read_only": False},
     )
 
 
@@ -73,9 +68,7 @@ async def test_create_deploy_key_failure(api):
     api.call_post = AsyncMock()
     api.call_post.return_value.status_code = 422
 
-    result = await api.create_deploy_key(
-        "test/repo", "Test Key", "invalid-key"
-    )
+    result = await api.create_deploy_key("test/repo", "Test Key", "invalid-key")
 
     assert result is False
 
@@ -84,19 +77,19 @@ async def test_create_deploy_key_failure(api):
 async def test_create_workflow_on_branch_success(api):
     """Test successful workflow creation on branch."""
     from unittest.mock import MagicMock
-    
+
     # Mock the repository info call
     api.get_repository = AsyncMock(return_value={"default_branch": "main"})
-    
+
     # Mock the branch info call
     branch_response = MagicMock()
     branch_response.status_code = 200
     branch_response.json.return_value = {"object": {"sha": "abc123"}}
-    
+
     # Mock the workflow creation call
     workflow_response = MagicMock()
     workflow_response.status_code = 201
-    
+
     api.call_get = AsyncMock(return_value=branch_response)
     api.call_post = AsyncMock(return_value=workflow_response)
 
