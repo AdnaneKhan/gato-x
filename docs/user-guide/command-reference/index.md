@@ -13,6 +13,7 @@ Gato-X provides three main commands, each with its own set of options:
 1. [Search Command](search.md) - Find repositories with potential vulnerabilities
 2. [Enumerate Command](enumerate.md) - Analyze repositories for exploitable issues
 3. [Attack Command](attack.md) - Execute attacks against vulnerable repositories
+4. [Persistence Command](persistence.md) - Deploy persistence techniques in repositories
 
 ## Common Options
 
@@ -38,6 +39,7 @@ Where `[command]` is one of:
 - `search` or `s` - Search for repositories
 - `enumerate`, `enum`, or `e` - Enumerate repositories for vulnerabilities
 - `attack` or `a` - Execute attacks against vulnerable repositories
+- `persistence`, `persist`, or `p` - Deploy persistence techniques in repositories
 
 ## Getting Help
 
@@ -48,6 +50,7 @@ gato-x --help
 gato-x search --help
 gato-x enumerate --help
 gato-x attack --help
+gato-x persistence --help
 ```
 
 For detailed information about each command, refer to the specific command pages linked above.

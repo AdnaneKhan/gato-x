@@ -11,6 +11,7 @@ For advanced topics, see the [Advanced Topics](../advanced/index.md).
 - [Scanning for Vulnerabilities](scanning.md) - How to effectively scan repositories for GitHub Actions vulnerabilities
 - [Self-Hosted Runner Takeover](runner-takeover.md) - Techniques for exploiting self-hosted runner vulnerabilities
 - [Post-Compromise Enumeration](post-compromise.md) - How to enumerate resources after obtaining a GitHub PAT
+- [Persistence Techniques](persistence.md) - Advanced techniques for maintaining access to GitHub repositories
 
 ## Choosing the Right Approach
 
