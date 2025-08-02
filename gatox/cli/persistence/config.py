@@ -76,11 +76,4 @@ def configure_parser_persistence(parser):
         type=StringType(100),
     )
 
-    parser.add_argument(
-        "--timeout",
-        "-to",
-        metavar="SECONDS",
-        help="Timeout, in seconds, to wait for API calls. Defaults to '30'",
-        default="30",
-        type=int,
-    )
+

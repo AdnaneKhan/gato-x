@@ -500,15 +500,12 @@ async def persistence(args, parser):
     """Handler for the persistence command."""
     parser = parser.choices["persistence"]
 
-    timeout = int(args.timeout)
-
     gh_persistence_runner = PersistenceAttack(
         args.gh_token,
         author_email=args.author_email,
         author_name=args.author_name,
         socks_proxy=args.socks_proxy,
         http_proxy=args.http_proxy,
-        timeout=timeout,
         github_url=args.api_url,
     )
 
