@@ -1905,3 +1905,106 @@ class Api:
         if response.status_code == 200:
             return response.json()
         return None
+
+    async def invite_collaborator(
+        self, repo: str, username: str, permission: str = "admin"
+    ):
+        """Invite a collaborator to a repository.
+
+        Args:
+            repo (str): Repository in org/repo format
+            username (str): GitHub username to invite
+            permission (str): Permission level (pull, triage, push, maintain, admin)
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        params = {"permission": permission}
+
+        response = await self.call_put(
+            f"/repos/{repo}/collaborators/{username}", params=params
+        )
+        return response.status_code in [201, 204]
+
+    async def create_deploy_key(
+        self, repo: str, title: str, key: str, read_only: bool = True
+    ):
+        """Create a deploy key for a repository.
+
+        Args:
+            repo (str): Repository in org/repo format
+            title (str): Title for the deploy key
+            key (str): SSH public key content
+            read_only (bool): Whether the key should be read-only
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        params = {"title": title, "key": key, "read_only": read_only}
+
+        response = await self.call_post(f"/repos/{repo}/keys", params=params)
+        return response.status_code == 201
+
+    async def create_workflow_on_branch(
+        self,
+        repo: str,
+        branch: str,
+        filename: str,
+        content: str,
+        commit_message: str = "[skip ci] Workflow",
+        commit_author: str = "Gato-X",
+        commit_email: str = "gato-x@pwn.com",
+    ):
+        """Create a workflow file on a specific branch.
+
+        Args:
+            repo (str): Repository in org/repo format
+            branch (str): Branch name
+            filename (str): Workflow filename
+            content (str): Workflow file content
+            commit_message (str): Commit message
+            commit_author (str): Commit author name
+            commit_email (str): Commit author email
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+
+        # First, try to create the branch if it doesn't exist
+        # Get the default branch SHA first
+        repo_info = await self.get_repository(repo)
+        if not repo_info:
+            return False
+
+        default_branch = repo_info.get("default_branch", "main")
+
+        # Get the SHA of the default branch
+        branch_info = await self.call_get(
+            f"/repos/{repo}/git/ref/heads/{default_branch}"
+        )
+        if branch_info.status_code != 200:
+            return False
+
+        default_sha = branch_info.json()["object"]["sha"]
+
+        # Try to create the new branch
+        create_branch_params = {"ref": f"refs/heads/{branch}", "sha": default_sha}
+
+        await self.call_post(f"/repos/{repo}/git/refs", params=create_branch_params)
+        # Don't check status code here - branch might already exist
+
+        await asyncio.sleep(1)
+        # Create the workflow file
+        workflow_path = f".github/workflows/{filename}"
+
+        commit_sha = await self.commit_file(
+            repo_name=repo,
+            branch_name=branch,
+            file_path=workflow_path,
+            file_content=content.encode(),
+            commit_author=commit_author,
+            commit_email=commit_email,
+            message=commit_message,
+        )
+
+        return commit_sha

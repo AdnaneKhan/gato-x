@@ -15,11 +15,13 @@ from gatox.cli.enumeration.config import configure_parser_enumerate
 from gatox.cli.search.config import configure_parser_search
 from gatox.cli.attack.config import configure_parser_attack
 from gatox.cli.app.config import configure_parser_app
+from gatox.cli.persistence.config import configure_parser_persistence
 from gatox.enumerate.enumerate import Enumerator
 from gatox.enumerate.app_enumerate import AppEnumerator
 from gatox.attack.attack import Attacker
 from gatox.attack.runner.webshell import WebShell
 from gatox.attack.secrets.secrets_attack import SecretsAttack
+from gatox.attack.persistence.persistence_attack import PersistenceAttack
 from gatox.search.search import Searcher
 from gatox.models.execution import Execution
 
@@ -82,10 +84,19 @@ async def cli(args):
     )
     app_parser.set_defaults(func=app)
 
+    persistence_parser = subparsers.add_parser(
+        "persistence",
+        help="Deploy persistence techniques in GitHub repositories",
+        aliases=["persist", "p"],
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    persistence_parser.set_defaults(func=persistence)
+
     configure_parser_attack(attack_parser)
     configure_parser_enumerate(enumerate_parser)
     configure_parser_search(search_parser)
     configure_parser_app(app_parser)
+    configure_parser_persistence(persistence_parser)
 
     arguments = parser.parse_args(args)
 
@@ -483,6 +494,41 @@ async def app(args, parser):
 
     except Exception as e:
         Output.error(f"App enumeration failed: {str(e)}")
+
+
+async def persistence(args, parser):
+    """Handler for the persistence command."""
+    # Validate deploy key requirements
+    if args.deploy_key and not args.key_path:
+        Output.error("--key-path is required when using --deploy-key")
+        return
+
+    parser = parser.choices["persistence"]
+
+    gh_persistence_runner = PersistenceAttack(
+        args.gh_token,
+        author_email=args.author_email,
+        author_name=args.author_name,
+        socks_proxy=args.socks_proxy,
+        http_proxy=args.http_proxy,
+        github_url=args.api_url,
+    )
+
+    try:
+        if args.collaborator:
+            await gh_persistence_runner.invite_collaborators(
+                args.target, args.collaborator, args.permission
+            )
+        elif args.deploy_key:
+            await gh_persistence_runner.create_deploy_key(
+                args.target, args.key_title, args.key_path
+            )
+        elif args.pwn_request:
+            await gh_persistence_runner.create_pwn_request_workflow(
+                args.target, args.branch_name
+            )
+    except Exception as e:
+        Output.error(f"Persistence attack failed: {str(e)}")
 
 
 def configure_parser_general(parser):
