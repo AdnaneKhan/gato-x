@@ -47,7 +47,9 @@ async def test_invite_collaborators_setup_failure(mock_output, persistence_attac
     """Test failure due to setup issues."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=False)
 
-    result = await persistence_attacker.invite_collaborators("test/repo", ["user1"], "push")
+    result = await persistence_attacker.invite_collaborators(
+        "test/repo", ["user1"], "push"
+    )
 
     assert result is False
 
