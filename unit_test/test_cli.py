@@ -64,18 +64,29 @@ async def test_cli_s2s_token_no_machine(capfd):
     assert "not support App tokens without machine flag" in err
 
 
-@patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock())
+@patch("gatox.enumerate.enumerate.Api")
 async def test_cli_s2s_token_machine(mock_api, capfd):
     """Test case where a service-to-service token is provided."""
     import os
     from gatox.cli import cli  # [gatox/cli/cli.py](gatox/cli/cli.py)
 
     os.environ["GH_TOKEN"] = "ghs_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-    mock_api.return_value.user_perms = None
-    mock_api.return_value.is_app_token.return_value = True
-    # Mock out the enumerator’s HTTP calls here as needed
-    mock_api.return_value.get_installation_repos.return_value = {"total_count": 1}
-    mock_api.return_value.call_post.return_value = AsyncMock(status_code=200)
+
+    # Create a proper mock API instance
+    mock_api_instance = AsyncMock()
+    mock_api_instance.user_perms = None
+    mock_api_instance.is_app_token = lambda: True  # Non-async method
+    mock_api_instance.get_installation_repos = AsyncMock(
+        return_value={"total_count": 1}
+    )
+
+    # Create a proper mock response object
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json = lambda: {"data": {"nodes": []}}  # Non-async method
+    mock_api_instance.call_post = AsyncMock(return_value=mock_response)
+
+    mock_api.return_value = mock_api_instance
 
     await cli.cli(["enumerate", "-r", "testOrg/testRepo", "--machine"])
     out, _ = capfd.readouterr()

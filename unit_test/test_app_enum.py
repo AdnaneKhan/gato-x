@@ -418,10 +418,11 @@ class TestAppEnumerator:
     ):
         """Test enumerate_installation succeeds with contents:read permission."""
         # Setup mocks
-        mock_api_instance = AsyncMock()
+        mock_api_instance = MagicMock()
         mock_api_instance.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
+        mock_api_instance.is_app_token = lambda: True  # Non-async method
 
         mock_installation_api = AsyncMock()
         mock_installation_api.get_installation_repos = AsyncMock(
@@ -435,6 +436,13 @@ class TestAppEnumerator:
         with patch("gatox.enumerate.enumerate.Enumerator") as mock_enumerator_class:
             mock_enumerator_instance = MagicMock()
             mock_enumerator_instance.enumerate_repos = AsyncMock(return_value=["repo1"])
+            # Ensure the enumerator's api is properly mocked
+            mock_enumerator_instance.api = MagicMock()
+            mock_enumerator_instance.api.is_app_token = lambda: True
+            # Mock the __setup_user_info method to prevent the problematic call
+            mock_enumerator_instance._Enumerator__setup_user_info = AsyncMock(
+                return_value=True
+            )
             mock_enumerator_class.return_value = mock_enumerator_instance
 
             # Create enumerator with contents:read permission
@@ -445,8 +453,15 @@ class TestAppEnumerator:
                 "metadata:read",
             ]
 
-            with patch(
-                "gatox.enumerate.app_enumerate.Api", return_value=mock_installation_api
+            with (
+                patch(
+                    "gatox.enumerate.app_enumerate.Api",
+                    return_value=mock_installation_api,
+                ),
+                patch(
+                    "gatox.enumerate.enumerate.Enumerator._Enumerator__setup_user_info",
+                    new=AsyncMock(return_value=True),
+                ),
             ):
                 # Call method
                 result = await enumerator.enumerate_installation("11111")
@@ -459,18 +474,19 @@ class TestAppEnumerator:
                 # Don't assert mock_error.assert_not_called() since there might be other validation errors
 
     @pytest.mark.asyncio
-    @patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
+    @patch("gatox.enumerate.enumerate.Api")
     @patch("gatox.cli.output.Output.info")
     @patch("gatox.cli.output.Output.error")
     async def test_enumerate_installation_with_contents_write_permission(
-        self, mock_error, mock_info, mock_api_instance
+        self, mock_error, mock_info, mock_api_class
     ):
         """Test enumerate_installation succeeds with contents:write permission."""
         # Setup mocks
-        mock_api_instance = AsyncMock()
+        mock_api_instance = MagicMock()
         mock_api_instance.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
+        mock_api_instance.is_app_token = lambda: True  # Non-async method
 
         mock_installation_api = AsyncMock()
         mock_installation_api.get_installation_repos = AsyncMock(
@@ -484,6 +500,13 @@ class TestAppEnumerator:
         with patch("gatox.enumerate.enumerate.Enumerator") as mock_enumerator_class:
             mock_enumerator_instance = MagicMock()
             mock_enumerator_instance.enumerate_repos = AsyncMock(return_value=["repo1"])
+            # Ensure the enumerator's api is properly mocked
+            mock_enumerator_instance.api = MagicMock()
+            mock_enumerator_instance.api.is_app_token = lambda: True
+            # Mock the __setup_user_info method to prevent the problematic call
+            mock_enumerator_instance._Enumerator__setup_user_info = AsyncMock(
+                return_value=True
+            )
             mock_enumerator_class.return_value = mock_enumerator_instance
 
             # Create enumerator with contents:write permission
@@ -494,8 +517,15 @@ class TestAppEnumerator:
                 "metadata:read",
             ]
 
-            with patch(
-                "gatox.enumerate.app_enumerate.Api", return_value=mock_installation_api
+            with (
+                patch(
+                    "gatox.enumerate.app_enumerate.Api",
+                    return_value=mock_installation_api,
+                ),
+                patch(
+                    "gatox.enumerate.enumerate.Enumerator._Enumerator__setup_user_info",
+                    new=AsyncMock(return_value=True),
+                ),
             ):
                 # Call method
                 result = await enumerator.enumerate_installation("11111")
