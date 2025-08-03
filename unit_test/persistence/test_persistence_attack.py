@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, AsyncMock, mock_open
+from unittest.mock import patch, AsyncMock, mock_open, ANY
 from gatox.attack.persistence.persistence_attack import PersistenceAttack
 
 
@@ -102,11 +102,23 @@ async def test_create_pwn_request_workflow_success(mock_output, persistence_atta
     """Test successful pwn request workflow creation."""
     persistence_attacker.setup_user_info = AsyncMock(return_value=True)
     persistence_attacker.api.create_workflow_on_branch = AsyncMock(return_value=True)
+    persistence_attacker.author_name = "Test Author"
+    persistence_attacker.author_email = "test@example.com"
 
     result = await persistence_attacker.create_pwn_request_workflow("test/repo")
 
     assert result is True
-    persistence_attacker.api.create_workflow_on_branch.assert_called_once()
+
+    # Verify the call includes author information
+    persistence_attacker.api.create_workflow_on_branch.assert_called_once_with(
+        "test/repo",
+        "feature/test-workflow",
+        "pwn-request.yml",
+        ANY,  # workflow content (generated from template)
+        commit_message="[skip ci] Add test workflow",
+        commit_author="Test Author",
+        commit_email="test@example.com",
+    )
 
 
 @pytest.mark.asyncio

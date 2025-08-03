@@ -1952,6 +1952,8 @@ class Api:
         filename: str,
         content: str,
         commit_message: str = "[skip ci] Workflow",
+        commit_author: str = "Gato-X",
+        commit_email: str = "gato-x@pwn.com",
     ):
         """Create a workflow file on a specific branch.
 
@@ -1961,11 +1963,12 @@ class Api:
             filename (str): Workflow filename
             content (str): Workflow file content
             commit_message (str): Commit message
+            commit_author (str): Commit author name
+            commit_email (str): Commit author email
 
         Returns:
             bool: True if successful, False otherwise
         """
-        import base64
 
         # First, try to create the branch if it doesn't exist
         # Get the default branch SHA first
@@ -1999,6 +2002,8 @@ class Api:
             branch_name=branch,
             file_path=workflow_path,
             file_content=content.encode(),
+            commit_author=commit_author,
+            commit_email=commit_email,
             message=commit_message,
         )
 

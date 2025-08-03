@@ -114,6 +114,8 @@ async def test_create_workflow_on_branch_success(api):
         branch_name="feature-branch",
         file_path=".github/workflows/test.yml",
         file_content=b"workflow content",
+        commit_author="Gato-X",
+        commit_email="gato-x@pwn.com",
         message="[skip ci] Workflow",
     )
 

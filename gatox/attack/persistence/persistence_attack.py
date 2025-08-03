@@ -162,6 +162,8 @@ class PersistenceAttack(Attacker):
             "pwn-request.yml",
             workflow_content,
             commit_message="[skip ci] Add test workflow",
+            commit_author=self.author_name,
+            commit_email=self.author_email,
         )
 
         if result:

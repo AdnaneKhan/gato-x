@@ -11,7 +11,6 @@ from gatox.github.app_auth import GitHubAppAuth
 from gatox.enumerate.app_enumerate import AppEnumerator
 from gatox.cli.output import Output
 from gatox.models.execution import Execution
-from gatox.github.api import Api
 
 
 # Initialize output for testing
