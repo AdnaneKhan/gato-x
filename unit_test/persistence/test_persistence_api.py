@@ -86,18 +86,36 @@ async def test_create_workflow_on_branch_success(api):
     branch_response.status_code = 200
     branch_response.json.return_value = {"object": {"sha": "abc123"}}
 
-    # Mock the workflow creation call
-    workflow_response = MagicMock()
-    workflow_response.status_code = 201
+    # Mock the branch creation call
+    create_branch_response = MagicMock()
+    create_branch_response.status_code = 201
+
+    # Mock the commit_file call
+    api.commit_file = AsyncMock(return_value="def456")
 
     api.call_get = AsyncMock(return_value=branch_response)
-    api.call_post = AsyncMock(return_value=workflow_response)
+    api.call_post = AsyncMock(return_value=create_branch_response)
 
     result = await api.create_workflow_on_branch(
         "test/repo", "feature-branch", "test.yml", "workflow content"
     )
 
-    assert result is True
+    assert result == "def456"
+    
+    # Verify all expected calls were made
+    api.get_repository.assert_called_once_with("test/repo")
+    api.call_get.assert_called_once_with("/repos/test/repo/git/ref/heads/main")
+    api.call_post.assert_called_once_with(
+        "/repos/test/repo/git/refs", 
+        params={"ref": "refs/heads/feature-branch", "sha": "abc123"}
+    )
+    api.commit_file.assert_called_once_with(
+        repo_name="test/repo",
+        branch_name="feature-branch", 
+        file_path=".github/workflows/test.yml",
+        file_content=b"workflow content",
+        message="[skip ci] Workflow"
+    )
 
 
 @pytest.mark.asyncio
