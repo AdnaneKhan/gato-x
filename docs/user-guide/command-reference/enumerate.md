@@ -90,6 +90,17 @@ The enumerate command performs several types of analysis:
 
 Results are presented with confidence ratings to help prioritize findings.
 
+### Vulnerability Types
+
+Gato-X identifies several types of vulnerabilities in GitHub Actions workflows:
+
+- **Pwn Requests** - Code execution through pull request workflows
+- **Actions Injection** - Command injection through user-controlled inputs
+- **TOCTOU Vulnerabilities** - Time-of-check to time-of-use race conditions
+- **Self-Hosted Runner Vulnerabilities** - Security risks with self-hosted runners
+
+For detailed explanations of how each vulnerability type works and examples of vulnerable patterns, see the [Understanding GitHub Actions Vulnerabilities](../advanced/vulnerabilities.md) guide.
+
 ### Single Commit Analysis
 
 When using the `--commit` option, gato-x analyzes the workflow files as they existed at the specified commit. This is useful for:

