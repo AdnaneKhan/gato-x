@@ -26,17 +26,17 @@ class Singleton(type):
 
 SPLASH = """
 
- .d8888b.         d8888 88888888888  .d88888b.         Y88b   d88P 
-d88P  Y88b       d88888     888     d88P" "Y88b         Y88b d88P  
-888    888      d88P888     888     888     888          Y88o88P   
-888            d88P 888     888     888     888           Y888P    
-888  88888    d88P  888     888     888     888           d888b    
-888    888   d88P   888     888     888     888 888888   d88888b   
-Y88b  d88P  d8888888888     888     Y88b. .d88P         d88P Y88b  
- "Y8888P88 d88P     888     888      "Y88888P"         d88P   Y88b 
-                                                                   
-    By @adnanthekhan - github.com/AdnaneKhan/gato-x                                            
-                                                                
+ .d8888b.         d8888 88888888888  .d88888b.         Y88b   d88P
+d88P  Y88b       d88888     888     d88P" "Y88b         Y88b d88P
+888    888      d88P888     888     888     888          Y88o88P
+888            d88P 888     888     888     888           Y888P
+888  88888    d88P  888     888     888     888           d888b
+888    888   d88P   888     888     888     888 888888   d88888b
+Y88b  d88P  d8888888888     888     Y88b. .d88P         d88P Y88b
+ "Y8888P88 d88P     888     888      "Y88888P"         d88P   Y88b
+
+    By @adnanthekhan - github.com/AdnaneKhan/gato-x
+
 """
 
 
