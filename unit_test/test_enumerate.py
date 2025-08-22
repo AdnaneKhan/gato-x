@@ -571,7 +571,7 @@ async def test_self_enumeration_fails_without_sufficient_scope(mock_api, capfd):
     result = await gh_enumeration_runner.self_enumeration()
 
     # Should return False when no appropriate scope
-    assert result == False
+    assert result is False
 
     out, err = capfd.readouterr()
     # Should contain the error message about missing scope
