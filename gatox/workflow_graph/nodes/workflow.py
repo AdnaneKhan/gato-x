@@ -205,7 +205,7 @@ class WorkflowNode(Node):
         if not self.__callers:
             return set()
         else:
-            return set([caller.get_workflow() for caller in self.__callers])
+            return {caller.get_workflow() for caller in self.__callers}
 
     def initialize(self, workflow: Workflow):
         """Initialize the Workflow node with the parsed workflow data."""

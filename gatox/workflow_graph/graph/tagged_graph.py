@@ -79,8 +79,8 @@ class TaggedGraph(nx.DiGraph):
             GraphTraversalTimeoutError: If traversal takes longer than MAX_TRAVERSAL_TIME_SECONDS (10) seconds.
         """
         start_time = time.time()
-        path = list()
-        all_paths = list()
+        path = []
+        all_paths = []
         visited = set()
 
         # Track traversal metrics

@@ -39,9 +39,7 @@ class ConfigurationManager:
             ConfigurationManager: The singleton instance of the ConfigurationManager class.
         """
         if cls._instance is None:
-            cls._instance = super(ConfigurationManager, cls).__new__(
-                cls, *args, **kwargs
-            )
+            cls._instance = super().__new__(cls, *args, **kwargs)
             script_dir = os.path.dirname(os.path.realpath(__file__))
             json_files = glob.glob(os.path.join(script_dir, "*.json"))
             for file_path in json_files:

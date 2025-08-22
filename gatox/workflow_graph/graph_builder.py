@@ -41,7 +41,7 @@ class WorkflowGraphBuilder:
         Create a new instance of the class. If an instance already exists, return that instance.
         """
         if cls._instance is None:
-            cls._instance = super(WorkflowGraphBuilder, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance.graph = TaggedGraph(cls._instance)
             cls._action_locks = {}
             cls._action_locks_lock = asyncio.Lock()

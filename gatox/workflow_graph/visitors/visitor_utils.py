@@ -117,7 +117,7 @@ class VisitorUtils:
         return ancestors
 
     @staticmethod
-    def check_mutable_ref(ref, start_tags=set()):
+    def check_mutable_ref(ref, start_tags=None):
         """
         Check if a reference is mutable based on allowed GitHub SHA patterns.
 
@@ -131,6 +131,8 @@ class VisitorUtils:
             bool:
                 False if the reference is immutable, True otherwise.
         """
+        if start_tags is None:
+            start_tags = set()
         if "github.event.pull_request.head.sha" in ref:
             return False
         elif "github.event.workflow_run.head.sha" in ref:

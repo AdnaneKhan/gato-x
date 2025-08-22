@@ -75,7 +75,7 @@ class ArtifactPoisoningResult(AnalysisResult):
             "confidence": self.confidence_score(),
             "attack_complexity": self.attack_complexity(),
             "explanation": self.attack_complexity().explain(),
-            "path": [node for node in self.collect_steps(self.__attack_path)],
+            "path": list(self.collect_steps(self.__attack_path)),
             "sink": (
                 self.__attack_path[-1].get_step_data()
                 if self.confidence_score() == Confidence.MEDIUM

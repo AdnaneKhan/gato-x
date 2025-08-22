@@ -13,7 +13,7 @@ class Runner:
         machine_name=None,
         os=None,
         status=None,
-        labels=[],
+        labels=None,
         non_ephemeral=False,
     ):
         """Constructor for runner wrapper object.
@@ -26,6 +26,8 @@ class Runner:
             status (str, optional): Status of runner. Defaults to None.
             labels (list, optional): Labels applied to runner. Defaults to [].
         """
+        if labels is None:
+            labels = []
         self.runner_name = runner_name
         self.machine_name = machine_name
         self.runner_group = runner_group
@@ -46,7 +48,7 @@ class Runner:
             "token_permissions": self.token_permissions,
             "os": self.os if self.os else "Unknown",
             "status": self.status if self.status else "Unknown",
-            "labels": [label for label in self.labels],
+            "labels": list(self.labels),
             "non_ephemeral": self.non_ephemeral,
         }
 

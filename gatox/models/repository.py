@@ -129,7 +129,7 @@ class Repository:
             "permissions": self.permission_data,
             "can_fork": self.can_fork(),
             "stars": self.repo_data["stargazers_count"],
-            "runner_workflows": [wf for wf in self.sh_workflow_names],
+            "runner_workflows": list(self.sh_workflow_names),
             "accessible_runners": [
                 runner.toJSON() for runner in self.accessible_runners
             ],

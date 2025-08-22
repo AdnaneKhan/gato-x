@@ -160,7 +160,7 @@ class PwnRequestVisitor:
                         break
 
                 if node.outputs:
-                    for key, val in node.outputs.items():
+                    for _key, val in node.outputs.items():
                         if "env." in val:
                             pass
 

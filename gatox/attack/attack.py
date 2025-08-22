@@ -155,7 +155,7 @@ class Attacker:
 
         Output.tabbed("Waiting for the workflow to queue...")
 
-        for i in range(self.timeout):
+        for _i in range(self.timeout):
             workflow_id = await self.api.get_recent_workflow(
                 target_repo, rev_hash, yaml_name
             )

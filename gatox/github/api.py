@@ -147,8 +147,8 @@ class Api:
         Returns:
             dict: metadata about the run execution.
         """
-        log_package = dict()
-        token_permissions = dict()
+        log_package = {}
+        token_permissions = {}
         runner_type = None
         non_ephemeral = False
         labels = []
@@ -882,7 +882,7 @@ class Api:
 
         return []
 
-    async def retrieve_run_logs(self, repo_name: str, workflows: list = []):
+    async def retrieve_run_logs(self, repo_name: str, workflows: list = None):
         """Retrieve the most recent run log associated with a repository.
 
         Args:
@@ -894,6 +894,8 @@ class Api:
         Returns:
             list: List of run logs for runs that ran on self-hosted runners.
         """
+        if workflows is None:
+            workflows = []
         start_date = datetime.now() - timedelta(days=60)
         runs = []
 

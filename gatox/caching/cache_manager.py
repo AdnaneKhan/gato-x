@@ -34,7 +34,7 @@ class CacheManager:
         Create a new instance of the class. If an instance already exists, return that instance.
         """
         if cls._instance is None:
-            cls._instance = super(CacheManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance.repo_wf_lookup = {}
             cls._instance.repo_store = {}
             cls._instance.workflow_cache = {}
