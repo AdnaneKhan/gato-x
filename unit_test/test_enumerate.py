@@ -436,13 +436,15 @@ async def test_unscoped_token(mock_api, capfd):
     mock_api.return_value.is_app_token.return_value = False
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
-        "scopes": ["public_repo"],
+        "scopes": [],
     }
 
     status = await gh_enumeration_runner.self_enumeration()
 
     out, _ = capfd.readouterr()
-    assert "Self-enumeration requires the repo scope!" in escape_ansi(out)
+    assert "Self-enumeration requires the repo or public_repo scope!" in escape_ansi(
+        out
+    )
     assert status is False
 
 
@@ -511,3 +513,96 @@ async def test_enumerate_commit(mock_api, mock_enum_repo, mock_pg, mock_build):
     )
     mock_build.assert_awaited()
     assert repo.name == repo_data["full_name"]
+
+
+@patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
+async def test_self_enumeration_with_public_repo_scope(mock_api, capfd):
+    """Test that self_enumeration works with public_repo scope."""
+    gh_enumeration_runner = Enumerator(
+        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        socks_proxy=None,
+        http_proxy=None,
+        skip_log=True,
+        output_json="test.json",
+    )
+
+    mock_api.return_value.is_app_token.return_value = False
+    mock_api.return_value.check_user.return_value = {
+        "user": "testUser",
+        "scopes": ["public_repo"],  # Only public_repo scope, not repo
+        "name": "Test User",
+    }
+    mock_api.return_value.get_own_repos.return_value = []
+    mock_api.return_value.check_organizations.return_value = []
+
+    # Mock the enumerate_repos method to return empty list for simplicity
+    with patch.object(gh_enumeration_runner, "enumerate_repos", return_value=[]):
+        orgs, repos = await gh_enumeration_runner.self_enumeration()
+
+    # Should return tuple of empty lists, not False
+    assert orgs == []
+    assert repos == []
+    assert isinstance(orgs, list)
+    assert isinstance(repos, list)
+
+    out, _ = capfd.readouterr()
+    # Should not contain the error message about missing repo scope
+    assert "Self-enumeration requires the repo or public_repo scope!" not in out
+
+
+@patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
+async def test_self_enumeration_fails_without_sufficient_scope(mock_api, capfd):
+    """Test that self_enumeration fails without repo or public_repo scope."""
+    gh_enumeration_runner = Enumerator(
+        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        socks_proxy=None,
+        http_proxy=None,
+        skip_log=True,
+        output_json="test.json",
+    )
+
+    mock_api.return_value.is_app_token.return_value = False
+    mock_api.return_value.check_user.return_value = {
+        "user": "testUser",
+        "scopes": ["user"],  # Only user scope, no repo access
+        "name": "Test User",
+    }
+
+    result = await gh_enumeration_runner.self_enumeration()
+
+    # Should return False when no appropriate scope
+    assert result is False
+
+    out, err = capfd.readouterr()
+    # Should contain the error message about missing scope
+    assert "Self-enumeration requires the repo or public_repo scope!" in out
+
+
+@patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
+async def test_validate_only_with_public_repo_scope(mock_api, capfd):
+    """Test that validate_only works with public_repo scope."""
+    gh_enumeration_runner = Enumerator(
+        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        socks_proxy=None,
+        http_proxy=None,
+        skip_log=True,
+    )
+
+    mock_api.return_value.is_app_token.return_value = False
+    mock_api.return_value.check_user.return_value = {
+        "user": "testUser",
+        "scopes": ["public_repo"],
+        "name": "Test User",
+    }
+    mock_api.return_value.check_organizations.return_value = ["testorg"]
+
+    result = await gh_enumeration_runner.validate_only()
+
+    # Should not return False
+    assert result != False
+    assert isinstance(result, list)
+    assert len(result) == 1
+
+    out, _ = capfd.readouterr()
+    # Should not contain the warning about insufficient access
+    assert "Token does not have sufficient access to list orgs!" not in out
