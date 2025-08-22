@@ -1,7 +1,11 @@
 name: Test and Lint
-on: 
-    push:
-    pull_request:
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
     Linux-test-and-lint:
@@ -15,7 +19,7 @@ jobs:
 
         steps:
           - name: Checkout the repo
-            uses: actions/checkout@v4
+            uses: actions/checkout@v5
           - name: Setup python
             uses: actions/setup-python@v5
             with:
@@ -48,7 +52,7 @@ jobs:
 
         steps:
           - name: Checkout the repo
-            uses: actions/checkout@v4
+            uses: actions/checkout@v5
           - name: Setup python
             uses: actions/setup-python@v5
             with:

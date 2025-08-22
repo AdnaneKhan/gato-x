@@ -14,7 +14,7 @@ jobs:
       version_bumped: ${{ steps.check.outputs.version_bumped }}
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2  # Ensure access to the previous commit
 
@@ -41,7 +41,7 @@ jobs:
       attestations: write
     if: needs.check_version.outputs.version_bumped == 'true' || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4 
+      - uses: actions/checkout@v5 
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -75,7 +75,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download artifacts
         uses: actions/download-artifact@v5
