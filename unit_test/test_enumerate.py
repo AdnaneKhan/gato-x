@@ -528,13 +528,13 @@ async def test_self_enumeration_with_public_repo_scope(mock_api, capfd):
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
         "scopes": ["public_repo"],  # Only public_repo scope, not repo
-        "name": "Test User"
+        "name": "Test User",
     }
     mock_api.return_value.get_own_repos.return_value = []
     mock_api.return_value.check_organizations.return_value = []
 
     # Mock the enumerate_repos method to return empty list for simplicity
-    with patch.object(gh_enumeration_runner, 'enumerate_repos', return_value=[]):
+    with patch.object(gh_enumeration_runner, "enumerate_repos", return_value=[]):
         orgs, repos = await gh_enumeration_runner.self_enumeration()
 
     # Should return tuple of empty lists, not False
@@ -563,18 +563,17 @@ async def test_self_enumeration_fails_without_sufficient_scope(mock_api, capfd):
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
         "scopes": ["user"],  # Only user scope, no repo access
-        "name": "Test User"
+        "name": "Test User",
     }
 
-    orgs, repos = await gh_enumeration_runner.self_enumeration()
+    result = await gh_enumeration_runner.self_enumeration()
 
     # Should return False when no appropriate scope
-    assert orgs == False
-    assert repos == False
+    assert result == False
 
     out, err = capfd.readouterr()
     # Should contain the error message about missing scope
-    assert "Self-enumeration requires the repo or public_repo scope!" in err
+    assert "Self-enumeration requires the repo or public_repo scope!" in out
 
 
 @patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
@@ -589,9 +588,9 @@ async def test_validate_only_with_public_repo_scope(mock_api, capfd):
 
     mock_api.return_value.is_app_token.return_value = False
     mock_api.return_value.check_user.return_value = {
-        "user": "testUser", 
+        "user": "testUser",
         "scopes": ["public_repo"],
-        "name": "Test User"
+        "name": "Test User",
     }
     mock_api.return_value.check_organizations.return_value = ["testorg"]
 
