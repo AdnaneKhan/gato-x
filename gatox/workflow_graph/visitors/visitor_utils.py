@@ -116,6 +116,16 @@ class VisitorUtils:
 
         return ancestors
 
+    # Class-level constants for immutable reference patterns
+    _IMMUTABLE_PATTERNS = frozenset(
+        [
+            "github.event.pull_request.head.sha",
+            "github.event.pull_request.merge_commit_sha",
+            "github.event.workflow_run.head.sha",
+            "github.sha",
+        ]
+    )
+
     @staticmethod
     def check_mutable_ref(ref, start_tags=None):
         """
@@ -133,18 +143,18 @@ class VisitorUtils:
         """
         if start_tags is None:
             start_tags = set()
-        if "github.event.pull_request.head.sha" in ref:
+
+        # Check immutable patterns using any() for early termination
+        if any(pattern in ref for pattern in VisitorUtils._IMMUTABLE_PATTERNS):
             return False
-        elif "github.event.workflow_run.head.sha" in ref:
-            return False
-        elif "github.sha" in ref:
-            return False
+
         # If the trigger is pull_request_target and we have a sha in the reference, then this is very likely
         # to be from the original trigger in some form and not a mutable reference, so if it is gated we can suppress.
-        elif "sha" in ref and "pull_request_target" in start_tags:
+        if "sha" in ref and "pull_request_target" in start_tags:
             return False
+
         # This points to the base branch, so it is not going to be exploitable.
-        elif "github.ref" in ref and "||" not in ref:
+        if "github.ref" in ref and "||" not in ref:
             return False
 
         return True

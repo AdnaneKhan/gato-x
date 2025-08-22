@@ -91,6 +91,9 @@ def test_add_results():
 def test_check_mutable_ref():
     # Test immutable refs
     assert not VisitorUtils.check_mutable_ref("github.event.pull_request.head.sha")
+    assert not VisitorUtils.check_mutable_ref(
+        "github.event.pull_request.merge_commit_sha"
+    )
     assert not VisitorUtils.check_mutable_ref("github.event.workflow_run.head.sha")
     assert not VisitorUtils.check_mutable_ref("github.sha")
     assert not VisitorUtils.check_mutable_ref("sha", {"pull_request_target"})
