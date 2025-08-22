@@ -135,6 +135,8 @@ class VisitorUtils:
             start_tags = set()
         if "github.event.pull_request.head.sha" in ref:
             return False
+        elif "github.event.pull_request.merge_commit_sha" in ref:
+            return False
         elif "github.event.workflow_run.head.sha" in ref:
             return False
         elif "github.sha" in ref:
