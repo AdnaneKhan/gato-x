@@ -1,7 +1,6 @@
 import datetime
 
-from gatox.models.organization import Organization
-from gatox.models.organization import Repository
+from gatox.models.organization import Organization, Repository
 
 
 class Execution:

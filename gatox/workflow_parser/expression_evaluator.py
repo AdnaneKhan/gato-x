@@ -108,8 +108,10 @@ class ExpressionEvaluator:
         "github.repository": Wildcard("github.repository"),
     }
 
-    def __init__(self, variables={}):
+    def __init__(self, variables=None):
         # Variables is a dictionary mapping variable names to boolean values
+        if variables is None:
+            variables = {}
         self.variables = {**self.STANDARD_VARIABLES, **variables}
 
     def evaluate(self, node):

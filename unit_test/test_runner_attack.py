@@ -1,4 +1,4 @@
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from gatox.attack.runner.webshell import WebShell
 from gatox.github.api import Api

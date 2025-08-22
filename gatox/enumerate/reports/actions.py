@@ -15,10 +15,9 @@ limitations under the License.
 """
 
 from gatox.cli.output import Output
-
 from gatox.enumerate.reports.report import Report
-from gatox.enumerate.results.issue_type import IssueType
 from gatox.enumerate.results.analysis_result import AnalysisResult
+from gatox.enumerate.results.issue_type import IssueType
 
 
 class ActionsReport(Report):

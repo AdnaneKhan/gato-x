@@ -1,13 +1,13 @@
+import json
 import os
 import pathlib
-import pytest
-import json
-
 from unittest.mock import AsyncMock
 
-from gatox.models.repository import Repository
-from gatox.enumerate.repository import RepositoryEnum
+import pytest
+
 from gatox.cli.output import Output
+from gatox.enumerate.repository import RepositoryEnum
+from gatox.models.repository import Repository
 
 TEST_REPO_DATA = None
 TEST_WORKFLOW_YML = None
@@ -23,10 +23,10 @@ def load_test_files(request):
     test_repo_path = os.path.join(curr_path, "files/example_repo.json")
     test_wf_path = os.path.join(curr_path, "files/main.yaml")
 
-    with open(test_repo_path, "r") as repo_data:
+    with open(test_repo_path) as repo_data:
         TEST_REPO_DATA = json.load(repo_data)
 
-    with open(test_wf_path, "r") as wf_data:
+    with open(test_wf_path) as wf_data:
         TEST_WORKFLOW_YML = wf_data.read()
 
 

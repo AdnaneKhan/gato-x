@@ -1,8 +1,9 @@
-from unittest.mock import patch, MagicMock, AsyncMock
-from gatox.github.search import Search
-from gatox.search.search import Searcher
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from gatox.cli.output import Output
 from gatox.github.api import Api
+from gatox.github.search import Search
+from gatox.search.search import Searcher
 
 Output(True)
 

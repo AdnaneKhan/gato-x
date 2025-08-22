@@ -1,6 +1,7 @@
-import unittest
-from unittest.mock import patch, mock_open, MagicMock, call
 import os
+import unittest
+from unittest.mock import MagicMock, call, mock_open, patch
+
 from gatox.cli import cli
 
 

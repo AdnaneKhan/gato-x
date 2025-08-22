@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Optional
-
 from gatox.cli.output import Output
+
 from .webshell_utils import WebShellUtils
 
 
@@ -34,7 +33,7 @@ class RepositoryManager:
         source_branch: str,
         author_name: str,
         author_email: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Set up the target repository by forking and preparing the attack branch.
 
@@ -114,7 +113,7 @@ class RepositoryManager:
         target_repo: str,
         target_branch: str,
         pr_title: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Create a draft pull request for the attack.
 
@@ -177,7 +176,7 @@ class RepositoryManager:
             return False
         return True
 
-    async def _fork_repository(self, target_repo: str) -> Optional[str]:
+    async def _fork_repository(self, target_repo: str) -> str | None:
         """Fork the target repository."""
         repo_name = await self.api.fork_repository(target_repo)
         if not repo_name:

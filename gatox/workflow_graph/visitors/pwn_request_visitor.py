@@ -16,13 +16,13 @@ limitations under the License.
 
 import logging
 
-from gatox.enumerate.results.confidence import Confidence
+from gatox.caching.cache_manager import CacheManager
 from gatox.enumerate.results.complexity import Complexity
+from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
+from gatox.github.api import Api
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
-from gatox.github.api import Api
-from gatox.caching.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class PwnRequestVisitor:
                         break
 
                 if node.outputs:
-                    for key, val in node.outputs.items():
+                    for _key, val in node.outputs.items():
                         if "env." in val:
                             pass
 

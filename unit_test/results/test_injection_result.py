@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import Mock
 
-from gatox.enumerate.results.injection_result import InjectionResult
-from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.complexity import Complexity
+from gatox.enumerate.results.confidence import Confidence
+from gatox.enumerate.results.injection_result import InjectionResult
 
 
 class TestInjectionResult(unittest.TestCase):

@@ -1,8 +1,8 @@
-import tempfile
+import asyncio
+import logging
 import os
 import subprocess
-import logging
-import asyncio
+import tempfile
 
 from gatox.models.workflow import Workflow
 
@@ -114,7 +114,7 @@ class Git:
                 if os.path.exists(workflow_dir):
                     for filename in os.listdir(workflow_dir):
                         if filename.endswith((".yml", ".yaml")):
-                            with open(os.path.join(workflow_dir, filename), "r") as f:
+                            with open(os.path.join(workflow_dir, filename)) as f:
                                 contents = f.read()
                                 workflows.append(
                                     Workflow(
@@ -153,7 +153,7 @@ class Git:
             for wf in workflows:
                 wf_p = os.path.join(repo_path, ".github", "workflows", wf)
                 if os.path.isfile(wf_p):
-                    with open(wf_p, "r") as wf_in:
+                    with open(wf_p) as wf_in:
                         wf_yml = wf_in.read()
                         ymls.append((wf, wf_yml))
         return ymls

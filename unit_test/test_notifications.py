@@ -1,13 +1,14 @@
-import pytest
-import json
 import io
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
+import pytest
 
 from gatox.notifications.send_webhook import (
-    send_slack_webhook,
-    send_discord_webhook,
     _create_result_summary,
+    send_discord_webhook,
+    send_slack_webhook,
 )
 
 

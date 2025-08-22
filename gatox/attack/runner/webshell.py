@@ -15,12 +15,13 @@ limitations under the License.
 """
 
 from gatox.attack.attack import Attacker
-from gatox.cli.output import Output
 from gatox.attack.payloads.payloads import Payloads
-from .webshell_utils import WebShellUtils
-from .payload_manager import PayloadManager
+from gatox.cli.output import Output
+
 from .c2_controller import C2Controller
+from .payload_manager import PayloadManager
 from .repository_manager import RepositoryManager
+from .webshell_utils import WebShellUtils
 
 
 class WebShell(Attacker):

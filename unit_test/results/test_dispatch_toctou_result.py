@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import Mock
 
-from gatox.enumerate.results.dispatch_toctou_result import DispatchTOCTOUResult
-from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.complexity import Complexity
+from gatox.enumerate.results.confidence import Confidence
+from gatox.enumerate.results.dispatch_toctou_result import DispatchTOCTOUResult
 
 
 class TestDispatchTOCTOUResult(unittest.TestCase):

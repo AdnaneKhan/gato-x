@@ -1,17 +1,17 @@
 import os
-import pytest
-import httpx
 import tempfile
 from datetime import datetime, timezone
-from unittest.mock import patch, AsyncMock, MagicMock, mock_open
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+
+import httpx
+import pytest
+
+from gatox.cli.output import Output
+from gatox.enumerate.app_enumerate import AppEnumerator
 
 # Import pytest-asyncio for async test support
-
 from gatox.github.app_auth import GitHubAppAuth
-from gatox.enumerate.app_enumerate import AppEnumerator
-from gatox.cli.output import Output
 from gatox.models.execution import Execution
-
 
 # Initialize output for testing
 Output(True)

@@ -1,10 +1,8 @@
-from typing import List
-
+from gatox.github.api import Api
 from gatox.models.organization import Organization
 from gatox.models.repository import Repository
-from gatox.models.secret import Secret
 from gatox.models.runner import Runner
-from gatox.github.api import Api
+from gatox.models.secret import Secret
 
 
 class OrganizationEnum:
@@ -20,7 +18,7 @@ class OrganizationEnum:
 
     async def __assemble_repo_list(
         self, organization: str, visibilities: list
-    ) -> List[Repository]:
+    ) -> list[Repository]:
         """Get a list of repositories that match the visibility types.
 
         Args:
@@ -38,7 +36,7 @@ class OrganizationEnum:
 
     async def construct_repo_enum_list(
         self, organization: Organization
-    ) -> List[Repository]:
+    ) -> list[Repository]:
         """Constructs a list of repositories that a user has access to within
         an organization.
 

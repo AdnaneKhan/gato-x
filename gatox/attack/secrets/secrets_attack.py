@@ -14,19 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import yaml
-import string
-import json
 import hashlib
+import json
 import random
+import string
 
+import yaml
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.ciphers import Cipher
-from cryptography.hazmat.primitives.ciphers import algorithms
-from cryptography.hazmat.primitives.ciphers import modes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from gatox.attack.attack import Attacker
 from gatox.cli.output import Output

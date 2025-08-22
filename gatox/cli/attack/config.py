@@ -1,5 +1,5 @@
-from gatox.util.arg_utils import ReadableFile, StringType
 from gatox.cli.output import Output
+from gatox.util.arg_utils import ReadableFile, StringType
 
 
 def configure_parser_attack(parser):

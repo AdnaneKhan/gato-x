@@ -17,9 +17,9 @@ limitations under the License.
 import logging
 import re
 
-from gatox.workflow_graph.nodes.node import Node
-from gatox.workflow_graph.nodes.job import JobNode
 from gatox.models.workflow import Workflow
+from gatox.workflow_graph.nodes.job import JobNode
+from gatox.workflow_graph.nodes.node import Node
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +205,7 @@ class WorkflowNode(Node):
         if not self.__callers:
             return set()
         else:
-            return set([caller.get_workflow() for caller in self.__callers])
+            return {caller.get_workflow() for caller in self.__callers}
 
     def initialize(self, workflow: Workflow):
         """Initialize the Workflow node with the parsed workflow data."""

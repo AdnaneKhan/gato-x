@@ -18,15 +18,15 @@ import asyncio
 import logging
 import traceback
 
-from gatox.models.workflow import Workflow
-from gatox.models.repository import Repository
-from gatox.models.composite import Composite
-from gatox.workflow_graph.node_factory import NodeFactory
-from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
-from gatox.workflow_graph.nodes.job import JobNode
-from gatox.workflow_graph.nodes.action import ActionNode
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
 from gatox.caching.cache_manager import CacheManager
+from gatox.models.composite import Composite
+from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
+from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
+from gatox.workflow_graph.node_factory import NodeFactory
+from gatox.workflow_graph.nodes.action import ActionNode
+from gatox.workflow_graph.nodes.job import JobNode
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class WorkflowGraphBuilder:
         Create a new instance of the class. If an instance already exists, return that instance.
         """
         if cls._instance is None:
-            cls._instance = super(WorkflowGraphBuilder, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance.graph = TaggedGraph(cls._instance)
             cls._action_locks = {}
             cls._action_locks_lock = asyncio.Lock()

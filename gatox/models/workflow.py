@@ -1,9 +1,10 @@
-from datetime import datetime
-import yaml
 import logging
+from datetime import datetime
+
+import yaml
+from yaml.resolver import Resolver
 
 from gatox.workflow_parser.source_map import build_workflow_source_map
-from yaml.resolver import Resolver
 
 logger = logging.getLogger(__name__)
 

@@ -15,8 +15,9 @@ limitations under the License.
 """
 
 from abc import abstractmethod
-from gatox.enumerate.results.confidence import Confidence
+
 from gatox.enumerate.results.complexity import Complexity
+from gatox.enumerate.results.confidence import Confidence
 
 
 class AnalysisResult:

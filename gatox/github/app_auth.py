@@ -1,7 +1,8 @@
-import jwt
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class GitHubAppAuth:
                     f"Private key file not found: {self.private_key_path}"
                 )
 
-            with open(self.private_key_path, "r") as f:
+            with open(self.private_key_path) as f:
                 self._private_key = f.read()
 
         return self._private_key

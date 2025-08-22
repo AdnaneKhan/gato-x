@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from gatox.workflow_graph.nodes.step import StepNode
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
+from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
+from gatox.workflow_graph.nodes.action import ActionNode
 from gatox.workflow_graph.nodes.job import JobNode
 from gatox.workflow_graph.nodes.repo import RepoNode
-from gatox.workflow_graph.nodes.action import ActionNode
-from gatox.models.workflow import Workflow
-from gatox.models.repository import Repository
+from gatox.workflow_graph.nodes.step import StepNode
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
 from gatox.workflow_parser.utility import parse_github_path
 
 
@@ -59,7 +59,7 @@ class NodeFactory:
 
     @staticmethod
     def create_job_node(
-        job_name, ref, repo_name, workflow_path, line_number=None, needs: list = []
+        job_name, ref, repo_name, workflow_path, line_number=None, needs: list = None
     ):
         """
         Create a JobNode for the specified job and cache it.
@@ -78,6 +78,8 @@ class NodeFactory:
         Returns:
             JobNode: The created or cached JobNode instance.
         """
+        if needs is None:
+            needs = []
         job_node = JobNode(job_name, ref, repo_name, workflow_path, line_number)
         if job_node.name in NodeFactory.NODE_CACHE:
             return NodeFactory.NODE_CACHE[job_node.name]
@@ -189,7 +191,7 @@ class NodeFactory:
 
     @staticmethod
     def create_action_node(
-        action_name, ref, action_path, repo_name, params={}, usage_context=None
+        action_name, ref, action_path, repo_name, params=None, usage_context=None
     ):
         """
         Create an ActionNode for the specified action with unique usage context.
@@ -211,6 +213,8 @@ class NodeFactory:
             ActionNode: The created or cached ActionNode instance.
         """
         # Create a context-aware unique name for this action usage
+        if params is None:
+            params = {}
         if usage_context:
             workflow_name = usage_context.get("workflow_name", "unknown")
             job_id = usage_context.get("job_id", "unknown")

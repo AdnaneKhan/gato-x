@@ -1,7 +1,8 @@
-import pytest
 import types
+from unittest.mock import MagicMock, patch
 
-from unittest.mock import patch, MagicMock
+import pytest
+
 from gatox.enumerate.reports.actions import ActionsReport
 from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.confidence import Confidence
@@ -9,12 +10,12 @@ from gatox.enumerate.results.issue_type import IssueType
 from gatox.enumerate.results.result_factory import ResultFactory
 from gatox.github.api import Api
 from gatox.models.workflow import Workflow
-from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
+from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
+from gatox.workflow_graph.nodes.action import ActionNode
 from gatox.workflow_graph.nodes.job import JobNode
 from gatox.workflow_graph.nodes.step import StepNode
-from gatox.workflow_graph.nodes.action import ActionNode
-from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
+from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
 
 
 class DummyNode:

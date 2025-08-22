@@ -1,11 +1,10 @@
-import time
-import logging
 import asyncio
-
-from gatox.github.api import Api
-from gatox.cli.output import Output
+import logging
+import time
 from urllib.parse import urlparse
 
+from gatox.cli.output import Output
+from gatox.github.api import Api
 
 logger = logging.getLogger(__name__)
 

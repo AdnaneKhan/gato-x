@@ -16,15 +16,15 @@ limitations under the License.
 
 from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
+from gatox.github.api import Api
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
-from gatox.workflow_parser.utility import CONTEXT_REGEX
+from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
 from gatox.workflow_parser.utility import (
-    getTokens,
+    CONTEXT_REGEX,
     getToken,
+    getTokens,
     prReviewUnsafe,
 )
-from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
-from gatox.github.api import Api
 
 
 class ReviewInjectionVisitor:

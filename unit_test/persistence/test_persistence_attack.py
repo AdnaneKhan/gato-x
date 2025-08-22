@@ -1,5 +1,7 @@
+from unittest.mock import ANY, AsyncMock, mock_open, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock, mock_open, ANY
+
 from gatox.attack.persistence.persistence_attack import PersistenceAttack
 
 

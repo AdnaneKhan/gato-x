@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import glob
 import json
 import os
-import glob
 
 
 class ConfigurationManager:
@@ -39,9 +39,7 @@ class ConfigurationManager:
             ConfigurationManager: The singleton instance of the ConfigurationManager class.
         """
         if cls._instance is None:
-            cls._instance = super(ConfigurationManager, cls).__new__(
-                cls, *args, **kwargs
-            )
+            cls._instance = super().__new__(cls, *args, **kwargs)
             script_dir = os.path.dirname(os.path.realpath(__file__))
             json_files = glob.glob(os.path.join(script_dir, "*.json"))
             for file_path in json_files:
@@ -55,7 +53,7 @@ class ConfigurationManager:
         Args:
             file_path (str): The path to the JSON file to load.
         """
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             config = json.load(f)
             if self._config is None:
                 self._config = {}

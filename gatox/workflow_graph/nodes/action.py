@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 from gatox.workflow_graph.nodes.node import Node
-
 from gatox.workflow_parser.utility import decompose_action_ref, starts_with_any
 
 
@@ -37,79 +36,69 @@ class ActionNode(Node):
 
     # Set of actions that we do not need
     # to pull down yamls for.
-    KNOWN_GOOD = set(
-        [
-            "azure/login",
-            "github/codeql-action/analyze",
-            "docker/login-action",
-            "github/codeql-action",
-            "github/codeql-action/init",
-            "codecov/codecov-action",
-            "docker/setup-buildx-action",
-            "actions-cool/check-user-permission",
-        ]
-    )
+    KNOWN_GOOD = {
+        "azure/login",
+        "github/codeql-action/analyze",
+        "docker/login-action",
+        "github/codeql-action",
+        "github/codeql-action/init",
+        "codecov/codecov-action",
+        "docker/setup-buildx-action",
+        "actions-cool/check-user-permission",
+    }
 
-    KNOWN_SINKS = set(
-        [
-            "sonarsource/sonarcloud-github-action",
-            "actions/jekyll-build-pages",
-            "bridgecrewio/checkov-action",
-            "pre-commit/action",
-            "oxsecurity/megalinter",
-            "andresz1/size-limit-action",
-        ]
-    )
+    KNOWN_SINKS = {
+        "sonarsource/sonarcloud-github-action",
+        "actions/jekyll-build-pages",
+        "bridgecrewio/checkov-action",
+        "pre-commit/action",
+        "oxsecurity/megalinter",
+        "andresz1/size-limit-action",
+    }
 
     # List taken from https://github.com/github/codeql/blob/main/actions/ql/lib/codeql/actions/security/ArtifactPoisoningQuery.qll#L47-L56
-    ARTIFACT_RETRIEVERS = set(
-        [
-            "actions/download-artifact",
-            "dawidd6/action-download-artifact",
-            "marcofaggian/action-download-multiple-artifacts",
-            "benday-inc/download-latest-artifact",
-            "blablacar/action-download-last-artifact",
-            "levonet/action-download-last-artifact",
-            "bettermarks/action-artifact-download",
-            "aochmann/actions-download-artifact",
-            "cytopia/download-artifact-retry-action",
-            "alextompkins/download-prior-artifact",
-            "nmerget/download-gzip-artifact",
-            "benday-inc/download-artifact",
-            "synergy-au/download-workflow-artifacts-action",
-            "sidx1024/action-download-artifact",
-            "hyperskill/azblob-download-artifact",
-            "ma-ve/action-download-artifact-with-retry",
-        ]
-    )
+    ARTIFACT_RETRIEVERS = {
+        "actions/download-artifact",
+        "dawidd6/action-download-artifact",
+        "marcofaggian/action-download-multiple-artifacts",
+        "benday-inc/download-latest-artifact",
+        "blablacar/action-download-last-artifact",
+        "levonet/action-download-last-artifact",
+        "bettermarks/action-artifact-download",
+        "aochmann/actions-download-artifact",
+        "cytopia/download-artifact-retry-action",
+        "alextompkins/download-prior-artifact",
+        "nmerget/download-gzip-artifact",
+        "benday-inc/download-artifact",
+        "synergy-au/download-workflow-artifacts-action",
+        "sidx1024/action-download-artifact",
+        "hyperskill/azblob-download-artifact",
+        "ma-ve/action-download-artifact-with-retry",
+    }
 
-    KNOWN_GATES = set(
-        [
-            "sushichop/action-repository-permission",
-            "actions-cool/check-user-permission",
-            "shopify/snapit",
-            "peter-evans/slash-command-dispatch",
-            "TheModdingInquisition/actions-team-membership",
-            "prince-chrismc/check-actor-permissions-action",
-            "lannonbr/repo-permission-check-action",
-            "skjnldsv/check-actor-permission",
-            "github/command",
-            "anthropics/claude-code-action",
-        ]
-    )
+    KNOWN_GATES = {
+        "sushichop/action-repository-permission",
+        "actions-cool/check-user-permission",
+        "shopify/snapit",
+        "peter-evans/slash-command-dispatch",
+        "TheModdingInquisition/actions-team-membership",
+        "prince-chrismc/check-actor-permissions-action",
+        "lannonbr/repo-permission-check-action",
+        "skjnldsv/check-actor-permission",
+        "github/command",
+        "anthropics/claude-code-action",
+    }
 
-    GOOD_PREFIXES = set(
-        [
-            "actions/",
-            "docker/",
-            "octokit/",
-            "github/",
-            "google-github-actions/",
-            "aws-actions/",
-        ]
-    )
+    GOOD_PREFIXES = {
+        "actions/",
+        "docker/",
+        "octokit/",
+        "github/",
+        "google-github-actions/",
+        "aws-actions/",
+    }
 
-    KNOWN_HARD_GATES = set(["dependabot/fetch-metadata"])
+    KNOWN_HARD_GATES = {"dependabot/fetch-metadata"}
 
     def __init__(
         self,

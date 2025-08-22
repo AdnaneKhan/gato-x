@@ -1,16 +1,15 @@
+import json
 import os
 import pathlib
+from unittest.mock import AsyncMock, patch
+
 import pytest
-import json
 
-from unittest.mock import patch, AsyncMock
-from gatox.github.api import Api
-
-from gatox.models.workflow import Workflow
-from gatox.enumerate.enumerate import Enumerator
-from gatox.cli.output import Output
 from gatox.caching.cache_manager import CacheManager
-
+from gatox.cli.output import Output
+from gatox.enumerate.enumerate import Enumerator
+from gatox.github.api import Api
+from gatox.models.workflow import Workflow
 from unit_test.utils import escape_ansi as escape_ansi
 
 TEST_REPO_DATA = None
@@ -54,13 +53,13 @@ def load_test_files(request):
     test_org_path = os.path.join(curr_path, "files/example_org.json")
     test_wf_path = os.path.join(curr_path, "files/main.yaml")
 
-    with open(test_repo_path, "r") as repo_data:
+    with open(test_repo_path) as repo_data:
         TEST_REPO_DATA = json.load(repo_data)
 
-    with open(test_org_path, "r") as repo_data:
+    with open(test_org_path) as repo_data:
         TEST_ORG_DATA = json.load(repo_data)
 
-    with open(test_wf_path, "r") as wf_data:
+    with open(test_wf_path) as wf_data:
         TEST_WORKFLOW_YML = wf_data.read()
 
 

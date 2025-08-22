@@ -1,6 +1,5 @@
-from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
-
+from gatox.workflow_parser.expression_parser import ExpressionParser
 
 # steps.get_changes.outputs.changed != 0
 # always() && (needs.build-artifacts.result == 'failure' || needs.github-release.result == 'failure')

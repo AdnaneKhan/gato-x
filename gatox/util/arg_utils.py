@@ -3,7 +3,7 @@ import os
 import re
 
 
-class StringType(object):
+class StringType:
     def __init__(self, length_cap, regex=None):
         self.length_cap = length_cap
         self.regex = regex
@@ -30,7 +30,7 @@ class StringType(object):
         return string
 
 
-class WriteableDir(object):
+class WriteableDir:
     def __call__(self, dirpath: str):
         """Checks if the path is of a directory that exists and can be
         written to.
@@ -58,7 +58,7 @@ class WriteableDir(object):
             )
 
 
-class WritablePath(object):
+class WritablePath:
     def __call__(self, filepath: str) -> str:
         """
         Checks that filepath is writable if it exists, or can be created if it does not exist.
@@ -93,7 +93,7 @@ class WritablePath(object):
         return filepath
 
 
-class ReadableFile(object):
+class ReadableFile:
     def __call__(self, filepath: str):
         """Argument validation function for file paths.
 
@@ -119,7 +119,7 @@ class ReadableFile(object):
 
 def is_valid_directory(parser, arg):
     if not os.path.isdir(arg):
-        parser.error("The directory {} does not exist!".format(arg))
+        parser.error(f"The directory {arg} does not exist!")
     else:
         # File exists so return the directory
         return arg
@@ -140,7 +140,7 @@ def read_file_and_validate_lines(filepath: str, regex: str):
     lines = []
     pat = re.compile(regex)
 
-    with open(filepath, "r") as f_in:
+    with open(filepath) as f_in:
         for line in f_in:
             match = pat.match(line)
             if not match:

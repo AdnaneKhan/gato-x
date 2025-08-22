@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
-from gatox.enumerate.ingest.ingest import DataIngestor
+
 from gatox.caching.cache_manager import CacheManager
+from gatox.enumerate.ingest.ingest import DataIngestor
 
 
 class TestConstructWorkflowCache(unittest.IsolatedAsyncioTestCase):

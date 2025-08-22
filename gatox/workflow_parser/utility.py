@@ -1,11 +1,10 @@
-import re
 import logging
-
+import re
 from datetime import datetime, timedelta
 
 from gatox.configuration.configuration_manager import ConfigurationManager
-from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
+from gatox.workflow_parser.expression_parser import ExpressionParser
 
 logger = logging.getLogger(__name__)
 
@@ -367,13 +366,15 @@ def check_false_if(if_check):
 
 
 @staticmethod
-def validate_if_check(if_check, variables={}):
+def validate_if_check(if_check, variables=None):
     """Function used to validate each if check.
     The strategy here is to "fail open". If we cannot
     determine with certainty the check would fail in an injection
     or pwn request scenario then we return True, because we would rather
     not miss a potential vulnerability.
     """
+    if variables is None:
+        variables = {}
     if not if_check:
         return True
 

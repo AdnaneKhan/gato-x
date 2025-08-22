@@ -1,8 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch, AsyncMock
+
+from gatox.github.api import Api
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 from gatox.workflow_graph.visitors.injection_visitor import InjectionVisitor
-from gatox.github.api import Api
 
 
 @pytest.fixture

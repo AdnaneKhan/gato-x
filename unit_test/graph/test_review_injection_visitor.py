@@ -1,10 +1,12 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from gatox.enumerate.results.confidence import Confidence
+from gatox.enumerate.results.issue_type import IssueType
 from gatox.workflow_graph.visitors.review_injection_visitor import (
     ReviewInjectionVisitor,
 )
-from gatox.enumerate.results.confidence import Confidence
-from gatox.enumerate.results.issue_type import IssueType
 
 
 @pytest.fixture

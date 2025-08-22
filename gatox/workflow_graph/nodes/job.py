@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 from gatox.workflow_graph.nodes.node import Node
-
 from gatox.workflow_parser.utility import (
     process_matrix,
     process_runner,

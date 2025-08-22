@@ -1,16 +1,17 @@
-import httpx
-import logging
-import json
 import asyncio
 import io
-from typing import List, Dict, Any
+import json
+import logging
+from typing import Any
+
+import httpx
 
 from gatox.configuration.configuration_manager import ConfigurationManager
 
 logger = logging.getLogger(__name__)
 
 
-def _create_result_summary(result_data: Dict[str, Any]) -> str:
+def _create_result_summary(result_data: dict[str, Any]) -> str:
     """Create a concise summary of analysis result for Discord messages.
 
     Args:
@@ -59,7 +60,7 @@ async def send_discord_webhook(message) -> None:
     Raises:
         ValueError: If the request to Discord fails after retries
     """
-    hooks: List[str] = ConfigurationManager().NOTIFICATIONS["DISCORD_WEBHOOKS"]
+    hooks: list[str] = ConfigurationManager().NOTIFICATIONS["DISCORD_WEBHOOKS"]
 
     # Convert message to JSON string if it's not already
     if isinstance(message, str):
@@ -118,8 +119,7 @@ async def send_discord_webhook(message) -> None:
 
                 if response.status_code not in [200, 204]:
                     raise ValueError(
-                        "Request to Discord returned an error %s, the response is:\n%s"
-                        % (response.status_code, response.text)
+                        f"Request to Discord returned an error {response.status_code}, the response is:\n{response.text}"
                     )
     else:
         # Message is short enough, send normally
@@ -148,8 +148,7 @@ async def send_discord_webhook(message) -> None:
 
                 if response.status_code not in [200, 204]:
                     raise ValueError(
-                        "Request to Discord returned an error %s, the response is:\n%s"
-                        % (response.status_code, response.text)
+                        f"Request to Discord returned an error {response.status_code}, the response is:\n{response.text}"
                     )
 
 
@@ -163,7 +162,7 @@ async def send_slack_webhook(message: str) -> None:
         ValueError: If the request to Slack fails after retries
     """
     payload = {"text": json.dumps(message, indent=4)}
-    hooks: List[str] = ConfigurationManager().NOTIFICATIONS["SLACK_WEBHOOKS"]
+    hooks: list[str] = ConfigurationManager().NOTIFICATIONS["SLACK_WEBHOOKS"]
 
     async with httpx.AsyncClient(
         http2=True, follow_redirects=True, timeout=10.0
@@ -188,6 +187,5 @@ async def send_slack_webhook(message: str) -> None:
 
             if response.status_code != 200:
                 raise ValueError(
-                    "Request to slack returned an error %s, the response is:\n%s"
-                    % (response.status_code, response.text)
+                    f"Request to slack returned an error {response.status_code}, the response is:\n{response.text}"
                 )

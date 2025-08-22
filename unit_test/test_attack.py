@@ -1,7 +1,6 @@
 import re
+from unittest.mock import AsyncMock, patch
 
-from unittest.mock import patch
-from unittest.mock import AsyncMock
 from gatox.attack.attack import Attacker
 from gatox.github.api import Api
 

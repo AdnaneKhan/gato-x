@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import networkx as nx
 import logging
 import time
+
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +79,8 @@ class TaggedGraph(nx.DiGraph):
             GraphTraversalTimeoutError: If traversal takes longer than MAX_TRAVERSAL_TIME_SECONDS (10) seconds.
         """
         start_time = time.time()
-        path = list()
-        all_paths = list()
+        path = []
+        all_paths = []
         visited = set()
 
         # Track traversal metrics

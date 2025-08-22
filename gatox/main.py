@@ -1,6 +1,7 @@
-from gatox.cli import cli
-import sys
 import asyncio
+import sys
+
+from gatox.cli import cli
 
 
 def entry():

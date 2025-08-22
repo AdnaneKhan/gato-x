@@ -1,17 +1,17 @@
-import os
-import pytest
-import pathlib
 import json
+import os
+import pathlib
 
-from .integration_utils import process_command
-from .integration_utils import load_creds
+import pytest
+
+from .integration_utils import load_creds, process_command
 
 
 def load_cases():
     """Load test cases from the test case JSON file."""
     curr_path = pathlib.Path(__file__).parent.resolve()
 
-    with open(os.path.join(curr_path, "test_cases.json"), "r") as f:
+    with open(os.path.join(curr_path, "test_cases.json")) as f:
         cases = json.load(f)
 
     creds = load_creds()
