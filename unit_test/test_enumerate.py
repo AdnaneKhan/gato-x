@@ -436,13 +436,15 @@ async def test_unscoped_token(mock_api, capfd):
     mock_api.return_value.is_app_token.return_value = False
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
-        "scopes": ["public_repo"],
+        "scopes": [],
     }
 
     status = await gh_enumeration_runner.self_enumeration()
 
     out, _ = capfd.readouterr()
-    assert "Self-enumeration requires the repo scope!" in escape_ansi(out)
+    assert "Self-enumeration requires the repo or public_repo scope!" in escape_ansi(
+        out
+    )
     assert status is False
 
 
