@@ -287,7 +287,10 @@ class Enumerator:
         if not await self.__setup_user_info():
             return False
 
-        if "repo" not in self.user_perms["scopes"]:
+        if (
+            "repo" not in self.user_perms["scopes"]
+            and "public_repo" not in self.user_perms["scopes"]
+        ):
             Output.warn("Token does not have sufficient access to list orgs!")
             return False
 
@@ -317,8 +320,11 @@ class Enumerator:
         if not self.user_perms:
             return False
 
-        if "repo" not in self.user_perms["scopes"]:
-            Output.error("Self-enumeration requires the repo scope!")
+        if (
+            "repo" not in self.user_perms["scopes"]
+            and "public_repo" not in self.user_perms["scopes"]
+        ):
+            Output.error("Self-enumeration requires the repo or public_repo scope!")
             return False
 
         Output.info("Enumerating user owned repositories!")
