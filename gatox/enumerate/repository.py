@@ -1,12 +1,12 @@
 import logging
 
-from gatox.enumerate.reports.runners import RunnersReport
 from gatox.cli.output import Output
 from gatox.enumerate.reports.actions import ActionsReport
-from gatox.models.execution import Repository
-from gatox.models.secret import Secret
-from gatox.models.runner import Runner
+from gatox.enumerate.reports.runners import RunnersReport
 from gatox.github.api import Api
+from gatox.models.execution import Repository
+from gatox.models.runner import Runner
+from gatox.models.secret import Secret
 
 logger = logging.getLogger(__name__)
 

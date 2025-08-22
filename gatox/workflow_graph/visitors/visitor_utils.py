@@ -18,22 +18,20 @@ import asyncio
 import logging
 import re
 
-from gatox.configuration.configuration_manager import ConfigurationManager
 from gatox.caching.cache_manager import CacheManager
+from gatox.configuration.configuration_manager import ConfigurationManager
+from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
-from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.result_factory import ResultFactory
-from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.github.api import Api
-
+from gatox.notifications.send_webhook import send_discord_webhook, send_slack_webhook
+from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.workflow_parser.utility import (
     CONTEXT_REGEX,
     is_within_last_day,
     return_recent,
 )
-from gatox.notifications.send_webhook import send_slack_webhook
-from gatox.notifications.send_webhook import send_discord_webhook
 
 logger = logging.getLogger(__name__)
 

@@ -60,7 +60,7 @@ class LocalCacheFactory:
         Example cache key format:
             'owner/repo:actions/checkout:v2'
         """
-        with open(saved_cache, "r") as f:
+        with open(saved_cache) as f:
             data = json.load(f)
             for key, val in data.items():
                 parts = key.split(":")

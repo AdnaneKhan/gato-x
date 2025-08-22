@@ -1,10 +1,8 @@
 import re
-
-from unittest.mock import patch
-from unittest.mock import MagicMock, AsyncMock
-from gatox.github.api import Api
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from gatox.attack.secrets.secrets_attack import SecretsAttack
+from gatox.github.api import Api
 
 
 # From https://stackoverflow.com/questions/14693701/

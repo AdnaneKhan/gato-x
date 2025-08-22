@@ -1,16 +1,16 @@
-from unittest.mock import patch
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
 from gatox.workflow_parser.utility import (
-    decompose_action_ref,
-    parse_github_path,
     check_sinks,
-    parse_script,
-    starts_with_any,
-    process_matrix,
-    getTokens,
     check_sus,
     checkUnsafe,
+    decompose_action_ref,
+    getTokens,
+    parse_github_path,
+    parse_script,
+    process_matrix,
     process_runner,
+    starts_with_any,
 )
 
 

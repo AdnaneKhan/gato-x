@@ -1,5 +1,7 @@
-import networkx as nx
 from unittest.mock import AsyncMock, MagicMock
+
+import networkx as nx
+
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 
 

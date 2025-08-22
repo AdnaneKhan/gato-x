@@ -8,10 +8,9 @@ import os
 
 from fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List
 
-from gatox.enumerate.enumerate import Enumerator
 from gatox.cli.output import Output
+from gatox.enumerate.enumerate import Enumerator
 
 app = FastMCP(
     name="Gato-X MCP Server",
@@ -24,25 +23,25 @@ class MCPAuthParams(BaseModel):
     Authentication and proxy options for GitHub enumeration. The GitHub Personal Access Token (PAT) is required and should be provided via the GH_TOKEN environment variable. If not set, an error will be raised. SOCKS and HTTP proxies are mutually exclusive.
     """
 
-    socks_proxy: Optional[str] = Field(
+    socks_proxy: str | None = Field(
         None, description="SOCKS proxy in HOST:PORT format (optional)"
     )
-    http_proxy: Optional[str] = Field(
+    http_proxy: str | None = Field(
         None, description="HTTP proxy in HOST:PORT format (optional)"
     )
-    github_url: Optional[str] = Field(
+    github_url: str | None = Field(
         None,
         description="Custom GitHub API URL (optional, defaults to https://api.github.com)",
     )
-    skip_runners: Optional[bool] = Field(
+    skip_runners: bool | None = Field(
         True,
         description="If true, skips runner enumeration via run-log analysis for speed, but may miss self-hosted runners for non-admin users.",
     )
-    ignore_workflow_run: Optional[bool] = Field(
+    ignore_workflow_run: bool | None = Field(
         False,
         description="If true, ignores the workflow_run trigger when enumerating repositories. Useful if the org requires approval for all fork PRs.",
     )
-    deep_dive: Optional[bool] = Field(
+    deep_dive: bool | None = Field(
         False,
         description="If true, performs deep-dive static analysis, including non-default branches for Pwn Request vulnerabilities. Requires git on PATH.",
     )
@@ -83,7 +82,7 @@ class EnumerateRepositoryInput(MCPAuthParams):
         ...,
         description="Repository in 'owner/repo' format to enumerate (e.g., 'octocat/Hello-World')",
     )
-    single_commit: Optional[str] = Field(
+    single_commit: str | None = Field(
         None,
         description="Scan a single commit SHA (40 hex chars). Only compatible with single repository enumeration. Assumes commit is latest on default branch.",
     )
@@ -94,7 +93,7 @@ class EnumerateRepositoriesInput(MCPAuthParams):
     Enumerate a list of repositories for self-hosted runners, workflow security, and secrets exposure. Returns findings and recommendations for each repository. Provide a list of repositories in 'owner/repo' format.
     """
 
-    repositories: List[str] = Field(
+    repositories: list[str] = Field(
         ...,
         description="List of repositories in 'owner/repo' format (e.g., ['octocat/Hello-World', ...])",
     )

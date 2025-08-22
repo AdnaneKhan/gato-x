@@ -1,12 +1,12 @@
-import pytest
 import os
 import pathlib
-
 from unittest import mock
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from gatox.cli import cli
-from gatox.util.arg_utils import read_file_and_validate_lines, is_valid_directory
+from gatox.util.arg_utils import is_valid_directory, read_file_and_validate_lines
 
 
 @pytest.fixture(autouse=True)
@@ -68,6 +68,7 @@ async def test_cli_s2s_token_no_machine(capfd):
 async def test_cli_s2s_token_machine(mock_api, capfd):
     """Test case where a service-to-service token is provided."""
     import os
+
     from gatox.cli import cli  # [gatox/cli/cli.py](gatox/cli/cli.py)
 
     os.environ["GH_TOKEN"] = "ghs_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"

@@ -1,8 +1,8 @@
-import yaml
 import logging
 
-from gatox.workflow_parser.source_map import build_composite_source_map
+import yaml
 
+from gatox.workflow_parser.source_map import build_composite_source_map
 
 logger = logging.getLogger(__name__)
 

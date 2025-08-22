@@ -1,12 +1,12 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any
 
-from gatox.github.api import Api
-from gatox.models.repository import Repository
-from gatox.github.app_auth import GitHubAppAuth
 from gatox.cli.output import Output
 from gatox.enumerate.enumerate import Enumerator
+from gatox.github.api import Api
+from gatox.github.app_auth import GitHubAppAuth
 from gatox.models.execution import Execution
+from gatox.models.repository import Repository
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class AppEnumerator:
             github_url=self.github_url,
         )
 
-    async def validate_app(self) -> Dict[str, Any]:
+    async def validate_app(self) -> dict[str, Any]:
         """Validate the GitHub App and return basic information."""
         if not self.api:
             await self._initialize_api_with_jwt()
@@ -85,7 +85,7 @@ class AppEnumerator:
 
         return app_info
 
-    def report_installations(self, installations: List[Dict[str, Any]]):
+    def report_installations(self, installations: list[dict[str, Any]]):
         """Report the installations found."""
         if installations:
             for installation in installations:
@@ -104,7 +104,7 @@ class AppEnumerator:
         else:
             Output.warn("No installations found")
 
-    async def list_installations(self) -> List[Dict[str, Any]]:
+    async def list_installations(self) -> list[dict[str, Any]]:
         """List all installations for the GitHub App."""
         if not self.api:
             await self._initialize_api_with_jwt()
@@ -132,7 +132,7 @@ class AppEnumerator:
 
         return enhanced_installations
 
-    async def enumerate_installation(self, installation_id: str) -> List[Repository]:
+    async def enumerate_installation(self, installation_id: str) -> list[Repository]:
         """Enumerate a specific installation."""
         if not self.api:
             await self._initialize_api_with_jwt()
@@ -199,7 +199,7 @@ class AppEnumerator:
 
         return enumerated_repos
 
-    async def enumerate_all_installations(self) -> List[Execution]:
+    async def enumerate_all_installations(self) -> list[Execution]:
         """Enumerate all installations accessible to the GitHub App."""
         installations = await self.list_installations()
 

@@ -17,10 +17,9 @@ limitations under the License.
 import base64
 import random
 import string
-from typing import Optional, Tuple
 
-from gatox.cli.output import Output
 from gatox.attack.payloads.payloads import Payloads
+from gatox.cli.output import Output
 
 
 class PayloadManager:
@@ -32,7 +31,7 @@ class PayloadManager:
 
     async def setup_payload_gist_and_workflow(
         self, c2_repo: str, target_os: str, target_arch: str, keep_alive: bool = False
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """
         Sets up a payload in the form of a GitHub Gist and a GitHub Actions workflow.
 
@@ -67,7 +66,7 @@ class PayloadManager:
         target_os: str,
         target_arch: str,
         keep_alive: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Configures a Gist file used to install the runner-on-runner implant.
 
@@ -140,7 +139,7 @@ class PayloadManager:
             Output.error(f"Unsupported target OS: {target_os}")
             return None
 
-    async def configure_c2_repository(self) -> Optional[str]:
+    async def configure_c2_repository(self) -> str | None:
         """
         Configures a C2 repository and returns the repository name.
 

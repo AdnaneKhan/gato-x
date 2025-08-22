@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import networkx as nx
 import logging
 import time
+
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 

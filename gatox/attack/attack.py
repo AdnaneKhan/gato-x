@@ -1,11 +1,11 @@
+import asyncio
 import logging
 import random
 import string
-import asyncio
 
-from gatox.github.api import Api
 from gatox.attack.cicd_attack import CICDAttack
 from gatox.cli.output import Output
+from gatox.github.api import Api
 
 logger = logging.getLogger(__name__)
 logging.root.setLevel(logging.DEBUG)
@@ -227,7 +227,7 @@ class Attacker:
                 return
 
             if custom_workflow:
-                with open(custom_workflow, "r") as custom_wf:
+                with open(custom_workflow) as custom_wf:
                     yaml_contents = custom_wf.read()
             else:
                 yaml_contents = CICDAttack.create_push_yml(payload, branch)

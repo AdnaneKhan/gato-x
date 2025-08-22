@@ -1,10 +1,11 @@
-import pathlib
 import os
+import pathlib
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from unittest.mock import MagicMock, patch
 from gatox.git.git import Git
-from gatox.git.utils import version_check, path_check, sed_check
+from gatox.git.utils import path_check, sed_check, version_check
 
 
 @patch("gatox.git.utils.subprocess.run")

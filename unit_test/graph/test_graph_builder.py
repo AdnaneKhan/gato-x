@@ -1,11 +1,13 @@
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
-from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
-from gatox.models.workflow import Workflow
+
+import pytest
+
 from gatox.models.repository import Repository
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
-from gatox.workflow_graph.nodes.action import ActionNode
+from gatox.models.workflow import Workflow
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
+from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
+from gatox.workflow_graph.nodes.action import ActionNode
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
 
 
 @pytest.fixture

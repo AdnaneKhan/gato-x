@@ -2,10 +2,12 @@
 Unit tests for RunnerVisitor
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
-from gatox.workflow_graph.visitors.runner_visitor import RunnerVisitor
+
+import pytest
+
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
+from gatox.workflow_graph.visitors.runner_visitor import RunnerVisitor
 
 
 @pytest.fixture

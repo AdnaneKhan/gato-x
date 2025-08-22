@@ -1,8 +1,9 @@
-import logging
 import asyncio
+import logging
 
 from gatox.caching.cache_manager import CacheManager
 from gatox.cli.output import Output
+from gatox.enumerate.deep_dive.ingest_non_default import IngestNonDefault
 from gatox.enumerate.ingest.ingest import DataIngestor
 from gatox.enumerate.organization import OrganizationEnum
 from gatox.enumerate.recommender import Recommender
@@ -12,20 +13,17 @@ from gatox.github.gql_queries import GqlQueries
 from gatox.models.organization import Organization
 from gatox.models.repository import Repository
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
-from gatox.workflow_graph.visitors.injection_visitor import InjectionVisitor
-from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
-from gatox.workflow_graph.visitors.runner_visitor import RunnerVisitor
-from gatox.workflow_graph.visitors.dispatch_toctou_visitor import DispatchTOCTOUVisitor
 from gatox.workflow_graph.visitors.artifact_poisoning_visitor import (
     ArtifactPoisoningVisitor,
 )
+from gatox.workflow_graph.visitors.dispatch_toctou_visitor import DispatchTOCTOUVisitor
+from gatox.workflow_graph.visitors.injection_visitor import InjectionVisitor
+from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
 from gatox.workflow_graph.visitors.review_injection_visitor import (
     ReviewInjectionVisitor,
 )
-
-from gatox.enumerate.deep_dive.ingest_non_default import IngestNonDefault
+from gatox.workflow_graph.visitors.runner_visitor import RunnerVisitor
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
-
 
 logger = logging.getLogger(__name__)
 
@@ -494,7 +492,7 @@ class Enumerator:
         )
 
         # Process results
-        for visitor_class, results in zip(visitors, visitor_results):
+        for visitor_class, results in zip(visitors, visitor_results, strict=False):
             if results and not isinstance(results, Exception):
                 await VisitorUtils.add_repo_results(results, self.api)
             elif isinstance(results, Exception):

@@ -1,5 +1,5 @@
-from gatox.cli.output import Fore, Style, Output
-from gatox.util.arg_utils import StringType, ReadableFile, WriteableDir, WritablePath
+from gatox.cli.output import Fore, Output, Style
+from gatox.util.arg_utils import ReadableFile, StringType, WritablePath, WriteableDir
 
 
 def configure_parser_enumerate(parser):

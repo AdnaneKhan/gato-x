@@ -1,18 +1,18 @@
 import json
-import textwrap
 import re
+import textwrap
+
+from colorama import Fore, Style
 
 from gatox.cli.colors import (
-    RED_DASH,
-    GREEN_PLUS,
-    GREEN_EXCLAIM,
-    RED_EXCLAIM,
     BRIGHT_DASH,
-    YELLOW_EXCLAIM,
+    GREEN_EXCLAIM,
+    GREEN_PLUS,
+    RED_DASH,
+    RED_EXCLAIM,
     YELLOW_DASH,
+    YELLOW_EXCLAIM,
 )
-
-from colorama import Style, Fore
 
 
 class Singleton(type):

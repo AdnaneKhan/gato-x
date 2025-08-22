@@ -1,10 +1,9 @@
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 from gatox.enumerate.deep_dive.ingest_non_default import IngestNonDefault
-from unittest.mock import AsyncMock
-import asyncio
-
 from gatox.models.repository import Repository
 
 

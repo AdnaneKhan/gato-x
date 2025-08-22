@@ -1,17 +1,18 @@
+import asyncio
 import base64
 import copy
-import httpx
-import logging
-import zipfile
-import re
 import io
-import asyncio
+import logging
+import re
+import zipfile
+from datetime import datetime, timedelta, timezone
+
+import httpx
 
 from gatox.cli.output import Output
-from datetime import datetime, timezone, timedelta
 from gatox.enumerate.ingest.ingest import DataIngestor
-from gatox.models.workflow import Workflow
 from gatox.github.gql_queries import GqlQueries
+from gatox.models.workflow import Workflow
 
 logger = logging.getLogger(__name__)
 

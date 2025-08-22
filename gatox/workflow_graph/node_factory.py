@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from gatox.workflow_graph.nodes.step import StepNode
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
+from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
+from gatox.workflow_graph.nodes.action import ActionNode
 from gatox.workflow_graph.nodes.job import JobNode
 from gatox.workflow_graph.nodes.repo import RepoNode
-from gatox.workflow_graph.nodes.action import ActionNode
-from gatox.models.workflow import Workflow
-from gatox.models.repository import Repository
+from gatox.workflow_graph.nodes.step import StepNode
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
 from gatox.workflow_parser.utility import parse_github_path
 
 

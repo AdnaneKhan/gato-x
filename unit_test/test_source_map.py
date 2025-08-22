@@ -1,7 +1,8 @@
 import yaml
+
 from gatox.workflow_parser.source_map import (
-    build_workflow_source_map,
     build_composite_source_map,
+    build_workflow_source_map,
 )
 
 

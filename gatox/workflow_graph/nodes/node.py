@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Optional
-
 
 class Node:
     """
@@ -26,7 +24,7 @@ class Node:
     """
 
     extra_tags: set[str]
-    line_number: Optional[int]
+    line_number: int | None
 
     def __init__(self, name, line_number=None):
         """

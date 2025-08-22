@@ -17,11 +17,11 @@ limitations under the License.
 # THis class encapsulates the logic for a result factory.
 # it takes a Graph traversal path and worlks from start to end in order
 # to populate the result.
-from gatox.enumerate.results.pwn_request_result import PwnRequestResult
-from gatox.enumerate.results.injection_result import InjectionResult
-from gatox.enumerate.results.dispatch_toctou_result import DispatchTOCTOUResult
-from gatox.enumerate.results.review_injection_result import ReviewInjectionResult
 from gatox.enumerate.results.artifact_poisoning_result import ArtifactPoisoningResult
+from gatox.enumerate.results.dispatch_toctou_result import DispatchTOCTOUResult
+from gatox.enumerate.results.injection_result import InjectionResult
+from gatox.enumerate.results.pwn_request_result import PwnRequestResult
+from gatox.enumerate.results.review_injection_result import ReviewInjectionResult
 
 
 class ResultFactory:

@@ -1,12 +1,14 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
-from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
-from gatox.github.api import Api
-from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
+
+import pytest
+
 from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
+from gatox.github.api import Api
+from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
+from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
+from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
 
 
 @pytest.fixture

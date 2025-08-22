@@ -1,13 +1,13 @@
 import base64
-import os
-import pytest
-import pathlib
 import logging
-
+import os
+import pathlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from gatox.github.api import Api
+import pytest
+
 from gatox.cli.output import Output
+from gatox.github.api import Api
 
 logging.root.setLevel(logging.DEBUG)
 

@@ -1,13 +1,12 @@
-import logging
-import httpx
 import json
-from typing import Optional, Set
+import logging
+
+import httpx
 
 from gatox.cli.output import Output
 from gatox.configuration.configuration_manager import ConfigurationManager
-from gatox.github.search import Search
 from gatox.github.api import Api
-
+from gatox.github.search import Search
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ class Searcher:
 
     async def use_sourcegraph_api(
         self, organization: str, query=None, output_text=None
-    ) -> Optional[Set[str]]:
+    ) -> set[str] | None:
         """Use SourceGraph's streaming search API to find repositories.
 
         Args:
@@ -133,7 +132,7 @@ class Searcher:
 
         return sorted(results)
 
-    async def use_search_api(self, organization: str, query=None) -> Optional[Set[str]]:
+    async def use_search_api(self, organization: str, query=None) -> set[str] | None:
         """Use GitHub's code search API to try and identify repositories
         using self-hosted runners.
 

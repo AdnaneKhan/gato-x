@@ -16,7 +16,8 @@ limitations under the License.
 
 import asyncio
 import datetime
-from typing import Optional, Callable, Any
+from collections.abc import Callable
+from typing import Any
 
 from gatox.cli.output import Output
 
@@ -38,7 +39,7 @@ class WebShellUtils:
         condition_func: Callable[[], Any],
         timeout: int,
         sleep_interval: int = 1,
-        success_condition: Optional[Callable[[Any], bool]] = None,
+        success_condition: Callable[[Any], bool] | None = None,
     ) -> Any:
         """
         Generic polling function with timeout.
@@ -73,7 +74,7 @@ class WebShellUtils:
         workflow_name: str,
         time_after: str,
         timeout: int,
-    ) -> Optional[int]:
+    ) -> int | None:
         """
         Wait for a workflow to appear and return its ID.
 
@@ -113,7 +114,7 @@ class WebShellUtils:
     @staticmethod
     async def wait_for_workflow_completion(
         api, repo: str, workflow_id: int, timeout: int
-    ) -> Optional[int]:
+    ) -> int | None:
         """
         Wait for a workflow to complete.
 
@@ -173,7 +174,7 @@ class WebShellUtils:
             return False
 
     @staticmethod
-    async def wait_for_runners(api, c2_repo: str, timeout: int) -> Optional[list]:
+    async def wait_for_runners(api, c2_repo: str, timeout: int) -> list | None:
         """
         Wait for runners to connect to C2 repository.
 

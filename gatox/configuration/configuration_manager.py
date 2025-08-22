@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import glob
 import json
 import os
-import glob
 
 
 class ConfigurationManager:
@@ -55,7 +55,7 @@ class ConfigurationManager:
         Args:
             file_path (str): The path to the JSON file to load.
         """
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             config = json.load(f)
             if self._config is None:
                 self._config = {}

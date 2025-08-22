@@ -1,8 +1,8 @@
 import datetime
 
+from gatox.enumerate.results.analysis_result import AnalysisResult
 from gatox.models.runner import Runner
 from gatox.models.secret import Secret
-from gatox.enumerate.results.analysis_result import AnalysisResult
 
 
 class Repository:

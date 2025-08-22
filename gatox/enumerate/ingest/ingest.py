@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import random
 import asyncio
 import logging
+import random
 
 from httpx import RequestError
 
 from gatox.caching.cache_manager import CacheManager
-from gatox.models.workflow import Workflow
-from gatox.models.repository import Repository
-from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.cli.output import Output
+from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
+from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 
 logger = logging.getLogger(__name__)
 

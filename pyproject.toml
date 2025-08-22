@@ -94,7 +94,6 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
     "E203",  # whitespace before ':', conflicts with black
-    "W503",  # line break before binary operator, conflicts with black
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]

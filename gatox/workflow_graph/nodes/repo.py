@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from gatox.workflow_graph.nodes.node import Node
 from gatox.models.repository import Repository
+from gatox.workflow_graph.nodes.node import Node
 
 
 class RepoNode(Node):

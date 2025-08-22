@@ -1,10 +1,9 @@
 from gatox.cli.output import Output
-from gatox.models.repository import Repository
+from gatox.enumerate.reports.runners import RunnersReport
 from gatox.models.organization import Organization
+from gatox.models.repository import Repository
 from gatox.models.runner import Runner
 from gatox.models.secret import Secret
-
-from gatox.enumerate.reports.runners import RunnersReport
 
 
 class Recommender:

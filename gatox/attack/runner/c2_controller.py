@@ -16,9 +16,9 @@ limitations under the License.
 
 import asyncio
 import re
-from typing import Optional
 
 from gatox.cli.output import Output
+
 from .webshell_utils import WebShellUtils
 
 
@@ -154,7 +154,7 @@ class C2Controller:
         workflow_name: str = "webshell.yml",
         runner_name: str = "gato-ror",
         download: bool = False,
-    ) -> Optional[bool]:
+    ) -> bool | None:
         """
         Issue a command to a GitHub Actions runner and retrieve the output.
 

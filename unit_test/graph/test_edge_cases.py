@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
-import asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from gatox.workflow_graph.nodes.workflow import WorkflowNode
+import pytest
+
+from gatox.models.workflow import Workflow
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
-from gatox.models.workflow import Workflow
+from gatox.workflow_graph.nodes.workflow import WorkflowNode
 
 
 class TestNonExistentWorkflowHandling:
@@ -31,9 +31,9 @@ class TestNonExistentWorkflowHandling:
         """Test that WorkflowNode starts in the correct initial state."""
         workflow = WorkflowNode("main", "test/repo", ".github/workflows/test.yml")
 
-        assert workflow.uninitialized == True
-        assert workflow.non_existent == False
-        assert workflow.is_non_existent() == False
+        assert workflow.uninitialized
+        assert not workflow.non_existent
+        assert not workflow.is_non_existent()
 
         tags = workflow.get_tags()
         assert "uninitialized" in tags
@@ -45,16 +45,16 @@ class TestNonExistentWorkflowHandling:
         workflow = WorkflowNode("main", "test/repo", ".github/workflows/missing.yml")
 
         # Initially uninitialized
-        assert workflow.uninitialized == True
-        assert workflow.non_existent == False
+        assert workflow.uninitialized
+        assert not workflow.non_existent
 
         # Mark as non-existent
         workflow.mark_as_non_existent()
 
         # Should now be non-existent
-        assert workflow.uninitialized == False
-        assert workflow.non_existent == True
-        assert workflow.is_non_existent() == True
+        assert not workflow.uninitialized
+        assert workflow.non_existent
+        assert workflow.is_non_existent()
 
         tags = workflow.get_tags()
         assert "non_existent" in tags
@@ -68,16 +68,16 @@ class TestNonExistentWorkflowHandling:
         mock_workflow_data.parsed_yml = {"on": ["push"], "env": {"TEST": "value"}}
 
         # Initially uninitialized
-        assert workflow.uninitialized == True
-        assert workflow.non_existent == False
+        assert workflow.uninitialized
+        assert not workflow.non_existent
 
         # Initialize normally
         workflow.initialize(mock_workflow_data)
 
         # Should now be initialized
-        assert workflow.uninitialized == False
-        assert workflow.non_existent == False
-        assert workflow.is_non_existent() == False
+        assert not workflow.uninitialized
+        assert not workflow.non_existent
+        assert not workflow.is_non_existent()
 
         tags = workflow.get_tags()
         assert "initialized" in tags
@@ -259,8 +259,8 @@ class TestGraphBuilderNonExistentHandling:
         await builder.initialize_node(workflow, mock_api)
 
         # State should remain unchanged
-        assert workflow.is_non_existent() == True
-        assert workflow.uninitialized == False
+        assert workflow.is_non_existent()
+        assert not workflow.uninitialized
 
     @pytest.mark.asyncio
     async def test_initialize_callee_node_marks_non_existent(self):
@@ -273,8 +273,8 @@ class TestGraphBuilderNonExistentHandling:
         mock_api.retrieve_repo_file = AsyncMock(return_value=None)
 
         with (
-            patch.object(builder.graph, "remove_tags_from_node") as mock_remove_tags,
-            patch.object(builder.graph, "add_tags_to_node") as mock_add_tags,
+            patch.object(builder.graph, "remove_tags_from_node"),
+            patch.object(builder.graph, "add_tags_to_node"),
             patch(
                 "gatox.caching.cache_manager.CacheManager.get_workflow",
                 return_value=None,
@@ -286,8 +286,8 @@ class TestGraphBuilderNonExistentHandling:
             await builder._initialize_callee_node(workflow, mock_api)
 
         # Verify workflow is marked as non-existent
-        assert workflow.is_non_existent() == True
-        assert workflow.uninitialized == False
+        assert workflow.is_non_existent()
+        assert not workflow.uninitialized
 
         tags = workflow.get_tags()
         assert "non_existent" in tags
@@ -308,23 +308,21 @@ class TestGraphBuilderNonExistentHandling:
         mock_api.retrieve_repo_file = AsyncMock(return_value=mock_workflow)
 
         with (
-            patch.object(builder.graph, "remove_tags_from_node") as mock_remove_tags,
-            patch.object(builder.graph, "add_tags_to_node") as mock_add_tags,
+            patch.object(builder.graph, "remove_tags_from_node"),
+            patch.object(builder.graph, "add_tags_to_node"),
             patch(
                 "gatox.caching.cache_manager.CacheManager.get_workflow",
                 return_value=None,
             ),
             patch("gatox.caching.cache_manager.CacheManager.set_workflow"),
-            patch.object(
-                builder, "build_workflow_jobs", new_callable=AsyncMock
-            ) as mock_build_jobs,
+            patch.object(builder, "build_workflow_jobs", new_callable=AsyncMock),
         ):
 
             await builder._initialize_callee_node(workflow, mock_api)
 
         # Verify workflow is properly initialized
-        assert workflow.is_non_existent() == False
-        assert workflow.uninitialized == False
+        assert not workflow.is_non_existent()
+        assert not workflow.uninitialized
 
         tags = workflow.get_tags()
         assert "initialized" in tags
@@ -340,13 +338,13 @@ class TestEdgeCasesAndErrorConditions:
         workflow = WorkflowNode("main", "test/repo", ".github/workflows/test.yml")
 
         # Initially uninitialized
-        assert workflow.uninitialized == True
-        assert workflow.non_existent == False
+        assert workflow.uninitialized
+        assert not workflow.non_existent
 
         # After marking as non-existent
         workflow.mark_as_non_existent()
-        assert workflow.uninitialized == False
-        assert workflow.non_existent == True
+        assert not workflow.uninitialized
+        assert workflow.non_existent
 
         # Should not be able to be both non-existent and initialized
         # (this would require direct manipulation of internal state)
@@ -355,8 +353,8 @@ class TestEdgeCasesAndErrorConditions:
         mock_workflow_data.parsed_yml = {"on": ["push"]}
         workflow.initialize(mock_workflow_data)
 
-        assert workflow.uninitialized == False
-        assert workflow.non_existent == False  # Should be False after initialization
+        assert not workflow.uninitialized
+        assert not workflow.non_existent  # Should be False after initialization
 
     @pytest.mark.asyncio
     async def test_dfs_with_empty_graph(self):

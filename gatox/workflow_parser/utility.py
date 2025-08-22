@@ -1,11 +1,10 @@
-import re
 import logging
-
+import re
 from datetime import datetime, timedelta
 
 from gatox.configuration.configuration_manager import ConfigurationManager
-from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
+from gatox.workflow_parser.expression_parser import ExpressionParser
 
 logger = logging.getLogger(__name__)
 

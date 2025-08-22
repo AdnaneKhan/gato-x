@@ -1,29 +1,29 @@
 import argparse
-import os
-from pathlib import Path
-import re
 import logging
+import os
+import re
+from pathlib import Path
 
 from colorama import Fore, Style
 
-from gatox.util.arg_utils import read_file_and_validate_lines
-from gatox.caching.cache_manager import CacheManager
-from gatox.cli.colors import RED_DASH
-from gatox.cli.output import Output, SPLASH
-from gatox.caching.local_cache_manager import LocalCacheFactory
-from gatox.cli.enumeration.config import configure_parser_enumerate
-from gatox.cli.search.config import configure_parser_search
-from gatox.cli.attack.config import configure_parser_attack
-from gatox.cli.app.config import configure_parser_app
-from gatox.cli.persistence.config import configure_parser_persistence
-from gatox.enumerate.enumerate import Enumerator
-from gatox.enumerate.app_enumerate import AppEnumerator
 from gatox.attack.attack import Attacker
+from gatox.attack.persistence.persistence_attack import PersistenceAttack
 from gatox.attack.runner.webshell import WebShell
 from gatox.attack.secrets.secrets_attack import SecretsAttack
-from gatox.attack.persistence.persistence_attack import PersistenceAttack
-from gatox.search.search import Searcher
+from gatox.caching.cache_manager import CacheManager
+from gatox.caching.local_cache_manager import LocalCacheFactory
+from gatox.cli.app.config import configure_parser_app
+from gatox.cli.attack.config import configure_parser_attack
+from gatox.cli.colors import RED_DASH
+from gatox.cli.enumeration.config import configure_parser_enumerate
+from gatox.cli.output import SPLASH, Output
+from gatox.cli.persistence.config import configure_parser_persistence
+from gatox.cli.search.config import configure_parser_search
+from gatox.enumerate.app_enumerate import AppEnumerator
+from gatox.enumerate.enumerate import Enumerator
 from gatox.models.execution import Execution
+from gatox.search.search import Searcher
+from gatox.util.arg_utils import read_file_and_validate_lines
 
 
 async def cli(args):

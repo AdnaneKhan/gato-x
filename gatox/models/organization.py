@@ -1,5 +1,5 @@
-from gatox.models.runner import Runner
 from gatox.models.repository import Repository
+from gatox.models.runner import Runner
 from gatox.models.secret import Secret
 
 

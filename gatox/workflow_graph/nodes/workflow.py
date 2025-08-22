@@ -17,9 +17,9 @@ limitations under the License.
 import logging
 import re
 
-from gatox.workflow_graph.nodes.node import Node
-from gatox.workflow_graph.nodes.job import JobNode
 from gatox.models.workflow import Workflow
+from gatox.workflow_graph.nodes.job import JobNode
+from gatox.workflow_graph.nodes.node import Node
 
 logger = logging.getLogger(__name__)
 

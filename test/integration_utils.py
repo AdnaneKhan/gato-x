@@ -1,9 +1,10 @@
-import re
-import sys
-import pytest
 import json
 import os
 import pathlib
+import re
+import sys
+
+import pytest
 
 from gatox.main import entry
 
@@ -44,7 +45,7 @@ def process_command(commandline: str, capsys):
 def load_creds():
     curr_path = pathlib.Path(__file__).parent.resolve()
 
-    with open(os.path.join(curr_path, "creds.json"), "r") as f:
+    with open(os.path.join(curr_path, "creds.json")) as f:
         creds = json.load(f)
     for key, val in creds.items():
         val["PAT_value"] = os.environ.get(key)

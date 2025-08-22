@@ -15,9 +15,10 @@ limitations under the License.
 """
 
 import asyncio
+
+from gatox.git.git import Git
 from gatox.models.repository import Repository
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
-from gatox.git.git import Git
 
 
 class IngestNonDefault:

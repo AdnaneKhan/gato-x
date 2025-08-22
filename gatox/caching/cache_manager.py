@@ -17,8 +17,8 @@ limitations under the License.
 import json
 from typing import IO
 
-from gatox.models.workflow import Workflow
 from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
 
 
 class CacheManager:

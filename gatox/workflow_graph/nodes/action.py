@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 from gatox.workflow_graph.nodes.node import Node
-
 from gatox.workflow_parser.utility import decompose_action_ref, starts_with_any
 
 
