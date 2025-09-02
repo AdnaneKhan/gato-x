@@ -55,7 +55,7 @@ jobs:
           --user
       - name: Build Binary wheel Source Tarball
         run: python3 -m build
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v3
         with:
           subject-path: 'dist/gato_x-*'
       - name: Store Distribution Packages
