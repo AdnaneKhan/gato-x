@@ -41,7 +41,7 @@ class Enumerator:
         output_json: str = None,
         ignore_workflow_run: bool = False,
         deep_dive: bool = False,
-        app_permisions: list = None,
+        app_permisions: set = (),
         api_client: Api = None,
     ):
         """Initialize enumeration class with arguments sent by user.
@@ -118,6 +118,12 @@ class Enumerator:
             Output.info(
                 f"The authenticated user is: {Output.bright(self.user_perms['user'])}"
             )
+
+            if self.user_perms.get("expiration"):
+                Output.info(
+                    f"Token expiration: {Output.bright(self.user_perms['expiration'])}"
+                )
+
             if len(self.user_perms["scopes"]):
                 Output.info(
                     "The GitHub Classic PAT has the following scopes: "
@@ -213,13 +219,22 @@ class Enumerator:
                 return False
 
             await self.repo_e.enumerate_repository(repo)
-            await self.repo_e.enumerate_repository_secrets(repo)
-            Recommender.print_repo_secrets(
-                self.user_perms["scopes"], repo.secrets + repo.org_secrets
-            )
-            Recommender.print_repo_runner_info(repo)
+
+            if not self.app_permissions or "secrets:read" in self.app_permissions:
+                await self.repo_e.enumerate_repository_secrets(repo)
+                Recommender.print_repo_secrets(
+                    self.user_perms["scopes"],
+                    repo.secrets + repo.org_secrets,
+                    self.app_permissions,
+                )
+
+            if (
+                not self.app_permissions
+                or "administration:read" in self.app_permissions
+            ):
+                Recommender.print_repo_runner_info(repo)
             Recommender.print_repo_attack_recommendations(
-                self.user_perms["scopes"], repo
+                self.user_perms["scopes"], repo, self.app_permissions
             )
 
             return repo

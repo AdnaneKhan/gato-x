@@ -8,7 +8,9 @@ from gatox.models.secret import Secret
 
 class Recommender:
     @staticmethod
-    def print_repo_attack_recommendations(scopes: list, repository: Repository):
+    def print_repo_attack_recommendations(
+        scopes: list, repository: Repository, fine_grained: set = {}
+    ):
         """Prints attack recommendations for repositories.
 
         Args:
@@ -17,7 +19,11 @@ class Recommender:
         """
 
         if not repository.sh_runner_access:
-            if repository.is_admin():
+            if (
+                repository.is_admin()
+                and not fine_grained
+                or "administration:read" in fine_grained
+            ):
                 Output.owned(
                     "The user is an administrator on the repository, but no "
                     "self-hosted runners were detected!"
@@ -30,6 +36,11 @@ class Recommender:
                 Output.result(
                     "The PAT also has the workflow scope, which means a "
                     "custom YAML payload can be used!"
+                )
+            elif fine_grained:
+                Output.result(
+                    "The PAT is a fine-grained token, so you will have to overtly check whether"
+                    "it has the 'workflow' permission!"
                 )
             else:
                 Output.inform(
