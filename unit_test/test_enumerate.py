@@ -598,7 +598,7 @@ async def test_validate_only_with_public_repo_scope(mock_api, capfd):
     result = await gh_enumeration_runner.validate_only()
 
     # Should not return False
-    assert result != False
+    assert result
     assert isinstance(result, list)
     assert len(result) == 1
 

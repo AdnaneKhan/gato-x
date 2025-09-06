@@ -1,5 +1,3 @@
-import json
-import pathlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,7 +6,6 @@ from gatox.caching.cache_manager import CacheManager
 from gatox.cli.output import Output
 from gatox.enumerate.finegrained_enumeration import FineGrainedEnumerator
 from gatox.github.api import Api
-from unit_test.utils import escape_ansi
 
 Output(True)
 

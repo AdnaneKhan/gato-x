@@ -58,7 +58,7 @@ class RepositoryEnum:
         return runner_detected
 
     async def enumerate_repository(
-        self, repository: Repository, fine_grained: set = {}
+        self, repository: Repository, fine_grained: set = None
     ):
         """Enumerate a repository, and check everything relevant to
         self-hosted runner abuse that that the user has permissions to check.
@@ -67,6 +67,8 @@ class RepositoryEnum:
             repository (Repository): Wrapper object created from calling the
             API and retrieving a repository.
         """
+        if fine_grained is None:
+            fine_grained = {}
         if not repository.can_pull():
             Output.error("The user cannot pull, skipping.")
             return

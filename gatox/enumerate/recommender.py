@@ -9,7 +9,7 @@ from gatox.models.secret import Secret
 class Recommender:
     @staticmethod
     def print_repo_attack_recommendations(
-        scopes: list, repository: Repository, fine_grained: set = {}
+        scopes: list, repository: Repository, fine_grained: set = None
     ):
         """Prints attack recommendations for repositories.
 
@@ -18,6 +18,8 @@ class Recommender:
             repository (Repository): Repository wrapper object.
         """
 
+        if fine_grained is None:
+            fine_grained = {}
         if not repository.sh_runner_access:
             if (
                 repository.is_admin()
