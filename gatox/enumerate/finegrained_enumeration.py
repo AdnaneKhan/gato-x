@@ -133,13 +133,18 @@ class FineGrainedEnumerator(Enumerator):
             is_public (bool): Whether the repository is public (allows probing without read permission).
         """
         if "contents:read" in valid_scopes or is_public:
-            result = await self.api.call_post(
-                f"/repos/{repo_to_check}/git/blobs",
-                params={"content": "Write probe.", "encoding": "utf-8"},
-            )
-            if result.status_code == 201:
-                valid_scopes.remove("contents:read")
-                valid_scopes.add("contents:write")
+            try:
+                result = await self.api.call_post(
+                    f"/repos/{repo_to_check}/git/blobs",
+                    params={"content": "Write probe.", "encoding": "utf-8"},
+                )
+                if result.status_code == 201:
+                    valid_scopes.discard(
+                        "contents:read"
+                    )  # Use discard to avoid KeyError
+                    valid_scopes.add("contents:write")
+            except Exception as e:
+                Output.tabbed(f" contents:write: Error - {str(e)}")
 
     async def probe_pull_requests_write_access(
         self, repo_to_check: str, valid_scopes: set[str], is_public: bool = False
@@ -170,7 +175,7 @@ class FineGrainedEnumerator(Enumerator):
 
                         # 403 means not valid, other status codes indicate valid write access
                         if patch_result.status_code != 403:
-                            valid_scopes.remove("pull_requests:read")
+                            valid_scopes.discard("pull_requests:read")
                             valid_scopes.add("pull_requests:write")
 
             except Exception as e:
@@ -205,7 +210,7 @@ class FineGrainedEnumerator(Enumerator):
 
                     if set_result.status_code in [201, 204]:
                         valid_scopes.add("actions:write")
-                        valid_scopes.remove("actions:read")
+                        valid_scopes.discard("actions:read")
 
             except Exception as e:
                 Output.tabbed(f" actions:write: Error - {str(e)}")
@@ -241,7 +246,7 @@ class FineGrainedEnumerator(Enumerator):
 
                         # 403 means not valid, other status codes indicate valid write access
                         if patch_result.status_code != 403:
-                            valid_scopes.remove("issues:read")
+                            valid_scopes.discard("issues:read")
                             valid_scopes.add("issues:write")
 
             except Exception as e:

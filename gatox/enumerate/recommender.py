@@ -98,12 +98,13 @@ class Recommender:
                 )
 
     @staticmethod
-    def print_repo_secrets(scopes, secrets: list[Secret]):
+    def print_repo_secrets(scopes, secrets: list[Secret], app_permissions=None):
         """Prints list of repository level secrets.
 
         Args:
             scopes (list): List of OAuth scopes.
             secrets (list[Secret]): List of secret wrapper objects.
+            app_permissions (set, optional): Set of app permissions for fine-grained tokens.
         """
 
         if not secrets:
