@@ -326,3 +326,36 @@ class TestFineGrainedEnumeratorSimple:
         assert expected_write_scopes.issubset(
             result
         ), f"Expected {expected_write_scopes} to be subset of {result}"
+
+    async def test_enumerate_fine_grained_token_no_repos(self):
+        """Test enumerate_fine_grained_token when token has no write+ public repos and no private repos."""
+        enumerator = FineGrainedEnumerator(
+            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+
+        # Mock the API
+        enumerator.api = MagicMock()
+
+        # Initialize user_perms to simulate successful validation
+        enumerator.user_perms = {"user": "testuser"}
+
+        # Mock validate_token_and_get_user to return True
+        enumerator.validate_token_and_get_user = AsyncMock(return_value=True)
+
+        # Mock get_own_repos to return empty lists for both public and private repos
+        enumerator.api.get_own_repos = AsyncMock(return_value=[])
+
+        repositories = await enumerator.enumerate_fine_grained_token()
+
+        # Verify API calls were made with correct parameters
+        enumerator.api.get_own_repos.assert_any_call(visibility="public")
+        enumerator.api.get_own_repos.assert_any_call(
+            affiliation="owner,collaborator,organization_member", visibility="private"
+        )
+
+        # Should return empty list when no repos are accessible
+        assert repositories == []
+        # finegrained_permissions should be set to empty set
+        assert enumerator.finegrained_permissions == set()
+        # user_perms["scopes"] should not be set since method returns early
+        assert "scopes" not in enumerator.user_perms

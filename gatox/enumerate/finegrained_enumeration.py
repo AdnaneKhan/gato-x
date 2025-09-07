@@ -360,7 +360,9 @@ class FineGrainedEnumerator(Enumerator):
                 write_accessible_repos[0]
             )
         else:
-            Output.info("Token has only public read access!")
+            self.finegrained_permissions = set()
+            Output.info("Token has only public read access to repositories!")
+            return []
 
         self.user_perms["scopes"] = list(self.finegrained_permissions)
         repositories = await self.enumerate_repos(

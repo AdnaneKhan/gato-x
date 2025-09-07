@@ -33,6 +33,11 @@ Common fine-grained permissions include:
 - `administration:read` - Repository administration settings
 - `variables:read` / `variables:write` - Repository and organization variables
 
+One important aspect of fine-grained tokens is that a token with any permissions will always have `metadata` read.
+
+The API endpoint to retrieve repositories for the authenticated user only requires this permission. This allows
+Gato-X to build an initial set of repositories for further enumeration. While it will return all public repos, it will also return private repos that the token has access to. This could be because the user configured the token to allow access to all user / org repos OR they expliticly opted that repo in.
+
 ## How Gato-X Handles Fine-Grained Tokens
 
 Gato-X automatically detects fine-grained tokens by their `github_pat_` prefix and uses specialized enumeration techniques optimized for the fine-grained permission model.
@@ -56,7 +61,7 @@ else:
 
 ### Permission Probing Strategy
 
-Gato-X uses a multi-stage approach to detect fine-grained permissions:
+Gato-X uses a multi-stage approach to detect fine-grained permissions.
 
 #### Stage 1: Read Permission Detection
 Gato-X probes various GET endpoints to detect read permissions:
@@ -89,7 +94,7 @@ The contents write probe creates a small dangling blob in the Git database.
 
 #### Public Repository Handling
 
-For public repositories, Gato-X performs write permission probes for scopes such as issues, pull_request, and actions because most public repo read endpoints always succeed regardless of the token's scopes.
+For public epositories, Gato-X performs directly skips to permission probes for scopes such as issues, pull_request, and actions because most public repo read endpoints always succeed regardless of the token's scopes.
 
 
 ## Security Implications
