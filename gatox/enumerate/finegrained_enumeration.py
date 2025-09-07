@@ -319,9 +319,7 @@ class FineGrainedEnumerator(Enumerator):
 
         return valid_scopes
 
-    async def enumerate_fine_grained_token(
-        self, enum_mode: str = "self", target_repo: str | None = None
-    ) -> tuple[list[Repository], dict[str, Any]]:
+    async def enumerate_fine_grained_token(self) -> list[Repository]:
         """Main enumeration method for fine-grained tokens.
 
         Args:
@@ -331,12 +329,6 @@ class FineGrainedEnumerator(Enumerator):
         Returns:
             Tuple[List[Repository], Dict[str, Any]]: Accessible repositories and enumeration results.
         """
-        if enum_mode not in ["self", "single"]:
-            raise ValueError("enum_mode must be either 'self' or 'single'")
-
-        if enum_mode == "single" and not target_repo:
-            raise ValueError("target_repo is required for single repo enumeration mode")
-
         Output.result("Starting fine-grained token enumeration")
 
         if not await self.validate_token_and_get_user():
@@ -368,17 +360,9 @@ class FineGrainedEnumerator(Enumerator):
         else:
             Output.info("Token has only public read access!")
 
+        self.user_perms["scopes"] = list(self.app_permissions)
         repositories = await self.enumerate_repos(
             write_accessible_repos + private_repos
         )
 
-        # Prepare enumeration results
-        enum_results = {
-            "user": self.user_perms,
-            "private_repos": len(private_repos),
-            "write_accessible_repos": len(write_accessible_repos),
-            "valid_scopes": self.app_permissions,
-            "enum_mode": enum_mode,
-        }
-
-        return repositories, enum_results
+        return repositories

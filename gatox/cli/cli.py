@@ -326,8 +326,8 @@ async def enumerate_finegrained(args, parser):
         exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
     elif args.self_enumeration:
         # Fine-grained self enumeration
-        accessible_repos, results = (
-            await gh_enumeration_runner.enumerate_fine_grained_token(enum_mode="self")
+        accessible_repos = await gh_enumeration_runner.enumerate_fine_grained_token(
+            enum_mode="self"
         )
         exec_wrapper = Execution()
         exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)

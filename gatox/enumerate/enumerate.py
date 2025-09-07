@@ -86,7 +86,7 @@ class Enumerator:
         self.output_json = output_json
         self.deep_dive = deep_dive
         self.ignore_workflow_run = ignore_workflow_run
-        self.app_permissions = app_permisions
+        self.finegrained_permissions = app_permisions
 
         self.repo_e = RepositoryEnum(self.api, skip_log)
         self.org_e = OrganizationEnum(self.api)
@@ -101,7 +101,7 @@ class Enumerator:
                 if count > 0:
                     self.user_perms = {
                         "user": "Github App",
-                        "scopes": self.app_permissions or [],
+                        "scopes": self.finegrained_permissions or [],
                         "name": "GATO-X App Mode",
                     }
 
@@ -220,21 +220,24 @@ class Enumerator:
 
             await self.repo_e.enumerate_repository(repo)
 
-            if not self.app_permissions or "secrets:read" in self.app_permissions:
+            if (
+                not self.finegrained_permissions
+                or "secrets:read" in self.finegrained_permissions
+            ):
                 await self.repo_e.enumerate_repository_secrets(repo)
                 Recommender.print_repo_secrets(
                     self.user_perms["scopes"],
                     repo.secrets + repo.org_secrets,
-                    self.app_permissions,
+                    self.finegrained_permissions,
                 )
 
             if (
-                not self.app_permissions
-                or "administration:read" in self.app_permissions
+                not self.finegrained_permissions
+                or "administration:read" in self.finegrained_permissions
             ):
                 Recommender.print_repo_runner_info(repo)
             Recommender.print_repo_attack_recommendations(
-                self.user_perms["scopes"], repo, self.app_permissions
+                self.user_perms["scopes"], repo, self.finegrained_permissions
             )
 
             return repo

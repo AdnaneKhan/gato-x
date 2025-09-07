@@ -240,33 +240,6 @@ class TestFineGrainedEnumeratorSimple:
 
         assert result is False
 
-    def test_enumerate_fine_grained_token_invalid_mode(self):
-        """Test fine-grained token enumeration with invalid mode."""
-        enumerator = FineGrainedEnumerator(
-            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        )
-
-        with pytest.raises(
-            ValueError, match="enum_mode must be either 'self' or 'single'"
-        ):
-            # Use a sync context manager to test the validation
-            import asyncio
-
-            asyncio.run(enumerator.enumerate_fine_grained_token("invalid", None))
-
-    def test_enumerate_fine_grained_token_single_mode_no_repo(self):
-        """Test fine-grained token enumeration in single mode without target repo."""
-        enumerator = FineGrainedEnumerator(
-            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        )
-
-        with pytest.raises(
-            ValueError, match="target_repo is required for single repo enumeration mode"
-        ):
-            import asyncio
-
-            asyncio.run(enumerator.enumerate_fine_grained_token("single", None))
-
     async def test_error_handling_in_probes(self):
         """Test error handling in various probe functions."""
         enumerator = FineGrainedEnumerator(
