@@ -11,3 +11,4 @@ For use cases, see the [Use Cases](../use-cases/index.md).
 
 - [Understanding GitHub Actions Vulnerabilities](vulnerabilities.md) - Detailed explanations of the vulnerability types that Gato-X can identify
 - [Complex Attack Scenarios](complex-attacks.md) - Advanced attack techniques and scenarios
+- [Continuous Scanning](continuous-scanning.md) - Using Gato-X for Continuous Scanning

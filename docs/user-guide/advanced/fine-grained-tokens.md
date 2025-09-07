@@ -149,18 +149,21 @@ When Gato-X enumerates a fine-grained token, the output includes:
 - **Write Access Summary**: Repositories with write+ access
 - **Workflow Details**: GitHub Actions workflows and potential attack vectors
 
-Example output:
+**Example output:**
+
 ```
-[INFO] Starting fine-grained token enumeration
-[INFO] The authenticated user is: example-user
-[INFO] Token expiration: 2024-12-31T23:59:59Z
-[INFO] Token has access to 5 private repo(s)
-[INFO] Probing endpoints to detect scopes...
- contents:read ✅
- issues:write ✅
- pull_requests:read ✅
- actions:write ✅
- secrets:read ✅
+[+] Starting fine-grained token enumeration
+[+] The authenticated user is: SomeUser
+[+] Token expiration: 2025-09-07 15:59:53 -0400
+[+] Checking write+ access to public repositories...
+    - Write+ access to gatoxtest/repo1
+    - Write+ access to gatoxtest/repo2
+[+] Token has access to 2 private repo(s).
+[+] Probing endpoints to detect scopes...
+    -  actions:write ✅
+    -  contents:write ✅
+    -  issues:read ✅
+    -  pull_requests:read ✅
 ```
 
 ## Conclusion
