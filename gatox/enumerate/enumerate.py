@@ -41,7 +41,7 @@ class Enumerator:
         output_json: str = None,
         ignore_workflow_run: bool = False,
         deep_dive: bool = False,
-        app_permisions: set = (),
+        finegrained_permisions: set = (),
         api_client: Api = None,
     ):
         """Initialize enumeration class with arguments sent by user.
@@ -86,7 +86,7 @@ class Enumerator:
         self.output_json = output_json
         self.deep_dive = deep_dive
         self.ignore_workflow_run = ignore_workflow_run
-        self.finegrained_permissions = app_permisions
+        self.finegrained_permissions = finegrained_permisions
 
         self.repo_e = RepositoryEnum(self.api, skip_log)
         self.org_e = OrganizationEnum(self.api)

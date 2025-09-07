@@ -17,14 +17,11 @@ class Recommender:
             scopes (list): List of scopes for user who ran Gato.
             repository (Repository): Repository wrapper object.
         """
-
         if fine_grained is None:
             fine_grained = {}
         if not repository.sh_runner_access:
-            if (
-                repository.is_admin()
-                and not fine_grained
-                or "administration:read" in fine_grained
+            if repository.is_admin() and (
+                not fine_grained or "administration:read" in fine_grained
             ):
                 Output.owned(
                     "The user is an administrator on the repository, but no "

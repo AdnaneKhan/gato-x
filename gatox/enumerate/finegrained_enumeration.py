@@ -22,7 +22,7 @@ class FineGrainedEnumerator(Enumerator):
         output_json: str = None,
         ignore_workflow_run: bool = False,
         deep_dive: bool = False,
-        app_permisions: list = None,
+        finerained_permisions: list = None,
         api_client: Api = None,
     ):
         """Initialize the fine-grained enumerator.
@@ -39,7 +39,7 @@ class FineGrainedEnumerator(Enumerator):
             output_json (str, optional): JSON file to output enumeration results.
             ignore_workflow_run (bool, optional): If set, then "workflow_run" triggers will be ignored.
             deep_dive (bool, optional): If set, then deep dive workflow ingestion will be performed.
-            app_permissions (list, optional): List of permissions for GitHub App.
+            finegrained_permissions (list, optional): List of Fine-Grained permissions.
             api_client (Api, optional): An existing Api client instance.
         """
         # Initialize the parent Enumerator class
@@ -52,7 +52,7 @@ class FineGrainedEnumerator(Enumerator):
             output_json=output_json,
             ignore_workflow_run=ignore_workflow_run,
             deep_dive=deep_dive,
-            app_permisions=app_permisions,
+            finegrained_permisions=finerained_permisions,
             api_client=api_client,
         )
 
@@ -353,14 +353,16 @@ class FineGrainedEnumerator(Enumerator):
             Output.info(f"Token has access to {len(private_repos)} private repo(s).")
             # Probe scopes on private repo - we just need to check one.
             # As the fg PAT model means it will be the same for all.
-            self.app_permissions = await self.detect_scopes(private_repos[0])
+            self.finegrained_permissions = await self.detect_scopes(private_repos[0])
         elif write_accessible_repos:
             Output.info("Token has public repository access only")
-            self.app_permissions = await self.detect_scopes(write_accessible_repos[0])
+            self.finegrained_permissions = await self.detect_scopes(
+                write_accessible_repos[0]
+            )
         else:
             Output.info("Token has only public read access!")
 
-        self.user_perms["scopes"] = list(self.app_permissions)
+        self.user_perms["scopes"] = list(self.finegrained_permissions)
         repositories = await self.enumerate_repos(
             write_accessible_repos + private_repos
         )

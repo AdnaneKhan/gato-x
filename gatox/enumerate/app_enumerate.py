@@ -185,7 +185,7 @@ class AppEnumerator:
             github_url=self.github_url,
             ignore_workflow_run=self.ignore_workflow_run,
             deep_dive=self.deep_dive,
-            app_permisions=self.__app_permissions,
+            finegrained_permisions=self.__app_permissions,
             api_client=installation_api,
         )
 
