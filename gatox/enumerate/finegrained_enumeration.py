@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from gatox.cli.output import Output
 from gatox.enumerate.enumerate import Enumerator
@@ -118,7 +117,7 @@ class FineGrainedEnumerator(Enumerator):
 
         except Exception as e:
             logger.debug(
-                f"Error checking collaborator access for {repo.get('full_name', 'unknown')}: {e}"
+                f"Error checking collaborator access for {repo}: {e}"
             )
             return False
 
