@@ -22,7 +22,7 @@ class FineGrainedEnumerator(Enumerator):
         output_json: str = None,
         ignore_workflow_run: bool = False,
         deep_dive: bool = False,
-        finerained_permisions: list = None,
+        finegrained_permisions: list = None,
         api_client: Api = None,
     ):
         """Initialize the fine-grained enumerator.
@@ -52,7 +52,7 @@ class FineGrainedEnumerator(Enumerator):
             output_json=output_json,
             ignore_workflow_run=ignore_workflow_run,
             deep_dive=deep_dive,
-            finegrained_permisions=finerained_permisions,
+            finegrained_permisions=finegrained_permisions,
             api_client=api_client,
         )
 
@@ -89,7 +89,7 @@ class FineGrainedEnumerator(Enumerator):
         # Use the parent class's setup method
         return await self.__setup_user_info()
 
-    async def check_collaborator_access(self, repo: dict[str, Any]) -> bool:
+    async def check_collaborator_access(self, repo: str) -> bool:
         """Checks if the user has write+ access to a repository via collaborators endpoint.
 
         This endpoint only works if the user has write+ access to the repository.
@@ -98,7 +98,7 @@ class FineGrainedEnumerator(Enumerator):
         2. The user explicitly opted this repo into the token's access
 
         Args:
-            repo (Dict[str, Any]): Repository data from GitHub API.
+            repo: Repository slug.
 
         Returns:
             bool: True if user has write+ access, False otherwise.
@@ -252,6 +252,131 @@ class FineGrainedEnumerator(Enumerator):
             except Exception as e:
                 Output.tabbed(f" issues:write: Error - {str(e)}")
 
+    async def probe_workflow_write_access(
+        self, repo_to_check: str, valid_scopes: set[str]
+    ) -> None:
+        """Probes workflow write access by attempting to create a workflow file using the Git Database API.
+
+        Args:
+            repo_to_check (str): Repository to probe for workflow write access.
+            valid_scopes (set[str]): Set of valid scopes to update if write access is found.
+            is_public (bool): Whether the repository is public (allows probing without read permission).
+        """
+
+        # We will only ever check this after confirming contents:write access
+        if "contents:write" in valid_scopes:
+            try:
+                # Create a blob with "TESTING" content
+                blob_result = await self.api.call_post(
+                    f"/repos/{repo_to_check}/git/blobs",
+                    params={"content": "TESTING", "encoding": "utf-8"},
+                )
+
+                if blob_result.status_code != 201:
+                    return
+
+                blob_sha = blob_result.json()["sha"]
+
+                # Get the current default branch
+                repo_result = await self.api.call_get(f"/repos/{repo_to_check}")
+                if repo_result.status_code != 200:
+                    return
+
+                default_branch = repo_result.json()["default_branch"]
+
+                # Get the current commit of the default branch
+                branch_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/git/ref/heads/{default_branch}"
+                )
+                if branch_result.status_code != 200:
+                    return
+
+                current_commit_sha = branch_result.json()["object"]["sha"]
+
+                # Get the current tree
+                commit_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/git/commits/{current_commit_sha}"
+                )
+                if commit_result.status_code != 200:
+                    return
+
+                current_tree_sha = commit_result.json()["tree"]["sha"]
+
+                # Get the current tree structure
+                tree_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/git/trees/{current_tree_sha}?recursive=1"
+                )
+                if tree_result.status_code != 200:
+                    return
+
+                tree_data = tree_result.json()
+                existing_tree = tree_data.get("tree", [])
+
+                # Build the new tree structure
+                new_tree = []
+                github_dir_exists = False
+                workflows_dir_exists = False
+
+                # Copy existing tree items and check for .github and .github/workflows
+                for item in existing_tree:
+                    new_tree.append(
+                        {
+                            "path": item["path"],
+                            "mode": item["mode"],
+                            "type": item["type"],
+                            "sha": item["sha"],
+                        }
+                    )
+
+                    if item["path"] == ".github" and item["type"] == "tree":
+                        github_dir_exists = True
+                    elif item["path"] == ".github/workflows" and item["type"] == "tree":
+                        workflows_dir_exists = True
+
+                # Add .github directory if it doesn't exist
+                if not github_dir_exists:
+                    new_tree.append(
+                        {
+                            "path": ".github",
+                            "mode": "040000",
+                            "type": "tree",
+                            "sha": None,  # Will be created
+                        }
+                    )
+
+                # Add .github/workflows directory if it doesn't exist
+                if not workflows_dir_exists:
+                    new_tree.append(
+                        {
+                            "path": ".github/workflows",
+                            "mode": "040000",
+                            "type": "tree",
+                            "sha": None,  # Will be created
+                        }
+                    )
+
+                # Add the testing workflow file
+                new_tree.append(
+                    {
+                        "path": ".github/workflows/testing",
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": blob_sha,
+                    }
+                )
+
+                # Create the new tree
+                create_tree_result = await self.api.call_post(
+                    f"/repos/{repo_to_check}/git/trees",
+                    params={"tree": new_tree, "base_tree": current_tree_sha},
+                )
+
+                if create_tree_result.status_code == 201:
+                    valid_scopes.add("workflows:write")
+
+            except Exception as e:
+                Output.tabbed(f" workflows:write (workflow): Error - {str(e)}")
+
     async def detect_scopes(self, repo_to_check) -> set[str]:
         """Probes various GET endpoints to determine read scopes of the token.
 
@@ -308,6 +433,9 @@ class FineGrainedEnumerator(Enumerator):
 
         is_public = not private_probes
         await self.probe_write_access(repo_to_check, valid_scopes, is_public)
+        # If we have write access, then check if we can modify workflows too.
+        if "contents:write" in valid_scopes:
+            await self.probe_workflow_write_access(repo_to_check, valid_scopes)
         await self.probe_actions_write_access(repo_to_check, valid_scopes, is_public)
         await self.probe_pull_requests_write_access(
             repo_to_check, valid_scopes, is_public
@@ -334,7 +462,9 @@ class FineGrainedEnumerator(Enumerator):
         if not await self.validate_token_and_get_user():
             return [], {}
 
-        public_repos = await self.api.get_own_repos(visibility="public")
+        public_repos = await self.api.get_own_repos(
+            affiliation="owner,collaborator,organization_member", visibility="public"
+        )
         write_accessible_repos = []
         if public_repos:
             Output.info("Checking write+ access to public repositories...")

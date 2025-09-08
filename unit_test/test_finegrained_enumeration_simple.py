@@ -276,6 +276,195 @@ class TestFineGrainedEnumeratorSimple:
         # Scopes should remain unchanged due to errors
         assert valid_scopes == expected_scopes
 
+    async def test_probe_workflow_write_access_success(self):
+        """Test successful workflow write access probing."""
+        enumerator = FineGrainedEnumerator(
+            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+
+        # Mock the API
+        enumerator.api = MagicMock()
+
+        # Mock blob creation response
+        blob_response = MagicMock()
+        blob_response.status_code = 201
+        blob_response.json.return_value = {"sha": "blob123"}
+
+        # Mock repository info response
+        repo_response = MagicMock()
+        repo_response.status_code = 200
+        repo_response.json.return_value = {"default_branch": "main"}
+
+        # Mock branch reference response
+        branch_response = MagicMock()
+        branch_response.status_code = 200
+        branch_response.json.return_value = {"object": {"sha": "commit123"}}
+
+        # Mock commit response
+        commit_response = MagicMock()
+        commit_response.status_code = 200
+        commit_response.json.return_value = {"tree": {"sha": "tree123"}}
+
+        # Mock tree response with existing structure
+        tree_response = MagicMock()
+        tree_response.status_code = 200
+        tree_response.json.return_value = {
+            "tree": [
+                {
+                    "path": "README.md",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": "readme123",
+                },
+                {
+                    "path": ".github",
+                    "mode": "040000",
+                    "type": "tree",
+                    "sha": "github123",
+                },
+                {
+                    "path": ".github/workflows",
+                    "mode": "040000",
+                    "type": "tree",
+                    "sha": "workflows123",
+                },
+            ]
+        }
+
+        # Mock successful tree creation response
+        create_tree_response = MagicMock()
+        create_tree_response.status_code = 201
+
+        # Set up API call responses
+        enumerator.api.call_post = AsyncMock(
+            side_effect=[blob_response, create_tree_response]
+        )
+        enumerator.api.call_get = AsyncMock(
+            side_effect=[repo_response, branch_response, commit_response, tree_response]
+        )
+
+        valid_scopes = {"contents:write"}
+
+        await enumerator.probe_workflow_write_access(
+            "octocat/Hello-World", valid_scopes
+        )
+
+        # Should add workflows:write scope
+        assert "workflows:write" in valid_scopes
+        # Should keep contents:write scope
+        assert "contents:write" in valid_scopes
+
+        # Verify API calls were made
+        enumerator.api.call_post.assert_any_call(
+            "/repos/octocat/Hello-World/git/blobs",
+            params={"content": "TESTING", "encoding": "utf-8"},
+        )
+
+    async def test_probe_workflow_write_access_no_contents_write(self):
+        """Test workflow write access probing when contents:write scope is not present."""
+        enumerator = FineGrainedEnumerator(
+            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+
+        # Mock the API
+        enumerator.api = MagicMock()
+        enumerator.api.call_post = AsyncMock()
+        enumerator.api.call_get = AsyncMock()
+
+        valid_scopes = {"actions:read"}  # No contents:write
+
+        await enumerator.probe_workflow_write_access(
+            "octocat/Hello-World", valid_scopes
+        )
+
+        # Should not make any API calls since contents:write is required
+        enumerator.api.call_post.assert_not_called()
+        enumerator.api.call_get.assert_not_called()
+
+        # Scopes should remain unchanged
+        assert valid_scopes == {"actions:read"}
+
+    async def test_probe_workflow_write_access_blob_creation_fails(self):
+        """Test workflow write access probing when blob creation fails."""
+        enumerator = FineGrainedEnumerator(
+            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+
+        # Mock the API
+        enumerator.api = MagicMock()
+
+        # Mock failed blob creation response
+        blob_response = MagicMock()
+        blob_response.status_code = 403  # Forbidden
+
+        enumerator.api.call_post = AsyncMock(return_value=blob_response)
+
+        valid_scopes = {"contents:write"}
+
+        await enumerator.probe_workflow_write_access(
+            "octocat/Hello-World", valid_scopes
+        )
+
+        # Should not add workflows:write scope due to blob creation failure
+        assert "workflows:write" not in valid_scopes
+        assert valid_scopes == {"contents:write"}
+
+    async def test_probe_workflow_write_access_tree_creation_fails(self):
+        """Test workflow write access probing when tree creation fails."""
+        enumerator = FineGrainedEnumerator(
+            pat="github_pat_11ABCDEFG123456789_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+
+        # Mock the API
+        enumerator.api = MagicMock()
+
+        # Mock successful blob creation
+        blob_response = MagicMock()
+        blob_response.status_code = 201
+        blob_response.json.return_value = {"sha": "blob123"}
+
+        # Mock repository info response
+        repo_response = MagicMock()
+        repo_response.status_code = 200
+        repo_response.json.return_value = {"default_branch": "main"}
+
+        # Mock branch reference response
+        branch_response = MagicMock()
+        branch_response.status_code = 200
+        branch_response.json.return_value = {"object": {"sha": "commit123"}}
+
+        # Mock commit response
+        commit_response = MagicMock()
+        commit_response.status_code = 200
+        commit_response.json.return_value = {"tree": {"sha": "tree123"}}
+
+        # Mock tree response
+        tree_response = MagicMock()
+        tree_response.status_code = 200
+        tree_response.json.return_value = {"tree": []}
+
+        # Mock failed tree creation response
+        create_tree_response = MagicMock()
+        create_tree_response.status_code = 403  # Forbidden
+
+        # Set up API call responses
+        enumerator.api.call_post = AsyncMock(
+            side_effect=[blob_response, create_tree_response]
+        )
+        enumerator.api.call_get = AsyncMock(
+            side_effect=[repo_response, branch_response, commit_response, tree_response]
+        )
+
+        valid_scopes = {"contents:write"}
+
+        await enumerator.probe_workflow_write_access(
+            "octocat/Hello-World", valid_scopes
+        )
+
+        # Should not add workflows:write scope due to tree creation failure
+        assert "workflows:write" not in valid_scopes
+        assert valid_scopes == {"contents:write"}
+
     async def test_detect_scopes_integration_mocked(self):
         """Integration test for detect_scopes with mocked API responses."""
         enumerator = FineGrainedEnumerator(
@@ -348,7 +537,9 @@ class TestFineGrainedEnumeratorSimple:
         repositories = await enumerator.enumerate_fine_grained_token()
 
         # Verify API calls were made with correct parameters
-        enumerator.api.get_own_repos.assert_any_call(visibility="public")
+        enumerator.api.get_own_repos.assert_any_call(
+            affiliation="owner,collaborator,organization_member", visibility="public"
+        )
         enumerator.api.get_own_repos.assert_any_call(
             affiliation="owner,collaborator,organization_member", visibility="private"
         )
