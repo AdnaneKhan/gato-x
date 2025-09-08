@@ -87,10 +87,13 @@ For each detected read permission, Gato-X attempts to detect corresponding write
 - **Issues Write**: Attempt to PATCH an existing issue with no changes
 - **Pull Requests Write**: Attempt to PATCH an existing PR with no changes  
 - **Actions Write**: Get and re-set OIDC customization settings
+- **Workflows Write**: Create a tree that would add a file to `.github/workflows`, but do not try and create a commit from that free.
 
 Each probe is effectively a no-op. The issues, PR and actions probe do not change anything, and the events do not trigger audit logs events (as of writing).
 
-The contents write probe creates a small dangling blob in the Git database.
+The `contents:write` probe creates a small dangling blob in the Git database, and the `workflows:write` probe attempts to create a tree that would add a file to the `.github/workflows` directory.
+
+GitHub's documentation does not state that tree modification requires `workflows:write` (as you need to create a ref to actually trigger anything) however, in my testing this failed without the workflow scope. Gato-X uses this undocumented behavior to non-intrusively detect `workflows:write`.
 
 #### Public Repository Handling
 
