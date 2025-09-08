@@ -116,9 +116,7 @@ class FineGrainedEnumerator(Enumerator):
                 return False
 
         except Exception as e:
-            logger.debug(
-                f"Error checking collaborator access for {repo}: {e}"
-            )
+            logger.debug(f"Error checking collaborator access for {repo}: {e}")
             return False
 
     async def probe_write_access(
