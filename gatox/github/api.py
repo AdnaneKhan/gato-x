@@ -586,12 +586,19 @@ class Api:
         if result.status_code == 200:
             return result.json()["type"]
 
-    async def get_own_repos(self):
+    async def get_own_repos(
+        self, affiliation: str = "owner,collaborator", visibility="all"
+    ):
         """Retrieve all repositories where the user is the owner or a collaborator."""
 
         repos = []
 
-        get_params = {"affiliation": "collaborator,owner", "per_page": 100, "page": 1}
+        get_params = {
+            "affiliation": affiliation,
+            "visibility": visibility,
+            "per_page": 100,
+            "page": 1,
+        }
 
         result = await self.call_get("/user/repos", params=get_params)
         if result.status_code == 200:
@@ -833,10 +840,15 @@ class Api:
             else:
                 scopes = []
 
+            exp_header = result.headers.get("github-authentication-token-expiration")
+            if exp_header:
+                expiration = exp_header
+
             user_scopes = {
                 "user": result.json()["login"],
                 "scopes": scopes,
                 "name": result.json()["name"],
+                "expiration": expiration if exp_header else None,
             }
 
             return user_scopes
@@ -879,6 +891,11 @@ class Api:
         if runners.status_code == 200:
             runner_list = runners.json()["runners"]
             return runner_list
+        elif runners.status_code == 403:
+            logger.debug(
+                f"Unable to query runners for {full_name}! This is likely due to the"
+                " PAT permission level!"
+            )
 
         return []
 

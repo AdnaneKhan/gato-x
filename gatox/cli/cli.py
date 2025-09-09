@@ -21,6 +21,7 @@ from gatox.cli.persistence.config import configure_parser_persistence
 from gatox.cli.search.config import configure_parser_search
 from gatox.enumerate.app_enumerate import AppEnumerator
 from gatox.enumerate.enumerate import Enumerator
+from gatox.enumerate.finegrained_enumeration import FineGrainedEnumerator
 from gatox.models.execution import Execution
 from gatox.search.search import Searcher
 from gatox.util.arg_utils import read_file_and_validate_lines
@@ -136,12 +137,9 @@ def validate_arguments(args, parser):
         else:
             gh_token = os.environ["GH_TOKEN"]
 
-        if "github_pat_" in gh_token:
-            parser.error(
-                f"{Fore.RED}[!] Fine-grained PATs are currently not supported!"
-            )
-
-        if not (
+        if re.match(r"github_pat_[A-Za-z0-9_]{22}_[A-Za-z0-9_]{59}$", gh_token):
+            logging.info("Using fine-grained token.")
+        elif not (
             re.match("gh[po]_[A-Za-z0-9]{36}$", gh_token)
             or re.match("^[a-fA-F0-9]{40}$", gh_token)
         ):
@@ -309,38 +307,49 @@ async def attack(args, parser):
         )
 
 
-async def enumerate(args, parser):
-    parser = parser.choices["enumerate"]
-
-    if not (
-        args.target
-        or args.self_enumeration
-        or args.repository
-        or args.repositories
-        or args.validate
-        or args.commit
-    ):
-        parser.error(
-            f"{Fore.RED}[-]{Style.RESET_ALL} No enumeration type was specified!"
-        )
-
-    # Count enumeration types, treating commit as a modifier for repository
-    enumeration_count = sum(
-        bool(x)
-        for x in [
-            args.target,
-            args.self_enumeration,
-            args.repository or args.commit,  # repository and commit work together
-            args.repositories,
-            args.validate,
-        ]
+async def enumerate_finegrained(args, parser):
+    """Execute fine-grained token enumeration workflow."""
+    gh_enumeration_runner = FineGrainedEnumerator(
+        pat=args.gh_token,
+        socks_proxy=args.socks_proxy,
+        http_proxy=args.http_proxy,
+        skip_log=args.skip_runners,
+        github_url=args.api_url,
+        ignore_workflow_run=args.ignore_workflow_run,
+        deep_dive=args.deep_dive,
     )
 
-    if enumeration_count != 1:
+    if args.validate:
+        # For validation, just check token validity
+        await gh_enumeration_runner.validate_token_and_get_user()
+        exec_wrapper = Execution()
+        exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
+    elif args.self_enumeration:
+        # Fine-grained self enumeration
+        accessible_repos = await gh_enumeration_runner.enumerate_fine_grained_token()
+        exec_wrapper = Execution()
+        exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
+        exec_wrapper.add_repositories(accessible_repos)
+    else:
+        # Fine-grained tokens only support self enum and single repo
         parser.error(
-            f"{Fore.RED}[-]{Style.RESET_ALL} You must only select one enumeration type."
+            f"{Fore.RED}[-]{Style.RESET_ALL} Fine-grained tokens only support "
+            "--self-enumeration or -validate modes!"
+        )
+        return
+
+    # Handle output
+    try:
+        if args.output_json:
+            Output.write_json(exec_wrapper, args.output_json)
+    except Exception:
+        Output.error(
+            "Encountered an error writing the output JSON, this is likely a Gato-X bug."
         )
 
+
+async def enumerate_classic(args, parser):
+    """Execute classic enumeration workflow."""
     gh_enumeration_runner = Enumerator(
         args.gh_token,
         socks_proxy=args.socks_proxy,
@@ -354,10 +363,6 @@ async def enumerate(args, parser):
     exec_wrapper = Execution()
     orgs = []
     repos = []
-
-    if args.cache_restore_file:
-        LocalCacheFactory.load_cache_from_file(args.cache_restore_file)
-        Output.info(f"Cache restored from file:{args.cache_restore_file}")
 
     if args.validate:
         orgs = await gh_enumeration_runner.validate_only()
@@ -409,6 +414,48 @@ async def enumerate(args, parser):
     if args.cache_save_file:
         LocalCacheFactory.dump_cache(args.cache_save_file)
         Output.info(f"Cache saved to file:{args.cache_save_file}")
+
+
+async def enumerate(args, parser):
+    parser = parser.choices["enumerate"]
+
+    if not (
+        args.target
+        or args.self_enumeration
+        or args.repository
+        or args.repositories
+        or args.validate
+        or args.commit
+    ):
+        parser.error(
+            f"{Fore.RED}[-]{Style.RESET_ALL} No enumeration type was specified!"
+        )
+
+    # Count enumeration types, treating commit as a modifier for repository
+    enumeration_count = sum(
+        bool(x)
+        for x in [
+            args.target,
+            args.self_enumeration,
+            args.repository or args.commit,  # repository and commit work together
+            args.repositories,
+            args.validate,
+        ]
+    )
+
+    if enumeration_count != 1:
+        parser.error(
+            f"{Fore.RED}[-]{Style.RESET_ALL} You must only select one enumeration type."
+        )
+
+    if args.cache_restore_file:
+        LocalCacheFactory.load_cache_from_file(args.cache_restore_file)
+        Output.info(f"Cache restored from file:{args.cache_restore_file}")
+
+    if "github_pat" in args.gh_token:
+        await enumerate_finegrained(args, parser)
+    else:
+        await enumerate_classic(args, parser)
 
 
 async def search(args, parser):

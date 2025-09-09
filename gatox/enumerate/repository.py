@@ -57,7 +57,9 @@ class RepositoryEnum:
 
         return runner_detected
 
-    async def enumerate_repository(self, repository: Repository):
+    async def enumerate_repository(
+        self, repository: Repository, fine_grained: set = None
+    ):
         """Enumerate a repository, and check everything relevant to
         self-hosted runner abuse that that the user has permissions to check.
 
@@ -65,6 +67,8 @@ class RepositoryEnum:
             repository (Repository): Wrapper object created from calling the
             API and retrieving a repository.
         """
+        if fine_grained is None:
+            fine_grained = {}
         if not repository.can_pull():
             Output.error("The user cannot pull, skipping.")
             return
@@ -75,9 +79,10 @@ class RepositoryEnum:
             for risk in repository.get_risks():
                 ActionsReport.report_actions_risk(risk)
 
-        if repository.is_admin():
+        if repository.is_admin() and (
+            not fine_grained or "administration:read" in fine_grained
+        ):
             runners = await self.api.get_repo_runners(repository.name)
-
             if runners:
                 repo_runners = [
                     Runner(

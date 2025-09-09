@@ -41,7 +41,7 @@ async def test_cli_fine_grained_pat(capfd):
     with pytest.raises(SystemExit):
         await cli.cli(["enumerate", "-t", "test"])
     out, err = capfd.readouterr()
-    assert "not supported" in err
+    assert "unsupported" in err
 
 
 async def test_cli_s2s_token(capfd):

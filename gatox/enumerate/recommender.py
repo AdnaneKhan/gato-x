@@ -8,16 +8,21 @@ from gatox.models.secret import Secret
 
 class Recommender:
     @staticmethod
-    def print_repo_attack_recommendations(scopes: list, repository: Repository):
+    def print_repo_attack_recommendations(
+        scopes: list, repository: Repository, fine_grained: set = None
+    ):
         """Prints attack recommendations for repositories.
 
         Args:
             scopes (list): List of scopes for user who ran Gato.
             repository (Repository): Repository wrapper object.
         """
-
+        if fine_grained is None:
+            fine_grained = {}
         if not repository.sh_runner_access:
-            if repository.is_admin():
+            if repository.is_admin() and (
+                not fine_grained or "administration:read" in fine_grained
+            ):
                 Output.owned(
                     "The user is an administrator on the repository, but no "
                     "self-hosted runners were detected!"
@@ -30,6 +35,11 @@ class Recommender:
                 Output.result(
                     "The PAT also has the workflow scope, which means a "
                     "custom YAML payload can be used!"
+                )
+            elif fine_grained:
+                Output.result(
+                    "The PAT is a fine-grained token, so you will have to overtly check whether"
+                    "it has the 'workflow' permission!"
                 )
             else:
                 Output.inform(
@@ -87,12 +97,13 @@ class Recommender:
                 )
 
     @staticmethod
-    def print_repo_secrets(scopes, secrets: list[Secret]):
+    def print_repo_secrets(scopes, secrets: list[Secret], app_permissions=None):
         """Prints list of repository level secrets.
 
         Args:
             scopes (list): List of OAuth scopes.
             secrets (list[Secret]): List of secret wrapper objects.
+            app_permissions (set, optional): Set of app permissions for fine-grained tokens.
         """
 
         if not secrets:

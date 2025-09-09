@@ -20,6 +20,7 @@
 ## Advanced Topics
 * [Overview](user-guide/advanced/index.md)
 * [Understanding GitHub Actions Vulnerabilities](user-guide/advanced/vulnerabilities.md)
+* [Fine-Grained Token Enumeration](user-guide/advanced/fine-grained-tokens.md)
 * [Complex Attack Scenarios](user-guide/advanced/complex-attacks.md)
 
 ## Additional Resources
