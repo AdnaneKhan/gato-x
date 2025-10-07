@@ -60,10 +60,11 @@ class Attacker:
             Output.info(
                 f"The authenticated user is: {Output.bright(self.user_perms['user'])}"
             )
-            Output.info(
-                "The GitHub Classic PAT has the following scopes: "
-                f"{Output.yellow(', '.join(self.user_perms['scopes']))}"
-            )
+            if self.user_perms["scopes"]:
+                Output.info(
+                    "The GitHub Classic PAT has the following scopes: "
+                    f"{Output.yellow(', '.join(self.user_perms['scopes']))}"
+                )
 
         return True
 
