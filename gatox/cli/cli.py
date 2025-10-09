@@ -300,9 +300,9 @@ async def attack(args, parser):
                 github_url=args.api_url,
             )
             scopes = await gh_enumeration_runner.detect_scopes(args.target)
-            if "contents:write" not in scopes and "workflow:write" not in scopes:
+            if "contents:write" not in scopes and "workflows:write" not in scopes:
                 parser.error(
-                    f"{Fore.RED}[-]{Style.RESET_ALL} The provided fine-grained token does not have the necessary 'contents:write' and `workflows:writes` permission on the targeted repository!"
+                    f"{Fore.RED}[-]{Style.RESET_ALL} The provided fine-grained token does not have the necessary 'contents:write' and 'workflows:write' permission on the targeted repository!"
                 )
                 return
 
