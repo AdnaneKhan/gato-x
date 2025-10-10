@@ -285,30 +285,26 @@ class TestFineGrainedEnumeratorSimple:
         # Mock the API
         enumerator.api = MagicMock()
 
-        # Mock blob creation response
-        blob_response = MagicMock()
-        blob_response.status_code = 201
-        blob_response.json.return_value = {"sha": "blob123"}
-
         # Mock repository info response
         repo_response = MagicMock()
         repo_response.status_code = 200
         repo_response.json.return_value = {"default_branch": "main"}
 
-        # Mock branch reference response
-        branch_response = MagicMock()
-        branch_response.status_code = 200
-        branch_response.json.return_value = {"object": {"sha": "commit123"}}
-
-        # Mock commit response
+        # Mock commit response from /repos/{repo}/commits/{branch}
         commit_response = MagicMock()
         commit_response.status_code = 200
-        commit_response.json.return_value = {"tree": {"sha": "tree123"}}
+        commit_response.json.return_value = {"sha": "commit123"}
+
+        # Mock git commit response from /repos/{repo}/git/commits/{sha}
+        git_commit_response = MagicMock()
+        git_commit_response.status_code = 200
+        git_commit_response.json.return_value = {"tree": {"sha": "tree123"}}
 
         # Mock tree response with existing structure
         tree_response = MagicMock()
         tree_response.status_code = 200
         tree_response.json.return_value = {
+            "sha": "tree123",
             "tree": [
                 {
                     "path": "README.md",
@@ -328,19 +324,29 @@ class TestFineGrainedEnumeratorSimple:
                     "type": "tree",
                     "sha": "workflows123",
                 },
-            ]
+            ],
         }
+
+        # Mock blob creation response
+        blob_response = MagicMock()
+        blob_response.status_code = 201
+        blob_response.json.return_value = {"sha": "blob123"}
 
         # Mock successful tree creation response
         create_tree_response = MagicMock()
         create_tree_response.status_code = 201
 
         # Set up API call responses
+        enumerator.api.call_get = AsyncMock(
+            side_effect=[
+                repo_response,
+                commit_response,
+                git_commit_response,
+                tree_response,
+            ]
+        )
         enumerator.api.call_post = AsyncMock(
             side_effect=[blob_response, create_tree_response]
-        )
-        enumerator.api.call_get = AsyncMock(
-            side_effect=[repo_response, branch_response, commit_response, tree_response]
         )
 
         valid_scopes = {"contents:write"}

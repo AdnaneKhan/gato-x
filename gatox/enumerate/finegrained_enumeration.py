@@ -263,109 +263,62 @@ class FineGrainedEnumerator(Enumerator):
         # We will only ever check this after confirming contents:write access
         if "contents:write" in valid_scopes:
             try:
-                # Create a blob with "TESTING" content
+                # Step 1: Get latest commit SHA of default branch
+                repo_result = await self.api.call_get(f"/repos/{repo_to_check}")
+                if repo_result.status_code != 200:
+                    return
+                default_branch = repo_result.json()["default_branch"]
+
+                commit_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/commits/{default_branch}"
+                )
+                if commit_result.status_code != 200:
+                    return
+                latest_commit_sha = commit_result.json()["sha"]
+
+                # Step 2: Get tree SHA of latest commit
+                tree_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/git/commits/{latest_commit_sha}"
+                )
+                if tree_result.status_code != 200:
+                    return
+                tree_sha = tree_result.json()["tree"]["sha"]
+
+                # Step 3: Get the tree with recursive to check for .github/workflows
+                tree_info_result = await self.api.call_get(
+                    f"/repos/{repo_to_check}/git/trees/{tree_sha}",
+                    params={"recursive": "1"},
+                )
+                if tree_info_result.status_code != 200:
+                    return
+
+                tree_info = tree_info_result.json()
+                base_sha = tree_info["sha"]
+
+                # Step 4: Create a new blob with test content
                 blob_result = await self.api.call_post(
                     f"/repos/{repo_to_check}/git/blobs",
                     params={"content": "TESTING", "encoding": "utf-8"},
                 )
-
                 if blob_result.status_code != 201:
                     return
 
                 blob_sha = blob_result.json()["sha"]
 
-                # Get the current default branch
-                repo_result = await self.api.call_get(f"/repos/{repo_to_check}")
-                if repo_result.status_code != 200:
-                    return
-
-                default_branch = repo_result.json()["default_branch"]
-
-                # Get the current commit of the default branch
-                branch_result = await self.api.call_get(
-                    f"/repos/{repo_to_check}/git/ref/heads/{default_branch}"
-                )
-                if branch_result.status_code != 200:
-                    return
-
-                current_commit_sha = branch_result.json()["object"]["sha"]
-
-                # Get the current tree
-                commit_result = await self.api.call_get(
-                    f"/repos/{repo_to_check}/git/commits/{current_commit_sha}"
-                )
-                if commit_result.status_code != 200:
-                    return
-
-                current_tree_sha = commit_result.json()["tree"]["sha"]
-
-                # Get the current tree structure
-                tree_result = await self.api.call_get(
-                    f"/repos/{repo_to_check}/git/trees/{current_tree_sha}?recursive=1"
-                )
-                if tree_result.status_code != 200:
-                    return
-
-                tree_data = tree_result.json()
-                existing_tree = tree_data.get("tree", [])
-
-                # Build the new tree structure
-                new_tree = []
-                github_dir_exists = False
-                workflows_dir_exists = False
-
-                # Copy existing tree items and check for .github and .github/workflows
-                for item in existing_tree:
-                    new_tree.append(
-                        {
-                            "path": item["path"],
-                            "mode": item["mode"],
-                            "type": item["type"],
-                            "sha": item["sha"],
-                        }
-                    )
-
-                    if item["path"] == ".github" and item["type"] == "tree":
-                        github_dir_exists = True
-                    elif item["path"] == ".github/workflows" and item["type"] == "tree":
-                        workflows_dir_exists = True
-
-                # Add .github directory if it doesn't exist
-                if not github_dir_exists:
-                    new_tree.append(
-                        {
-                            "path": ".github",
-                            "mode": "040000",
-                            "type": "tree",
-                            "sha": None,  # Will be created
-                        }
-                    )
-
-                # Add .github/workflows directory if it doesn't exist
-                if not workflows_dir_exists:
-                    new_tree.append(
-                        {
-                            "path": ".github/workflows",
-                            "mode": "040000",
-                            "type": "tree",
-                            "sha": None,  # Will be created
-                        }
-                    )
-
-                # Add the testing workflow file
-                new_tree.append(
+                # Step 5: Create a new tree with the workflow file
+                new_tree = [
                     {
                         "path": ".github/workflows/testing",
                         "mode": "100644",
                         "type": "blob",
                         "sha": blob_sha,
                     }
-                )
+                ]
 
-                # Create the new tree
+                # Create the new tree using base_tree to preserve existing structure
                 create_tree_result = await self.api.call_post(
                     f"/repos/{repo_to_check}/git/trees",
-                    params={"tree": new_tree, "base_tree": current_tree_sha},
+                    params={"tree": new_tree, "base_tree": base_sha},
                 )
 
                 if create_tree_result.status_code == 201:

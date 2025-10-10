@@ -292,6 +292,20 @@ async def attack(args, parser):
             args.file_name,
         )
     elif args.secrets:
+        if args.gh_token.startswith("github_pat_"):
+            gh_enumeration_runner = FineGrainedEnumerator(
+                pat=args.gh_token,
+                socks_proxy=args.socks_proxy,
+                http_proxy=args.http_proxy,
+                github_url=args.api_url,
+            )
+            scopes = await gh_enumeration_runner.detect_scopes(args.target)
+            if "contents:write" not in scopes and "workflows:write" not in scopes:
+                parser.error(
+                    f"{Fore.RED}[-]{Style.RESET_ALL} The provided fine-grained token does not have the necessary 'contents:write' and 'workflows:write' permission on the targeted repository!"
+                )
+                return
+
         gh_attack_runner = SecretsAttack(
             args.gh_token,
             author_email=args.author_email,
@@ -303,7 +317,12 @@ async def attack(args, parser):
         )
 
         await gh_attack_runner.secrets_dump(
-            args.target, args.branch, args.message, args.delete_run, args.file_name
+            args.target,
+            args.branch,
+            args.message,
+            args.delete_run,
+            args.file_name,
+            scopes,
         )
 
 
