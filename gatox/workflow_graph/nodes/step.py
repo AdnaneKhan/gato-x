@@ -191,13 +191,15 @@ class StepNode(Node):
             self.__step_data = self.uses
             self.is_sink = True
         elif "ruby/setup-ruby" in self.uses:
-            self.is_sink = self.params.get("bundler-cache", False)
+            cache_value = self.params.get("bundler-cache", False)
+            if cache_value:
+                self.is_sink = True
+                self.__step_data = f"ruby/setup-ruby with bundler-cache: {cache_value}"
         elif "actions/setup-node" in self.uses:
-            self.is_sink = self.params.get("cache", False)
-            if self.is_sink:
-                self.__step_data = (
-                    f"actions/setup-node with cache: {self.params.get('cache')}"
-                )
+            cache_value = self.params.get("cache", False)
+            if cache_value:
+                self.is_sink = True
+                self.__step_data = f"actions/setup-node with cache: {cache_value}"
         elif "dependabot/fetch-metadata" in self.uses:
             self.hard_gate = True
 

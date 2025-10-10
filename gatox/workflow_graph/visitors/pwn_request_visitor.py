@@ -61,7 +61,6 @@ class PwnRequestVisitor:
 
         for index, node in enumerate(path):
             tags = node.get_tags()
-
             if "JobNode" in tags:
                 # Exit fast if we hit a blocker
                 paths = await graph.dfs_to_tag(
@@ -121,7 +120,6 @@ class PwnRequestVisitor:
                         )
                     ) or not approval_gate:
                         sinks = await graph.dfs_to_tag(node, "sink", api)
-
                         if approval_gate:
                             complexity = Complexity.TOCTOU
                         elif "workflow_run" in path[0].get_tags():
@@ -184,7 +182,24 @@ class PwnRequestVisitor:
                     if repo.is_fork():
                         break
 
-                    if node.excluded():
+                    # Determine the trigger for this path
+                    path_trigger = None
+                    for tag in tags:
+                        if tag in [
+                            "pull_request_target",
+                            "pull_request_target:labeled",
+                            "issue_comment",
+                            "workflow_run",
+                            "workflow_dispatch",
+                        ]:
+                            path_trigger = tag
+                            break
+
+                    # Check if this specific trigger is excluded
+                    if path_trigger and node.excluded(path_trigger):
+                        break
+                    # If we couldn't determine the trigger, fall back to checking all triggers
+                    elif not path_trigger and node.excluded():
                         break
 
                     if "pull_request_target:labeled" in tags:
