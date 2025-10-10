@@ -192,7 +192,7 @@ class StepNode(Node):
             self.is_sink = True
         elif "ruby/setup-ruby" in self.uses:
             cache_value = self.params.get("bundler-cache", False)
-            if cache_value:
+            if cache_value is True or (isinstance(cache_value, str) and cache_value.lower() == "true"):
                 self.is_sink = True
                 self.__step_data = f"ruby/setup-ruby with bundler-cache: {cache_value}"
         elif "actions/setup-node" in self.uses:
