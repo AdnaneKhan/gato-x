@@ -55,7 +55,8 @@ class ArtifactPoisoningVisitor:
                     if repo.is_fork():
                         break
 
-                    if node.excluded():
+                    # Check if workflow_run trigger is excluded
+                    if node.excluded("workflow_run"):
                         break
             elif "ActionNode" in tags:
                 await VisitorUtils.initialize_action_node(graph, api, node)

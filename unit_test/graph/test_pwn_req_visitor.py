@@ -1038,3 +1038,79 @@ async def test_process_single_path_deployment_rule_substring_match(
         mock_add_results.assert_called_once()
         call_args = mock_add_results.call_args
         assert call_args[1]["complexity"] == Complexity.TOCTOU
+
+
+@pytest.mark.asyncio
+async def test_process_single_path_multiple_triggers_partial_exclusion(
+    mock_graph, mock_api, mock_cache_manager
+):
+    """
+    Test that a workflow with multiple triggers (e.g., pull_request_target and workflow_dispatch)
+    is not excluded when only one trigger is excluded. The pull_request_target path should still
+    be analyzed even if workflow_dispatch is excluded.
+    """
+    # Create workflow node with both triggers
+    workflow_node = MagicMock()
+    workflow_node.get_tags.return_value = [
+        "WorkflowNode",
+        "pull_request_target",
+        "workflow_dispatch",
+    ]
+    # Mock excluded to return True only for workflow_dispatch, False for pull_request_target
+    workflow_node.excluded.side_effect = lambda trigger=None: (
+        True if trigger == "workflow_dispatch" else False
+    )
+    workflow_node.get_env_vars.return_value = {}
+    workflow_node.repo_name.return_value = "test/repo"
+
+    job_node = MagicMock()
+    job_node.get_tags.return_value = ["JobNode"]
+    job_node.deployments = None
+    job_node.outputs = None
+
+    checkout_step = MagicMock()
+    checkout_step.get_tags.return_value = ["StepNode"]
+    checkout_step.is_checkout = True
+    checkout_step.metadata = "refs/heads/main"
+    checkout_step.outputs = None
+    checkout_step.hard_gate = False
+    checkout_step.soft_gate = False
+
+    sink_node = MagicMock()
+    sink_node.get_tags.return_value = ["sink"]
+
+    path = [workflow_node, job_node, checkout_step]
+
+    def mock_dfs_side_effect(node, tag, api, ignore_depends=False):
+        if tag == "permission_blocker":
+            return []
+        elif tag == "permission_check":
+            return []
+        elif tag == "sink":
+            return [[sink_node]]
+        return []
+
+    mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
+    mock_api.get_all_environment_protection_rules.return_value = {}
+
+    results = {}
+    rule_cache = {}
+
+    with (
+        patch.object(VisitorUtils, "process_context_var", return_value="processed"),
+        patch.object(VisitorUtils, "check_mutable_ref", return_value=True),
+        patch.object(VisitorUtils, "append_path"),
+        patch.object(VisitorUtils, "_add_results") as mock_add_results,
+    ):
+        await PwnRequestVisitor._process_single_path(
+            path, mock_graph, mock_api, rule_cache, results
+        )
+
+        # Should NOT break early - pull_request_target is not excluded
+        # Results should be added since the path is valid for pull_request_target
+        mock_add_results.assert_called_once()
+        call_args = mock_add_results.call_args
+        assert call_args[0][0] == path
+        assert (
+            call_args[0][2] == IssueType.PWN_REQUEST
+        )  # issue_type is 3rd positional arg

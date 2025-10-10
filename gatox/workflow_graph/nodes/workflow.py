@@ -81,7 +81,7 @@ class WorkflowNode(Node):
         self.__workflow_path = workflow_path
         self.__triggers = []
         self.__callers = []
-        self.__excluded = False
+        self.__excluded_triggers = set()
         self.__repo_name = repo_name
         self.__env_vars = {}
         self.inputs = {}
@@ -143,20 +143,20 @@ class WorkflowNode(Node):
                     if "branches" in trigger_conditions:
                         # If the branches filter is present, then
                         # forks cannot trigger the workflow.
-                        self.__excluded = True
+                        self.__excluded_triggers.add(trigger)
                     else:
                         extracted_triggers.append(trigger)
                 elif trigger == "workflow_dispatch":
                     if not trigger_conditions or "inputs" not in trigger_conditions:
                         # If no inputs are present, then this workflow
                         # cannot have a dispatch TOCTOU
-                        self.__excluded = True
+                        self.__excluded_triggers.add(trigger)
                     else:
                         # Check if workflow has TOCTOU risk (PR number without required SHA)
                         if not _has_dispatch_toctou_risk(
                             trigger_conditions.get("inputs", {})
                         ):
-                            self.__excluded = True
+                            self.__excluded_triggers.add(trigger)
                         extracted_triggers.append(trigger)
                 else:
                     extracted_triggers.append(trigger)
@@ -183,10 +183,23 @@ class WorkflowNode(Node):
         else:
             return {}
 
-    def excluded(self):
-        """Returns whether the workflow is excluded as it cannot be
-        triggered from a fork."""
-        return self.__excluded
+    def excluded(self, trigger=None):
+        """Returns whether the workflow (or a specific trigger) is excluded
+        as it cannot be triggered from a fork.
+
+        Args:
+            trigger (str, optional): Specific trigger to check. If None, checks if
+                                    all triggers are excluded.
+
+        Returns:
+            bool: True if excluded, False otherwise.
+        """
+        if trigger is not None:
+            return trigger in self.__excluded_triggers
+        # If no trigger specified, check if all triggers are excluded
+        return len(self.__excluded_triggers) > 0 and len(self.__triggers) == len(
+            self.__excluded_triggers
+        )
 
     def get_env_vars(self):
         """Returns environment variables for the workflow."""
