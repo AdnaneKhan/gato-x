@@ -72,6 +72,7 @@ class InjectionVisitor:
         query_taglist = [
             "issue_comment",
             "pull_request_target",
+            "pull_request",
             "fork",
             "issues",
             "discussion",
