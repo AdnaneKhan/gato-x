@@ -292,6 +292,7 @@ async def attack(args, parser):
             args.file_name,
         )
     elif args.secrets:
+        scopes = None
         if args.gh_token.startswith("github_pat_"):
             gh_enumeration_runner = FineGrainedEnumerator(
                 pat=args.gh_token,
