@@ -21,6 +21,7 @@
             "number"
         ],
         "GITHUB_HOSTED_LABELS": [
+            "ubuntu-slim",
             "ubuntu-latest",
             "macos-latest",
             "macOS-latest",
@@ -113,7 +114,8 @@
             "ok",
             "outputs.approved",
             "outputs.users",
-            "outputs.token"
+            "outputs.token",
+            "outputs.app-slug"
         ],
         "SINKS": [
             "scripts/",
