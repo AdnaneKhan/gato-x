@@ -59,7 +59,7 @@ jobs:
         with:
           subject-path: 'dist/gato_x-*'
       - name: Store Distribution Packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: python-package-distributions
           path: dist/
