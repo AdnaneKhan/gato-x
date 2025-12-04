@@ -27,7 +27,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout the repo
-            uses: actions/checkout@v5
+            uses: actions/checkout@v6
           - name: Setup python
             uses: actions/setup-python@v6
             with:
@@ -52,7 +52,7 @@ jobs:
 
         steps:
           - name: Checkout the repo
-            uses: actions/checkout@v5
+            uses: actions/checkout@v6
             with:
               repository: ${{ inputs.pr_repo }}
               ref: ${{ inputs.pr_sha }}
