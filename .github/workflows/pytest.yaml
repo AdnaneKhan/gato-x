@@ -27,7 +27,7 @@ jobs:
           - run: |
               python -m pip install --upgrade pip
               pip install ".[test]"
-          - uses: psf/black@05f0a8ce1f71fbb36e1e032d3b518c7b945089a2 # 25.11.0
+          - uses: psf/black@782e5605c86aab56be6f905da10dcd3e463fd9c2 # 25.12.0
           - name: Lint with flake8
             run: |
               # stop the build if there are Python syntax errors or undefined names
@@ -60,7 +60,7 @@ jobs:
           - run: |
               python -m pip install --upgrade pip
               pip install ".[test]"
-          - uses: psf/black@05f0a8ce1f71fbb36e1e032d3b518c7b945089a2 # 25.11.0
+          - uses: psf/black@782e5605c86aab56be6f905da10dcd3e463fd9c2 # 25.12.0
           - name: Lint with flake8
             run: |
               # stop the build if there are Python syntax errors or undefined names
