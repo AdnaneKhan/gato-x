@@ -587,10 +587,6 @@ async def persistence(args, parser):
             await gh_persistence_runner.create_deploy_key(
                 args.target, args.key_title, args.key_path
             )
-        elif args.pwn_request:
-            await gh_persistence_runner.create_pwn_request_workflow(
-                args.target, args.branch_name
-            )
     except Exception as e:
         Output.error(f"Persistence attack failed: {str(e)}")
 

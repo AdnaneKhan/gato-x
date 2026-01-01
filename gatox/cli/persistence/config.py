@@ -52,22 +52,6 @@ def configure_parser_persistence(parser):
         action="store_true",
     )
 
-    technique_group.add_argument(
-        "--pwn-request",
-        help="Create a malicious pull_request_target workflow on a non-default branch.\n"
-        "Requires write privileges on the target repository.",
-        action="store_true",
-    )
-
-    # Optional arguments for specific techniques
-    parser.add_argument(
-        "--branch-name",
-        "-b",
-        help="Branch name for pwn-request technique. Defaults to 'feature/test-workflow'.",
-        metavar="BRANCH",
-        type=StringType(244),
-    )
-
     parser.add_argument(
         "--key-title",
         "-k",
