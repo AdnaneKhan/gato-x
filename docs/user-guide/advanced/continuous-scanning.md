@@ -196,7 +196,6 @@ Gato-X provides several configuration options to optimize performance for contin
 - **Intelligent Backoff**: Automatic handling of GitHub's rate limits with appropriate delays
 
 ### Scanning Depth
-- **Deep Dive Mode** (`-dd`): Enables analysis of non-default branches but requires Git
 - **Skip Runners** (default): Avoids expensive run log analysis for faster scanning
 - **Workflow Run Analysis**: Can be disabled for speed when runner enumeration isn't needed
 
@@ -210,9 +209,6 @@ Gato-X provides several configuration options to optimize performance for contin
 ```bash
 # Fast scanning for continuous monitoring
 gato-x e -R candidates.txt --skip-runners -oJ results.json
-
-# Comprehensive scanning (weekly deep dive)
-gato-x e -R candidates.txt -dd -oJ comprehensive_results.json
 
 # Organization-wide scanning with webhook notifications
 gato-x e -t MyOrganization -oJ org_scan.json
