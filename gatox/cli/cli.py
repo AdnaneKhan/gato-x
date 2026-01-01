@@ -336,7 +336,6 @@ async def enumerate_finegrained(args, parser):
         skip_log=args.skip_runners,
         github_url=args.api_url,
         ignore_workflow_run=args.ignore_workflow_run,
-        deep_dive=args.deep_dive,
     )
 
     if args.validate:
@@ -377,7 +376,6 @@ async def enumerate_classic(args, parser):
         skip_log=args.skip_runners,
         github_url=args.api_url,
         ignore_workflow_run=args.ignore_workflow_run,
-        deep_dive=args.deep_dive,
     )
 
     exec_wrapper = Execution()
@@ -526,7 +524,6 @@ async def app(args, parser):
         http_proxy=args.http_proxy,
         skip_log=args.skip_runners,
         github_url=args.api_url,
-        deep_dive=args.deep_dive,
     )
 
     exec_wrapper = Execution()

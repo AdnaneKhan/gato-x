@@ -20,7 +20,6 @@ class FineGrainedEnumerator(Enumerator):
         github_url: str = None,
         output_json: str = None,
         ignore_workflow_run: bool = False,
-        deep_dive: bool = False,
         finegrained_permisions: list = None,
         api_client: Api = None,
     ):
@@ -37,7 +36,6 @@ class FineGrainedEnumerator(Enumerator):
             github_url (str, optional): GitHub API URL.
             output_json (str, optional): JSON file to output enumeration results.
             ignore_workflow_run (bool, optional): If set, then "workflow_run" triggers will be ignored.
-            deep_dive (bool, optional): If set, then deep dive workflow ingestion will be performed.
             finegrained_permissions (list, optional): List of Fine-Grained permissions.
             api_client (Api, optional): An existing Api client instance.
         """
@@ -50,7 +48,6 @@ class FineGrainedEnumerator(Enumerator):
             github_url=github_url,
             output_json=output_json,
             ignore_workflow_run=ignore_workflow_run,
-            deep_dive=deep_dive,
             finegrained_permisions=finegrained_permisions,
             api_client=api_client,
         )
