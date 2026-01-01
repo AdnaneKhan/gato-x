@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import hashlib
 import json
 import random
@@ -219,28 +220,46 @@ EOF
             )
             if not workflow_id:
                 return
-            res = await self.api.retrieve_workflow_artifact(target_repo, workflow_id)
 
-            if not res:
-                Output.error("Failed to Retrieve workflow artifact!")
+            # Retry artifact retrieval - artifacts may not be immediately
+            # available after workflow completion
+            res = None
+            for _ in range(30):
+                res = await self.api.retrieve_workflow_artifact(
+                    target_repo, workflow_id
+                )
+                if res and "output_updated.json" in res and "lookup.txt" in res:
+                    break
+                await asyncio.sleep(1)
+
+            if not res or not ("output_updated.json" in res and "lookup.txt" in res):
+                Output.error(
+                    "Failed to retrieve workflow artifact! "
+                    "Artifacts may not have been uploaded."
+                )
             else:
                 # Carve files out of the zipfile.
 
                 # lookup.txt is the encrypted AES key
                 # output_updated.json is the AES encrypted json blob
 
-                if "output_updated.json" in res and "lookup.txt" in res:
-                    cleartext = self.__decrypt_secrets(
-                        priv_key, res["lookup.txt"], res["output_updated.json"]
-                    )
-                    Output.owned("Decrypted and Decoded Secrets:")
-                    secrets = json.loads(cleartext)
+                cleartext = self.__decrypt_secrets(
+                    priv_key, res["lookup.txt"], res["output_updated.json"]
+                )
+                Output.owned("Decrypted and Decoded Secrets:")
+                secrets = json.loads(cleartext)
 
-                    for k, v in secrets.items():
-                        if k != "github_token":
-                            print(f"{k}={v}")
+                # Filter out github_token which is always present
+                extracted = {k: v for k, v in secrets.items() if k != "github_token"}
+
+                if not extracted:
+                    Output.warn(
+                        "No secrets were extracted. Org secrets are not "
+                        "accessible to public repos on the free plan."
+                    )
                 else:
-                    Output.error("Unexpected run artifact structure!")
+                    for k, v in extracted.items():
+                        print(f"{k}={v}")
             if delete_action and (
                 not finegrain_scopes or "actions:write" in finegrain_scopes
             ):
