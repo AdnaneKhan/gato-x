@@ -130,5 +130,3 @@ class PersistenceAttack(Attacker):
         else:
             Output.error(f"Failed to create deploy key for {target_repo}")
             return False
-
-
