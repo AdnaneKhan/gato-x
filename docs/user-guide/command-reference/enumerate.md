@@ -27,7 +27,6 @@ gato-x e [options]
 | `--machine` | Run with a GitHub App token for single repository enumeration |
 | `--ignore-workflow-run` | Ignore the `workflow_run` trigger when enumerating repositories |
 | `--output-json`, `-oJ` | Save enumeration output to JSON file |
-| `--deep-dive`, `-dd` | Perform deep dive static analysis, including analyzing non-default branches |
 | `--cache-restore-file` | Path to JSON file containing saved reusable action files |
 | `--cache-save-file` | Path to JSON file to save cache to after executing |
 
@@ -64,12 +63,6 @@ gato-x e -s
 
 ```bash
 gato-x e -v
-```
-
-### Enumerate an organization with deep dive analysis
-
-```bash
-gato-x e -t MyOrganization -dd
 ```
 
 ### Save results to JSON for further analysis

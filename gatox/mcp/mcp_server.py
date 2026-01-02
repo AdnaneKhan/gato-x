@@ -41,10 +41,6 @@ class MCPAuthParams(BaseModel):
         False,
         description="If true, ignores the workflow_run trigger when enumerating repositories. Useful if the org requires approval for all fork PRs.",
     )
-    deep_dive: bool | None = Field(
-        False,
-        description="If true, performs deep-dive static analysis, including non-default branches for Pwn Request vulnerabilities. Requires git on PATH.",
-    )
 
     @field_validator("socks_proxy")
     @classmethod
@@ -127,7 +123,6 @@ def get_enumerator(params: MCPAuthParams):
         skip_log=params.skip_runners,
         github_url=params.github_url,
         ignore_workflow_run=params.ignore_workflow_run,
-        deep_dive=params.deep_dive,
     )
 
 

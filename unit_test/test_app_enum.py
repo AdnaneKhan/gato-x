@@ -175,7 +175,6 @@ class TestAppEnumerator:
             github_url="https://github.enterprise.com/api/v3",
             skip_log=False,
             ignore_workflow_run=True,
-            deep_dive=True,
         )
 
         assert enumerator.app_id == "12345"
@@ -185,7 +184,6 @@ class TestAppEnumerator:
         assert enumerator.github_url == "https://github.enterprise.com/api/v3"
         assert enumerator.skip_log is False
         assert enumerator.ignore_workflow_run is True
-        assert enumerator.deep_dive is True
         assert isinstance(enumerator.app_auth, GitHubAppAuth)
 
     @pytest.mark.asyncio

@@ -1,10 +1,7 @@
-import asyncio
 import logging
 import os
 import subprocess
 import tempfile
-
-from gatox.models.workflow import Workflow
 
 logger = logging.getLogger(__name__)
 
@@ -58,81 +55,6 @@ class Git:
         """Clean up temporary directory"""
         if os.path.exists(self.work_dir):
             subprocess.run(["rm", "-rf", self.work_dir], check=True)
-
-    async def get_non_default(self) -> list:
-        """Get all workflows in non-default branches.
-
-        Returns:
-            list: List of Workflow objects
-        """
-        workflows = []
-        try:
-            url = f"https://{self.pat}@github.com/{self.repository}"
-
-            # Create process to clone the repo
-            proc = await asyncio.create_subprocess_exec(
-                "git",
-                "clone",
-                "--no-checkout",
-                url,
-                self.work_dir,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            await proc.communicate()
-
-            # Get all remote branches
-            proc = await asyncio.create_subprocess_exec(
-                "git",
-                "-C",
-                self.work_dir,
-                "branch",
-                "-r",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, _ = await proc.communicate()
-            branches = stdout.decode().splitlines()
-            for branch in branches:
-                branch = branch.strip()
-                if branch.startswith("origin/HEAD"):
-                    continue
-
-                # Checkout branch
-                proc = await asyncio.create_subprocess_exec(
-                    "git",
-                    "-C",
-                    self.work_dir,
-                    "checkout",
-                    branch.replace("origin/", ""),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-
-                workflow_dir = os.path.join(self.work_dir, ".github", "workflows")
-                if os.path.exists(workflow_dir):
-                    for filename in os.listdir(workflow_dir):
-                        if filename.endswith((".yml", ".yaml")):
-                            with open(os.path.join(workflow_dir, filename)) as f:
-                                contents = f.read()
-                                workflows.append(
-                                    Workflow(
-                                        self.repository,
-                                        contents,
-                                        filename,
-                                        default_branch=branch.replace("origin/", ""),
-                                    )
-                                )
-
-        except subprocess.CalledProcessError as e:
-            logger.warning(f"Git operation failed: {e}")
-        except Exception as e:
-            logger.warning(f"Error processing repository {self.repository}: {e}")
-        finally:
-            await self.cleanup()
-
-        return workflows
 
     async def extract_workflow_ymls(self, repo_path: str = None):
         """Extracts and returns all github workflow .yml files located within
