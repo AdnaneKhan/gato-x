@@ -156,7 +156,6 @@ async def test_cli_old_token(mock_enumerator, capfd):
         skip_log=False,
         github_url=None,
         ignore_workflow_run=False,
-        deep_dive=False,
     )
 
     # Verify the enumerate_organization method was called

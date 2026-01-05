@@ -111,16 +111,6 @@ def configure_parser_enumerate(parser):
     )
 
     parser.add_argument(
-        "--deep-dive",
-        "-dd",
-        help=(
-            "Perform deep dive static analysis, which includes analyzing non-default branches for Pwn Request vulnerabilities.\n"
-            "Git is required on the PATH for this feature."
-        ),
-        action="store_true",
-    )
-
-    parser.add_argument(
         "--cache-restore-file",
         help=(
             "Path to JSON file containing saved reusable action files. This will reduce the need for frequent API requests."

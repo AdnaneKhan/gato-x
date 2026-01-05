@@ -23,7 +23,6 @@ class AppEnumerator:
         github_url: str = "https://api.github.com",
         skip_log: bool = True,
         ignore_workflow_run: bool = False,
-        deep_dive: bool = False,
     ):
         """Initialize App Enumerator.
 
@@ -35,7 +34,6 @@ class AppEnumerator:
             github_url: GitHub API URL
             skip_log: Skip runner log analysis
             ignore_workflow_run: Ignore workflow_run triggers
-            deep_dive: Perform deep dive analysis
         """
         self.app_id = app_id
         self.private_key_path = private_key_path
@@ -44,7 +42,6 @@ class AppEnumerator:
         self.github_url = github_url
         self.skip_log = skip_log
         self.ignore_workflow_run = ignore_workflow_run
-        self.deep_dive = deep_dive
 
         # Initialize App authentication
         self.app_auth = GitHubAppAuth(app_id, private_key_path)
@@ -184,7 +181,6 @@ class AppEnumerator:
             skip_log=self.skip_log,
             github_url=self.github_url,
             ignore_workflow_run=self.ignore_workflow_run,
-            deep_dive=self.deep_dive,
             finegrained_permisions=self.__app_permissions,
             api_client=installation_api,
         )
