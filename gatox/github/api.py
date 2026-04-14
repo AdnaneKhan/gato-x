@@ -1431,13 +1431,25 @@ class Api:
             (list): List of secrets at the repo level, empty list if none.
         """
         secrets = []
+        page = 1
+        per_page = 100
 
-        resp = await self.call_get(f"/repos/{repo_name}/actions/secrets")
-        if resp.status_code == 200:
-            secrets_response = resp.json()
-
-            if secrets_response["total_count"] > 0:
-                secrets = secrets_response["secrets"]
+        while True:
+            params = {"page": page, "per_page": per_page}
+            resp = await self.call_get(
+                f"/repos/{repo_name}/actions/secrets", params=params
+            )
+            if resp.status_code == 200:
+                secrets_response = resp.json()
+                page_secrets = secrets_response["secrets"]
+                if not page_secrets:
+                    break
+                secrets.extend(page_secrets)
+                if len(page_secrets) < per_page:
+                    break
+                page += 1
+            else:
+                break
 
         return secrets
 
@@ -1454,28 +1466,47 @@ class Api:
             list: List of secrets at the environment level, empty list if none.
         """
         secrets = []
+        page = 1
+        per_page = 100
 
         environment_name = environment_name.replace("/", "%2F")
-        resp = await self.call_get(
-            f"/repos/{repo_name}/environments/{environment_name}/secrets"
-        )
-        if resp.status_code == 200:
-            secrets_response = resp.json()
-
-            if secrets_response["total_count"] > 0:
-                secrets = secrets_response["secrets"]
+        while True:
+            params = {"page": page, "per_page": per_page}
+            resp = await self.call_get(
+                f"/repos/{repo_name}/environments/{environment_name}/secrets",
+                params=params,
+            )
+            if resp.status_code == 200:
+                secrets_response = resp.json()
+                page_secrets = secrets_response["secrets"]
+                if not page_secrets:
+                    break
+                secrets.extend(page_secrets)
+                if len(page_secrets) < per_page:
+                    break
+                page += 1
+            else:
+                break
 
         return secrets
 
     async def get_org_secrets(self, org_name: str):
         secrets = []
+        page = 1
+        per_page = 100
 
-        resp = await self.call_get(f"/orgs/{org_name}/actions/secrets")
-        if resp.status_code == 200:
-            secrets_response = resp.json()
+        while True:
+            params = {"page": page, "per_page": per_page}
+            resp = await self.call_get(
+                f"/orgs/{org_name}/actions/secrets", params=params
+            )
+            if resp.status_code == 200:
+                secrets_response = resp.json()
+                page_secrets = secrets_response["secrets"]
+                if not page_secrets:
+                    break
 
-            if secrets_response["total_count"] > 0:
-                for secret in secrets_response["secrets"]:
+                for secret in page_secrets:
                     if secret["visibility"] == "selected":
                         repos_resp = await self.call_get(
                             f"/orgs/{org_name}/actions/secrets/"
@@ -1485,12 +1516,19 @@ class Api:
                         if repos_resp.status_code == 200:
                             repos_json = repos_resp.json()
                             repo_names = [
-                                repo["full_name"] for repo in repos_json["repositories"]
+                                repo["full_name"]
+                                for repo in repos_json["repositories"]
                             ]
 
                         secret["repos"] = repo_names
 
                     secrets.append(secret)
+
+                if len(page_secrets) < per_page:
+                    break
+                page += 1
+            else:
+                break
 
         return secrets
 
@@ -1506,13 +1544,26 @@ class Api:
             (list): List of org secrets that can be read via a workflow in this
             repository.
         """
-        resp = await self.call_get(f"/repos/{repo_name}/actions/organization-secrets")
         secrets = []
-        if resp.status_code == 200:
-            secrets_response = resp.json()
+        page = 1
+        per_page = 100
 
-            if secrets_response["total_count"] > 0:
-                secrets = secrets_response["secrets"]
+        while True:
+            params = {"page": page, "per_page": per_page}
+            resp = await self.call_get(
+                f"/repos/{repo_name}/actions/organization-secrets", params=params
+            )
+            if resp.status_code == 200:
+                secrets_response = resp.json()
+                page_secrets = secrets_response["secrets"]
+                if not page_secrets:
+                    break
+                secrets.extend(page_secrets)
+                if len(page_secrets) < per_page:
+                    break
+                page += 1
+            else:
+                break
 
         return secrets
 
