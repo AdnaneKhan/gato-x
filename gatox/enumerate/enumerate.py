@@ -68,10 +68,10 @@ class Enumerator:
         else:
             if not pat:
                 raise ValueError("A valid GitHub token must be provided!")
-            api_kwargs: dict = dict(
-                socks_proxy=socks_proxy,
-                http_proxy=http_proxy,
-            )
+            api_kwargs: dict = {
+                "socks_proxy": socks_proxy,
+                "http_proxy": http_proxy,
+            }
             if github_url is not None:
                 api_kwargs["github_url"] = github_url
             self.api = Api(pat, **api_kwargs)

@@ -5,6 +5,12 @@ repos:
       - id: black
         language_version: python3
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.12
+    hooks:
+      - id: ruff
+        args: [--fix]
+
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.408
     hooks:

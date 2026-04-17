@@ -130,7 +130,7 @@ class Searcher:
             Output.warn(f"Request timed out: {str(e)}")
             pass
 
-        return set(sorted(results))
+        return results
 
     async def use_search_api(
         self, organization: str | None = None, query=None
@@ -167,7 +167,7 @@ class Searcher:
             organization, custom_query=query or ""
         )
 
-        return set(sorted(candidates))
+        return candidates
 
     def present_results(self, results, output_text=None):
         """Present search results and optionally write to file.
