@@ -36,6 +36,7 @@ jobs:
               src: "./gatox"
           - name: Type check with pyright
             run: pyright
+
           - name: Test with Pytest
             run: |
               pytest --cov-fail-under=60

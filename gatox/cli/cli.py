@@ -213,7 +213,7 @@ async def attack(args, parser):
 
     if args.payload_only and not (args.target_os and args.target_arch):
         parser.error(
-            f"{Fore.RED}[!] You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+            f"{Fore.RED}[!] You must specify a target OS and architecture for runner-on-runner payload generation!"
         )
 
     if args.runner_on_runner:
