@@ -55,16 +55,6 @@ def configure_parser_app(parser):
     )
 
     parser.add_argument(
-        "--deep-dive",
-        "-dd",
-        help=(
-            "Perform deep dive static analysis, which includes analyzing non-default branches for Pwn Request vulnerabilities.\n"
-            "Git is required on the PATH for this feature."
-        ),
-        action="store_true",
-    )
-
-    parser.add_argument(
         "--output-json",
         "-oJ",
         help=("Save enumeration output to JSON file."),

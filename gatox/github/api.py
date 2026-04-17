@@ -1391,7 +1391,7 @@ class Api:
                 repo_name,
                 file_data,
                 file_path.rsplit("/", 1)[-1],
-                non_default=ref,
+                default_branch=ref,
                 special_path=file_path,
             )
 
