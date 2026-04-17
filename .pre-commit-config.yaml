@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.393
+    hooks:
+      - id: pyright
+        additional_dependencies:
+          - colorama
+          - httpx[socks,http2]
+          - pyyaml
+          - cryptography
+          - networkx
+          - PyJWT[crypto]
+          - fastmcp
