@@ -41,6 +41,7 @@ class Workflow:
             if type(workflow_contents) is bytes:
                 workflow_contents = workflow_contents.decode("utf-8")
 
+            self.workflow_contents = workflow_contents
             loader = yaml.CSafeLoader(workflow_contents.replace("\t", "  "))
             node = loader.get_single_node()
             if node is not None:
@@ -59,7 +60,6 @@ class Workflow:
 
             if not self.invalid and node is not None:
                 self.source_map = build_workflow_source_map(node)
-            self.workflow_contents = workflow_contents
         except (
             yaml.parser.ParserError,  # type: ignore[attr-defined]
             yaml.scanner.ScannerError,  # type: ignore[attr-defined]
