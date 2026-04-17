@@ -323,7 +323,6 @@ Gato-X scans for workflows in standard locations:
 It also considers:
 
 - **Default branch workflows**: Primary security analysis target
-- **Non-default branch workflows**: Secondary analysis (with `--deep-dive`)
 - **Disabled workflows**: Still analyzed for potential vulnerabilities
 
 ## Advanced Workflow Features

