@@ -52,6 +52,8 @@ class PayloadManager:
             Output.error("Failed to format runner-on-runner Gist!")
             return None, None
 
+        if not self.parent_attacker:
+            return None, None
         gist_id, gist_url = await self.parent_attacker.create_gist("runner", ror_gist)
 
         if not gist_url:

@@ -79,7 +79,7 @@ class ActionsReport(Report):
         cls.report_actions_risk(risk)
 
     @classmethod
-    def __report_path(self, path, result: AnalysisResult):
+    def __report_path(cls, path, result: AnalysisResult):
         """Report pwn request candidate jobs, their steps, and if-checks."""
 
         details = []

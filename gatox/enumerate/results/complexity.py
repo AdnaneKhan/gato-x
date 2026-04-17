@@ -51,3 +51,4 @@ class Complexity(str, Enum):
             return "Exploit requires updating pull request quickly after the maintainer performs an approval action, make sure the approval action runs on forks for this to be feasible."
         elif self.value == Complexity.BROKEN_ACCESS:
             return "Exploit requires the attacker to have some access, but the access control mechanism is not properly implemented."
+        return ""

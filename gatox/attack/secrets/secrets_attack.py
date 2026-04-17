@@ -61,7 +61,7 @@ class SecretsAttack(Attacker):
             return False
         else:
             Output.owned(
-                f"The repository has {Output.bright(len(secrets))} "
+                f"The repository has {Output.bright(str(len(secrets)))} "
                 "accessible secret(s)!"
             )
 
@@ -164,7 +164,7 @@ EOF
         commit_message: str,
         delete_action: bool,
         yaml_name: str,
-        finegrain_scopes: set = None,
+        finegrain_scopes: set | None = None,
     ):
         """Given a user with write access to a repository, runs a workflow that
         dumps all repository secrets.
@@ -179,7 +179,7 @@ EOF
 
         """
         if finegrain_scopes is None:
-            finegrain_scopes = []
+            finegrain_scopes = set()
         await self.setup_user_info()
 
         if not self.user_perms:

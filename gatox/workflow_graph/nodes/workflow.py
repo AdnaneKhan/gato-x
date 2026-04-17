@@ -115,8 +115,10 @@ class WorkflowNode(Node):
         """
         return self.__workflow_path.replace(".github/workflows/", "")
 
-    def __process_triggers(self, workflow_data: dict):
+    def __process_triggers(self, workflow_data: dict | None):
         """Retrieve the triggers associated with the Workflow node."""
+        if workflow_data is None:
+            return []
         triggers = workflow_data.get("on", [])
         extracted_triggers = []
 
@@ -163,7 +165,9 @@ class WorkflowNode(Node):
 
         return extracted_triggers
 
-    def __process_inputs(self, workflow_data: dict):
+    def __process_inputs(self, workflow_data: dict | None):
+        if workflow_data is None:
+            return {}
         try:
             if (
                 "workflow_dispatch" in self.__triggers
@@ -177,7 +181,9 @@ class WorkflowNode(Node):
         except TypeError:
             logger.error(workflow_data["on"])
 
-    def __process_envs(self, workflow_data: dict):
+    def __process_envs(self, workflow_data: dict | None):
+        if workflow_data is None:
+            return {}
         if "env" in workflow_data:
             return workflow_data["env"]
         else:

@@ -18,8 +18,8 @@ class AppEnumerator:
         self,
         app_id: str,
         private_key_path: str,
-        socks_proxy: str = None,
-        http_proxy: str = None,
+        socks_proxy: str | None = None,
+        http_proxy: str | None = None,
         github_url: str = "https://api.github.com",
         skip_log: bool = True,
         ignore_workflow_run: bool = False,
@@ -47,8 +47,8 @@ class AppEnumerator:
         self.app_auth = GitHubAppAuth(app_id, private_key_path)
 
         # This will be set when we generate the JWT
-        self.api = None
-        self.__app_permissions = None
+        self.api: Api | None = None
+        self._app_permissions: list[str] | None = None
 
     async def _initialize_api_with_jwt(self):
         """Initialize API with JWT token."""
@@ -64,6 +64,7 @@ class AppEnumerator:
         """Validate the GitHub App and return basic information."""
         if not self.api:
             await self._initialize_api_with_jwt()
+        assert self.api is not None
 
         app_info = await self.api.get_app_info()
         if not app_info:
@@ -71,14 +72,12 @@ class AppEnumerator:
                 "Failed to validate GitHub App - check App ID and private key"
             )
 
-        self.__app_permissions = [
-            f"{k}:{v}" for k, v in app_info["permissions"].items()
-        ]
+        self._app_permissions = [f"{k}:{v}" for k, v in app_info["permissions"].items()]
 
         Output.info(f"Successfully authenticated as GitHub App: {app_info['name']}")
         Output.info(f"App ID: {app_info['id']}")
         Output.info(f"Owner: {app_info['owner']['login']}")
-        Output.info(f"Permissions: {Output.yellow(', '.join(self.__app_permissions))}")
+        Output.info(f"Permissions: {Output.yellow(', '.join(self._app_permissions))}")
 
         return app_info
 
@@ -105,6 +104,7 @@ class AppEnumerator:
         """List all installations for the GitHub App."""
         if not self.api:
             await self._initialize_api_with_jwt()
+        assert self.api is not None
 
         installations = await self.api.get_app_installations()
         if not installations:
@@ -129,14 +129,17 @@ class AppEnumerator:
 
         return enhanced_installations
 
-    async def enumerate_installation(self, installation_id: str) -> list[Repository]:
+    async def enumerate_installation(
+        self, installation_id: str
+    ) -> list[Repository] | None:
         """Enumerate a specific installation."""
         if not self.api:
             await self._initialize_api_with_jwt()
+        assert self.api is not None
 
-        if (
-            "contents:read" not in self.__app_permissions
-            and "contents:write" not in self.__app_permissions
+        if not self._app_permissions or (
+            "contents:read" not in self._app_permissions
+            and "contents:write" not in self._app_permissions
         ):
             Output.error(
                 "App does not have contents permissions, cannot enumerate repositories"
@@ -181,7 +184,9 @@ class AppEnumerator:
             skip_log=self.skip_log,
             github_url=self.github_url,
             ignore_workflow_run=self.ignore_workflow_run,
-            finegrained_permisions=self.__app_permissions,
+            finegrained_permisions=(
+                set(self._app_permissions) if self._app_permissions else None
+            ),
             api_client=installation_api,
         )
 

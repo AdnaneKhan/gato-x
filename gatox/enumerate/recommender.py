@@ -9,7 +9,7 @@ from gatox.models.secret import Secret
 class Recommender:
     @staticmethod
     def print_repo_attack_recommendations(
-        scopes: list, repository: Repository, fine_grained: set = None
+        scopes: list, repository: Repository, fine_grained: set | None = None
     ):
         """Prints attack recommendations for repositories.
 
@@ -18,7 +18,7 @@ class Recommender:
             repository (Repository): Repository wrapper object.
         """
         if fine_grained is None:
-            fine_grained = {}
+            fine_grained = set()
         if not repository.sh_runner_access:
             if repository.is_admin() and (
                 not fine_grained or "administration:read" in fine_grained
@@ -112,13 +112,13 @@ class Recommender:
         if "workflow" in scopes:
             Output.owned(
                 "The repository can access "
-                f"{Output.bright(len(secrets))} secret(s) and the "
+                f"{Output.bright(str(len(secrets)))} secret(s) and the "
                 "token can use a workflow to read them!"
             )
         else:
             Output.info(
                 f"The repository can access "
-                f"{Output.bright(len(secrets))} secret(s), but the "
+                f"{Output.bright(str(len(secrets)))} secret(s), but the "
                 "token cannot trigger a new workflow!"
             )
 
@@ -165,9 +165,9 @@ class Recommender:
             labels = ", ".join([elem["name"] for elem in runner.labels])
 
             Output.tabbed(
-                f"Name: {Output.bright(runner_name)}, OS: "
-                f"{Output.bright(runner_os)} Status: "
-                f"{Output.bright(runner_status)}"
+                f"Name: {Output.bright(str(runner_name))}, OS: "
+                f"{Output.bright(str(runner_os))} Status: "
+                f"{Output.bright(str(runner_status))}"
             )
 
             if labels:
@@ -204,7 +204,7 @@ class Recommender:
         if organization.secrets:
             Output.owned(
                 f"The organization has "
-                f"{Output.bright(len(organization.secrets))} secret(s)!"
+                f"{Output.bright(str(len(organization.secrets)))} secret(s)!"
             )
             Output.result("The secret names are:")
             for secret in organization.secrets:

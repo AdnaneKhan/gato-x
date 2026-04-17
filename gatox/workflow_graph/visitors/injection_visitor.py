@@ -226,7 +226,7 @@ class InjectionVisitor:
                             input_lookup.update(node_params)
                         if index == 0:
                             repo = CacheManager().get_repository(node.repo_name())
-                            if repo.is_fork():
+                            if repo and repo.is_fork():
                                 break
 
                             if "pull_request_target:labeled" in tags:

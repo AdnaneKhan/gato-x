@@ -85,5 +85,9 @@ class AnalysisResult:
         return self.__attack_complexity
 
     @abstractmethod
+    def get_first_and_last_hash(self) -> str:
+        pass
+
+    @abstractmethod
     def to_machine(self):
         pass

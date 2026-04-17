@@ -107,8 +107,11 @@ known-first-party = ["gatox"]
 
 [tool.pyright]
 include = ["gatox"]
+exclude = ["unit_test", "test"]
 pythonVersion = "3.10"
 typeCheckingMode = "basic"
+venvPath = "."
+venv = "venv"
 
 [project.scripts]
 gato-x = "gatox.main:entry"

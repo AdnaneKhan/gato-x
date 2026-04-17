@@ -24,11 +24,12 @@ class Composite:
         try:
             loader = yaml.CSafeLoader(action_yml.replace("\t", "  "))
             node = loader.get_single_node()
-            self.source_map = build_composite_source_map(node)
-            self.parsed_yml = loader.construct_document(node)
+            if node is not None:
+                self.source_map = build_composite_source_map(node)
+                self.parsed_yml = loader.construct_document(node)
         except (
-            yaml.parser.ParserError,
-            yaml.scanner.ScannerError,
+            yaml.parser.ParserError,  # type: ignore[attr-defined]
+            yaml.scanner.ScannerError,  # type: ignore[attr-defined]
             yaml.constructor.ConstructorError,
         ):
             self.invalid = True
@@ -53,5 +54,9 @@ class Composite:
             bool: True if the parsed YAML file represents a composite GitHub
             Actions workflow, False otherwise.
         """
-        if "runs" in self.parsed_yml and "using" in self.parsed_yml["runs"]:
+        if (
+            self.parsed_yml is not None
+            and "runs" in self.parsed_yml
+            and "using" in self.parsed_yml["runs"]
+        ):
             return self.parsed_yml["runs"]["using"] == "composite"

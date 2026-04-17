@@ -13,7 +13,7 @@ class Git:
         self,
         pat: str,
         repository: str,
-        work_dir: str = None,
+        work_dir: str | None = None,
         username="Gato-X",
         email="gato-x@pwn.com",
         proxies=None,
@@ -56,7 +56,7 @@ class Git:
         if os.path.exists(self.work_dir):
             subprocess.run(["rm", "-rf", self.work_dir], check=True)
 
-    async def extract_workflow_ymls(self, repo_path: str = None):
+    async def extract_workflow_ymls(self, repo_path: str | None = None):
         """Extracts and returns all github workflow .yml files located within
         the cloned repository.
 

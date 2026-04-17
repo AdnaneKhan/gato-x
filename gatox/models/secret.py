@@ -4,7 +4,7 @@ class Secret:
     in-depth analysis of run logs and/or workflows.
     """
 
-    def __init__(self, secret_data: dict, parent: str, environment: str = None):
+    def __init__(self, secret_data: dict, parent: str, environment: str | None = None):
         """Initialize wrapper object for secret.
 
         Args:

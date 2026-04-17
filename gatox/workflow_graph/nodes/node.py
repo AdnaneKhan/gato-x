@@ -86,7 +86,7 @@ class Node:
         Returns:
             value: A dict representation of the Node instance.
         """
-        value = {
+        value: dict[str, str | int | bool | list | None] = {
             "node": str(self),
         }
 

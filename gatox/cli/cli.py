@@ -345,10 +345,11 @@ async def enumerate_finegrained(args, parser):
         exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
     elif args.self_enumeration:
         # Fine-grained self enumeration
-        accessible_repos = await gh_enumeration_runner.enumerate_fine_grained_token()
+        result = await gh_enumeration_runner.enumerate_fine_grained_token()
         exec_wrapper = Execution()
         exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
-        exec_wrapper.add_repositories(accessible_repos)
+        if isinstance(result, list):
+            exec_wrapper.add_repositories(result)
     else:
         # Fine-grained tokens only support self enum and single repo
         parser.error(
@@ -383,13 +384,16 @@ async def enumerate_classic(args, parser):
     repos = []
 
     if args.validate:
-        orgs = await gh_enumeration_runner.validate_only()
+        orgs = await gh_enumeration_runner.validate_only() or []
     elif args.self_enumeration:
-        orgs, repos = await gh_enumeration_runner.self_enumeration()
+        result = await gh_enumeration_runner.self_enumeration()
+        if result:
+            orgs, repos = result
     elif args.target:
         # First, determine if the target is an organization or a repository.
         if await gh_enumeration_runner.api.get_user_type(args.target) == "Organization":
-            orgs = [await gh_enumeration_runner.enumerate_organization(args.target)]
+            org = await gh_enumeration_runner.enumerate_organization(args.target)
+            orgs = [org] if org else []
         else:
             # Otherwise, simply enumerate all repositories belonging to the user.
             repos = await gh_enumeration_runner.enumerate_user(args.target)
@@ -402,7 +406,7 @@ async def enumerate_classic(args, parser):
         except argparse.ArgumentError as e:
             parser.error(
                 f"{RED_DASH} The file contained an invalid repository name!"
-                f"{Output.bright(e)}"
+                f"{Output.bright(str(e))}"
             )
     elif args.commit:
         if not args.repository:
@@ -418,8 +422,12 @@ async def enumerate_classic(args, parser):
         save_workflow_ymls(args.output_yaml)
 
     exec_wrapper.set_user_details(gh_enumeration_runner.user_perms)
-    exec_wrapper.add_organizations(orgs)
-    exec_wrapper.add_repositories(repos)
+    if isinstance(orgs, list):
+        exec_wrapper.add_organizations(orgs)
+    else:
+        exec_wrapper.add_organizations([orgs])
+    if isinstance(repos, list):
+        exec_wrapper.add_repositories(repos)
 
     try:
         if args.output_json:

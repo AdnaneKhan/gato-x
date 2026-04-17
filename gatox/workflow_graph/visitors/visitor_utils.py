@@ -259,7 +259,8 @@ class VisitorUtils:
                     continue
 
                 repo = CacheManager().get_repository(flow.repo_name())
-                repo.set_results(flow)
+                if repo:
+                    repo.set_results(flow)
 
                 if (
                     ConfigurationManager().NOTIFICATIONS["SLACK_WEBHOOKS"]

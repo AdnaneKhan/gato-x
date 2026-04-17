@@ -13,15 +13,15 @@ class FineGrainedEnumerator(Enumerator):
 
     def __init__(
         self,
-        pat: str = None,
-        socks_proxy: str = None,
-        http_proxy: str = None,
+        pat: str | None = None,
+        socks_proxy: str | None = None,
+        http_proxy: str | None = None,
         skip_log: bool = False,
-        github_url: str = None,
-        output_json: str = None,
+        github_url: str | None = None,
+        output_json: str | None = None,
         ignore_workflow_run: bool = False,
-        finegrained_permisions: list = None,
-        api_client: Api = None,
+        finegrained_permisions: set | None = None,
+        api_client: Api | None = None,
     ):
         """Initialize the fine-grained enumerator.
 
@@ -394,7 +394,9 @@ class FineGrainedEnumerator(Enumerator):
 
         return valid_scopes
 
-    async def enumerate_fine_grained_token(self) -> list[Repository]:
+    async def enumerate_fine_grained_token(
+        self,
+    ) -> list[Repository] | tuple[list, dict]:
         """Main enumeration method for fine-grained tokens.
 
         Args:
@@ -441,7 +443,8 @@ class FineGrainedEnumerator(Enumerator):
             Output.info("Token has only public read access to repositories!")
             return []
 
-        self.user_perms["scopes"] = list(self.finegrained_permissions)
+        if self.user_perms:
+            self.user_perms["scopes"] = list(self.finegrained_permissions)
         repositories = await self.enumerate_repos(
             write_accessible_repos + private_repos
         )

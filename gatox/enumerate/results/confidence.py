@@ -28,10 +28,10 @@ class Confidence(str, Enum):
         UNKNOWN: Not enough information to determine confidence
     """
 
-    HIGH: str = "High"
-    MEDIUM: str = "Medium"
-    LOW: str = "Low"
-    UNKNOWN: str = "Unknown"
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+    UNKNOWN = "Unknown"
 
     def __str__(self) -> str:
         return str(self.value)
