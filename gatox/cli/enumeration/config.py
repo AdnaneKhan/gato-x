@@ -37,6 +37,7 @@ def configure_parser_enumerate(parser):
 
     parser.add_argument(
         "--commit",
+        "-c",
         help="Check a specific commit for Actions vulnerabilities. Requires --repository.",
         metavar=f"{Fore.RED}SHA{Style.RESET_ALL}",
         type=StringType(40, regex=r"[A-Fa-f0-9]{40}"),

@@ -97,7 +97,7 @@ GitHub's documentation does not state that tree modification requires `workflows
 
 #### Public Repository Handling
 
-For public epositories, Gato-X performs directly skips to permission probes for scopes such as issues, pull_request, and actions because most public repo read endpoints always succeed regardless of the token's scopes.
+For public repositories, Gato-X performs directly skips to permission probes for scopes such as issues, pull_request, and actions because most public repo read endpoints always succeed regardless of the token's scopes.
 
 
 ## Security Implications
