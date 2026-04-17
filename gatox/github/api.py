@@ -1516,8 +1516,7 @@ class Api:
                         if repos_resp.status_code == 200:
                             repos_json = repos_resp.json()
                             repo_names = [
-                                repo["full_name"]
-                                for repo in repos_json["repositories"]
+                                repo["full_name"] for repo in repos_json["repositories"]
                             ]
 
                         secret["repos"] = repo_names
