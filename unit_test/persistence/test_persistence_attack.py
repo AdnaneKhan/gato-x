@@ -1,4 +1,4 @@
-from unittest.mock import ANY, AsyncMock, mock_open, patch
+from unittest.mock import AsyncMock, mock_open, patch
 
 import pytest
 
@@ -96,47 +96,3 @@ async def test_create_deploy_key_no_path(mock_output, persistence_attacker):
 
     assert result is False
     mock_output.error.assert_called_with("Key path is required for deploy key creation")
-
-
-@pytest.mark.asyncio
-@patch("gatox.attack.persistence.persistence_attack.Output")
-async def test_create_pwn_request_workflow_success(mock_output, persistence_attacker):
-    """Test successful pwn request workflow creation."""
-    persistence_attacker.setup_user_info = AsyncMock(return_value=True)
-    persistence_attacker.api.create_workflow_on_branch = AsyncMock(return_value=True)
-    persistence_attacker.author_name = "Test Author"
-    persistence_attacker.author_email = "test@example.com"
-
-    result = await persistence_attacker.create_pwn_request_workflow("test/repo")
-
-    assert result is True
-
-    # Verify the call includes author information
-    persistence_attacker.api.create_workflow_on_branch.assert_called_once_with(
-        "test/repo",
-        "feature/test-workflow",
-        "pwn-request.yml",
-        ANY,  # workflow content (generated from template)
-        commit_message="[skip ci] Add test workflow",
-        commit_author="Test Author",
-        commit_email="test@example.com",
-    )
-
-
-@pytest.mark.asyncio
-@patch("gatox.attack.persistence.persistence_attack.Output")
-async def test_create_pwn_request_workflow_custom_branch(
-    mock_output, persistence_attacker
-):
-    """Test pwn request workflow creation with custom branch."""
-    persistence_attacker.setup_user_info = AsyncMock(return_value=True)
-    persistence_attacker.api.create_workflow_on_branch = AsyncMock(return_value=True)
-
-    result = await persistence_attacker.create_pwn_request_workflow(
-        "test/repo", "custom-branch"
-    )
-
-    assert result is True
-    # Verify the correct branch name was passed
-    call_args = persistence_attacker.api.create_workflow_on_branch.call_args
-    assert call_args[0][1] == "custom-branch"  # Second argument is branch name

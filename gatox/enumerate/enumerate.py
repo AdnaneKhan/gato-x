@@ -3,7 +3,6 @@ import logging
 
 from gatox.caching.cache_manager import CacheManager
 from gatox.cli.output import Output
-from gatox.enumerate.deep_dive.ingest_non_default import IngestNonDefault
 from gatox.enumerate.ingest.ingest import DataIngestor
 from gatox.enumerate.organization import OrganizationEnum
 from gatox.enumerate.recommender import Recommender
@@ -40,7 +39,6 @@ class Enumerator:
         github_url: str = None,
         output_json: str = None,
         ignore_workflow_run: bool = False,
-        deep_dive: bool = False,
         finegrained_permisions: set = (),
         api_client: Api = None,
     ):
@@ -58,10 +56,6 @@ class Enumerator:
             results.
             ignore_workflow_run (bool, optional): If set, then
             "workflow_run" triggers will be ignored.
-            deep_dive (bool, optional): If set, then deep dive workflow
-            ingestion will be performed. This will slow down enumeration
-            significantly, but will provide more information about workflows
-            and their runs.
             app_permissions (list, optional): List of permissions for GitHub App.
             api_client (Api, optional): An existing Api client instance.
             Defaults to None.
@@ -84,7 +78,6 @@ class Enumerator:
         self.user_perms = None
         self.github_url = github_url
         self.output_json = output_json
-        self.deep_dive = deep_dive
         self.ignore_workflow_run = ignore_workflow_run
         self.finegrained_permissions = finegrained_permisions
 
@@ -436,23 +429,6 @@ class Enumerator:
         await self.__query_graphql_workflows(wf_queries)
         await self.__finalize_caches(enum_list)
 
-        if self.deep_dive:
-            Output.inform(
-                "Deep dive workflow ingestion enabled, this will slow down enumeration!"
-            )
-            for repo in enum_list:
-                if repo.is_archived():
-                    continue
-                if self.skip_log and repo.is_fork():
-                    continue
-
-                cached_repo = CacheManager().get_repository(repo.name)
-                if self.deep_dive and not cached_repo.is_fork():
-                    await IngestNonDefault.ingest(cached_repo, self.api)
-
-            await IngestNonDefault.pool_empty()
-            Output.info("Deep dive ingestion complete!")
-
         await self.process_graph()
 
         try:
@@ -549,15 +525,6 @@ class Enumerator:
         for repo in repo_names:
             await self.__retrieve_missing_ymls(repo)
 
-        if self.deep_dive:
-            Output.inform(
-                "Performing deep dive workflow ingestion, this will be a very slow process!"
-            )
-            for repo in repo_names:
-                repo_obj = CacheManager().get_repository(repo)
-                await IngestNonDefault.ingest(repo_obj, self.api)
-
-        await IngestNonDefault.pool_empty()
         await self.process_graph()
 
         try:

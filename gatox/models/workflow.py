@@ -28,17 +28,13 @@ class Workflow:
         workflow_name,
         default_branch="main",
         date=None,
-        non_default=None,
         special_path=None,
     ):
         self.repo_name = repo_name
         self.invalid = False
         self.workflow_name = workflow_name
         self.special_path = special_path
-        if non_default:
-            self.branch = non_default
-        else:
-            self.branch = default_branch
+        self.branch = default_branch
 
         # Only save off if it's a valid parse. RAM matters.
         try:

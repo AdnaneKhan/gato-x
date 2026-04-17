@@ -336,7 +336,6 @@ async def enumerate_finegrained(args, parser):
         skip_log=args.skip_runners,
         github_url=args.api_url,
         ignore_workflow_run=args.ignore_workflow_run,
-        deep_dive=args.deep_dive,
     )
 
     if args.validate:
@@ -377,7 +376,6 @@ async def enumerate_classic(args, parser):
         skip_log=args.skip_runners,
         github_url=args.api_url,
         ignore_workflow_run=args.ignore_workflow_run,
-        deep_dive=args.deep_dive,
     )
 
     exec_wrapper = Execution()
@@ -526,7 +524,6 @@ async def app(args, parser):
         http_proxy=args.http_proxy,
         skip_log=args.skip_runners,
         github_url=args.api_url,
-        deep_dive=args.deep_dive,
     )
 
     exec_wrapper = Execution()
@@ -589,10 +586,6 @@ async def persistence(args, parser):
         elif args.deploy_key:
             await gh_persistence_runner.create_deploy_key(
                 args.target, args.key_title, args.key_path
-            )
-        elif args.pwn_request:
-            await gh_persistence_runner.create_pwn_request_workflow(
-                args.target, args.branch_name
             )
     except Exception as e:
         Output.error(f"Persistence attack failed: {str(e)}")

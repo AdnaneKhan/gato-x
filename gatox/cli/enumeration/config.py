@@ -37,6 +37,7 @@ def configure_parser_enumerate(parser):
 
     parser.add_argument(
         "--commit",
+        "-c",
         help="Check a specific commit for Actions vulnerabilities. Requires --repository.",
         metavar=f"{Fore.RED}SHA{Style.RESET_ALL}",
         type=StringType(40, regex=r"[A-Fa-f0-9]{40}"),
@@ -108,16 +109,6 @@ def configure_parser_enumerate(parser):
         help=("Save enumeration output to JSON file."),
         metavar="JSON_FILE",
         type=StringType(256),
-    )
-
-    parser.add_argument(
-        "--deep-dive",
-        "-dd",
-        help=(
-            "Perform deep dive static analysis, which includes analyzing non-default branches for Pwn Request vulnerabilities.\n"
-            "Git is required on the PATH for this feature."
-        ),
-        action="store_true",
     )
 
     parser.add_argument(
