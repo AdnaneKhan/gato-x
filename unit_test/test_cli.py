@@ -611,7 +611,7 @@ async def test_payload_only_missing_target_os(capfd):
         )
     _, err = capfd.readouterr()
     assert (
-        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        "You must specify a target OS and architecture for runner-on-runner payload generation!"
         in err
     )
 
@@ -629,7 +629,7 @@ async def test_payload_only_missing_target_arch(capfd):
         )
     _, err = capfd.readouterr()
     assert (
-        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        "You must specify a target OS and architecture for runner-on-runner payload generation!"
         in err
     )
 
@@ -645,7 +645,7 @@ async def test_payload_only_missing_both_target_params(capfd):
         )
     _, err = capfd.readouterr()
     assert (
-        "You must specify a target OS, architecture, and C2 Repo for runner-on-runner payload generation!"
+        "You must specify a target OS and architecture for runner-on-runner payload generation!"
         in err
     )
 

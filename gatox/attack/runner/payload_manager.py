@@ -79,6 +79,12 @@ class PayloadManager:
         Returns:
             Formatted gist content or None if failed
         """
+        if not target_os or not target_arch:
+            Output.error(
+                "target-os and target-arch are required for runner-on-runner payload generation!"
+            )
+            return None
+
         # Get latest actions/runner version for arch and OS
         releases = await self.api.call_get(
             "/repos/actions/runner/releases", params={"per_page": 1}
