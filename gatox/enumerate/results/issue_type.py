@@ -28,12 +28,12 @@ class IssueType(str, Enum):
         ARTIFACT_POISONING:
     """
 
-    PWN_REQUEST: str = "PwnRequestResult"
-    DISPATCH_TOCTOU: str = "DispatchTOCTOUResult"
-    ACTIONS_INJECTION: str = "InjectionResult"
-    PR_REVIEW_INJECTION: str = "ReviewInjectionResult"
-    ENVIRONMENT_POLLUTION: str = "EnvironmentPollutionResult"
-    ARTIFACT_POISONING: str = "ArtifactPoisoningResult"
+    PWN_REQUEST = "PwnRequestResult"
+    DISPATCH_TOCTOU = "DispatchTOCTOUResult"
+    ACTIONS_INJECTION = "InjectionResult"
+    PR_REVIEW_INJECTION = "ReviewInjectionResult"
+    ENVIRONMENT_POLLUTION = "EnvironmentPollutionResult"
+    ARTIFACT_POISONING = "ArtifactPoisoningResult"
 
     def __str__(self) -> str:
         return str(self.value)

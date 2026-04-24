@@ -55,8 +55,10 @@ class WebShellUtils:
         """
         if success_condition is None:
 
-            def success_condition(x):
+            def default_condition(x):
                 return bool(x)
+
+            success_condition = default_condition
 
         for _ in range(timeout):
             result = await condition_func()

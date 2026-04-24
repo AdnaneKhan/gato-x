@@ -34,11 +34,11 @@ class Api:
         self,
         pat: str,
         version: str = "2022-11-28",
-        http_proxy: str = None,
-        socks_proxy: str = None,
-        github_url: str = "https://api.github.com",
-        client: httpx.AsyncClient = None,  # Optional, mostly for unit tests.
-        app_permissions: list = None,  # Optional, for GitHub App tokens
+        http_proxy: str | None = None,
+        socks_proxy: str | None = None,
+        github_url: str | None = "https://api.github.com",
+        client: httpx.AsyncClient | None = None,  # Optional, mostly for unit tests.
+        app_permissions: list | None = None,  # Optional, for GitHub App tokens
     ):
         """Initialize the API abstraction layer to interact with the GitHub
         REST API.
@@ -203,7 +203,8 @@ class Api:
                             if "Job is about to start running on" in line:
                                 runner_type = line.split()[-1]
                                 matches = Api.RUNNERTYPE_RE.search(runner_type)
-                                runner_type = matches.group(1)
+                                if matches:
+                                    runner_type = matches.group(1)
 
                             if "GITHUB_TOKEN Permission" in line:
                                 while "[endgroup]" not in content_lines[index + 1]:
@@ -304,7 +305,7 @@ class Api:
         """Returns if the API is using a GitHub App installation token."""
         return self.pat.startswith("ghs_")
 
-    async def call_get(self, url: str, params: dict = None, strip_auth=False):
+    async def call_get(self, url: str, params: dict | None = None, strip_auth=False):
         """Internal method to wrap a GET request so that proxies and headers
         do not need to be repeated.
 
@@ -351,7 +352,7 @@ class Api:
 
         return api_response
 
-    async def call_post(self, url: str, params: dict = None):
+    async def call_post(self, url: str, params: dict | None = None):
         """Internal method to wrap a POST request so that proxies and headers
         do not need to be updated in each method.
 
@@ -374,7 +375,7 @@ class Api:
 
         return api_response
 
-    async def call_patch(self, url: str, params: dict = None):
+    async def call_patch(self, url: str, params: dict | None = None):
         """Internal method to wrap a PATCH request so that proxies and headers
         do not need to be updated in each method.
 
@@ -397,7 +398,7 @@ class Api:
 
         return api_response
 
-    async def call_put(self, url: str, params: dict = None):
+    async def call_put(self, url: str, params: dict | None = None):
         """Internal method to wrap a PUT request so that proxies and headers
         do not need to be updated in each method.
 
@@ -899,7 +900,9 @@ class Api:
 
         return []
 
-    async def retrieve_run_logs(self, repo_name: str, workflows: list = None):
+    async def retrieve_run_logs(
+        self, repo_name: str, workflows: list | set | None = None
+    ):
         """Retrieve the most recent run log associated with a repository.
 
         Args:
@@ -1795,7 +1798,7 @@ class Api:
         """
 
         since = (
-            (datetime.now(datetime.UTC) - timedelta(minutes=1))
+            (datetime.now(timezone.utc) - timedelta(minutes=1))
             .replace(microsecond=0)
             .isoformat()
         )

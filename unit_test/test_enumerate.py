@@ -12,9 +12,9 @@ from gatox.github.api import Api
 from gatox.models.workflow import Workflow
 from unit_test.utils import escape_ansi as escape_ansi
 
-TEST_REPO_DATA = None
-TEST_WORKFLOW_YML = None
-TEST_ORG_DATA = None
+TEST_REPO_DATA: dict | None = None
+TEST_WORKFLOW_YML: str | None = None
+TEST_ORG_DATA: dict | None = None
 
 Output(True)
 
@@ -420,7 +420,7 @@ async def test_bad_token(mock_api):
 
     val = await gh_enumeration_runner.self_enumeration()
 
-    assert val is False
+    assert val is None
 
 
 @patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
@@ -444,7 +444,7 @@ async def test_unscoped_token(mock_api, capfd):
     assert "Self-enumeration requires the repo or public_repo scope!" in escape_ansi(
         out
     )
-    assert status is False
+    assert status is None
 
 
 @patch("gatox.enumerate.enumerate.Api", return_value=AsyncMock(Api))
@@ -463,7 +463,9 @@ async def test_enum_self_no_repos(mock_api, capfd):
         "scopes": ["repo"],
     }
 
-    orgs, repos = await gh_enumeration_runner.self_enumeration()
+    result = await gh_enumeration_runner.self_enumeration()
+    assert result is not None
+    orgs, repos = result
 
     assert orgs == []
     assert repos == []
@@ -511,6 +513,7 @@ async def test_enumerate_commit(mock_api, mock_enum_repo, mock_pg, mock_build):
         repo_data["full_name"], sha
     )
     mock_build.assert_awaited()
+    assert repo is not None
     assert repo.name == repo_data["full_name"]
 
 
@@ -536,7 +539,9 @@ async def test_self_enumeration_with_public_repo_scope(mock_api, capfd):
 
     # Mock the enumerate_repos method to return empty list for simplicity
     with patch.object(gh_enumeration_runner, "enumerate_repos", return_value=[]):
-        orgs, repos = await gh_enumeration_runner.self_enumeration()
+        result = await gh_enumeration_runner.self_enumeration()
+    assert result is not None
+    orgs, repos = result
 
     # Should return tuple of empty lists, not False
     assert orgs == []
@@ -570,7 +575,7 @@ async def test_self_enumeration_fails_without_sufficient_scope(mock_api, capfd):
     result = await gh_enumeration_runner.self_enumeration()
 
     # Should return False when no appropriate scope
-    assert result is False
+    assert result is None
 
     out, err = capfd.readouterr()
     # Should contain the error message about missing scope

@@ -107,7 +107,7 @@ class ActionNode(Node):
         action_path: str,
         repo_name: str,
         params: dict,
-        usage_context: dict = None,
+        usage_context: dict | None = None,
     ):
         """
         Constructor for the action wrapper.

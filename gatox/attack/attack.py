@@ -19,12 +19,12 @@ class Attacker:
     def __init__(
         self,
         pat: str,
-        socks_proxy: str = None,
-        http_proxy: str = None,
-        author_email: str = None,
-        author_name: str = None,
+        socks_proxy: str | None = None,
+        http_proxy: str | None = None,
+        author_email: str | None = None,
+        author_name: str | None = None,
         timeout: int = 30,
-        github_url: str = None,
+        github_url: str | None = None,
     ):
         self.api = Api(
             pat,
@@ -72,7 +72,7 @@ class Attacker:
         """Create a Gist with the specified contents and return the raw URL."""
         await self.setup_user_info()
 
-        if "gist" not in self.user_perms["scopes"]:
+        if not self.user_perms or "gist" not in self.user_perms["scopes"]:
             Output.error("Unable to create Gist without gist scope!")
             return False
 
@@ -236,6 +236,9 @@ class Attacker:
             workflow_id = await self.execute_and_wait_workflow(
                 target_repo, branch, yaml_contents, commit_message, yaml_name
             )
+
+            if not workflow_id or workflow_id is False:
+                return False
 
             res = await self.api.download_workflow_logs(target_repo, workflow_id)
             if not res:

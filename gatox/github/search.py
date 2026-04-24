@@ -24,7 +24,7 @@ class Search:
         self.api_accessor = api_accessor
 
     async def search_enumeration(
-        self, organization: str = None, custom_query: str = None
+        self, organization: str | None = None, custom_query: str | None = None
     ):
         """Search for self-hosted in yml files within a given organization.
 

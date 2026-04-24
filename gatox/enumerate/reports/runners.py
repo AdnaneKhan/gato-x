@@ -41,10 +41,18 @@ class RunnersReport(Report):
                 else:
                     Output.generic(f" Runner Type: {Output.green('EPHEMERAL')}")
 
-                Output.generic(f" Runner Name: {Output.bright(runner.runner_name)}")
-                Output.generic(f" Machine Name: {Output.bright(runner.machine_name)}")
-                Output.generic(f" Runner Scope: {Output.bright(runner.runner_type)}")
-                Output.generic(f" Runner Groups: {Output.bright(runner.runner_group)}")
+                Output.generic(
+                    f" Runner Name: {Output.bright(str(runner.runner_name))}"
+                )
+                Output.generic(
+                    f" Machine Name: {Output.bright(str(runner.machine_name))}"
+                )
+                Output.generic(
+                    f" Runner Scope: {Output.bright(str(runner.runner_type))}"
+                )
+                Output.generic(
+                    f" Runner Groups: {Output.bright(str(runner.runner_group))}"
+                )
                 Output.generic(f" Labels: {Output.bright(', '.join(runner.labels))}")
 
             cls.print_divider()

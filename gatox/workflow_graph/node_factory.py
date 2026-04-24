@@ -59,7 +59,12 @@ class NodeFactory:
 
     @staticmethod
     def create_job_node(
-        job_name, ref, repo_name, workflow_path, line_number=None, needs: list = None
+        job_name,
+        ref,
+        repo_name,
+        workflow_path,
+        line_number=None,
+        needs: list | None = None,
     ):
         """
         Create a JobNode for the specified job and cache it.

@@ -14,7 +14,7 @@ class Organization:
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = None
+        self.name: str = ""
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False

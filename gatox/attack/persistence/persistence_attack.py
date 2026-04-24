@@ -69,7 +69,10 @@ class PersistenceAttack(Attacker):
             return False
 
     async def create_deploy_key(
-        self, target_repo: str, key_title: str = None, key_path: str = None
+        self,
+        target_repo: str,
+        key_title: str | None = None,
+        key_path: str | None = None,
     ):
         """Create a read/write deploy key for the repository.
 

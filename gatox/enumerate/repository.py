@@ -24,7 +24,9 @@ class RepositoryEnum:
         self.api = api
         self.skip_log = skip_log
 
-    async def perform_runlog_enumeration(self, repository: Repository, workflows: list):
+    async def perform_runlog_enumeration(
+        self, repository: Repository, workflows: set | list
+    ):
         """Enumerate for the presence of a self-hosted runner based on
         downloading historical runlogs.
 
@@ -58,7 +60,7 @@ class RepositoryEnum:
         return runner_detected
 
     async def enumerate_repository(
-        self, repository: Repository, fine_grained: set = None
+        self, repository: Repository, fine_grained: set | None = None
     ):
         """Enumerate a repository, and check everything relevant to
         self-hosted runner abuse that that the user has permissions to check.
@@ -68,7 +70,7 @@ class RepositoryEnum:
             API and retrieving a repository.
         """
         if fine_grained is None:
-            fine_grained = {}
+            fine_grained = set()
         if not repository.can_pull():
             Output.error("The user cannot pull, skipping.")
             return

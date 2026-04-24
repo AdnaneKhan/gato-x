@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 
@@ -11,6 +13,7 @@ from gatox.github.api import Api
 from gatox.github.gql_queries import GqlQueries
 from gatox.models.organization import Organization
 from gatox.models.repository import Repository
+from gatox.models.workflow import Workflow
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.workflow_graph.visitors.artifact_poisoning_visitor import (
     ArtifactPoisoningVisitor,
@@ -32,15 +35,15 @@ class Enumerator:
 
     def __init__(
         self,
-        pat: str = None,
-        socks_proxy: str = None,
-        http_proxy: str = None,
+        pat: str | None = None,
+        socks_proxy: str | None = None,
+        http_proxy: str | None = None,
         skip_log: bool = False,
-        github_url: str = None,
-        output_json: str = None,
+        github_url: str | None = None,
+        output_json: str | None = None,
         ignore_workflow_run: bool = False,
-        finegrained_permisions: set = (),
-        api_client: Api = None,
+        finegrained_permisions: set | None = None,
+        api_client: Api | None = None,
     ):
         """Initialize enumeration class with arguments sent by user.
 
@@ -65,12 +68,13 @@ class Enumerator:
         else:
             if not pat:
                 raise ValueError("A valid GitHub token must be provided!")
-            self.api = Api(
-                pat,
-                socks_proxy=socks_proxy,
-                http_proxy=http_proxy,
-                github_url=github_url,
-            )
+            api_kwargs: dict = {
+                "socks_proxy": socks_proxy,
+                "http_proxy": http_proxy,
+            }
+            if github_url is not None:
+                api_kwargs["github_url"] = github_url
+            self.api = Api(pat, **api_kwargs)
 
         self.socks_proxy = socks_proxy
         self.http_proxy = http_proxy
@@ -175,6 +179,8 @@ class Enumerator:
                     workflows = await self.api.retrieve_workflow_ymls(repo.name)
 
                     for workflow in workflows:
+                        if not isinstance(workflow, Workflow):
+                            continue
                         CacheManager().set_workflow(
                             repo.name, workflow.workflow_name, workflow
                         )
@@ -184,7 +190,7 @@ class Enumerator:
                     "Ensure the repository exists and the user has access."
                 )
 
-    async def enumerate_repo(self, repo_name: str) -> Repository:
+    async def enumerate_repo(self, repo_name: str) -> Repository | None:
         """Enumerate only a single repository. No checks for org-level
         self-hosted runners will be performed in this case.
 
@@ -194,7 +200,7 @@ class Enumerator:
             run logs when workflow analysis detects runners. Defaults to False.
         """
         if not await self.__setup_user_info():
-            return False
+            return None
 
         repo = CacheManager().get_repository(repo_name)
 
@@ -209,11 +215,11 @@ class Enumerator:
                 Output.tabbed(
                     f"Skipping archived repository: {Output.bright(repo.name)}!"
                 )
-                return False
+                return None
 
             await self.repo_e.enumerate_repository(repo)
 
-            if (
+            if self.user_perms and (
                 not self.finegrained_permissions
                 or "secrets:read" in self.finegrained_permissions
             ):
@@ -229,9 +235,10 @@ class Enumerator:
                 or "administration:read" in self.finegrained_permissions
             ):
                 Recommender.print_repo_runner_info(repo)
-            Recommender.print_repo_attack_recommendations(
-                self.user_perms["scopes"], repo, self.finegrained_permissions
-            )
+            if self.user_perms:
+                Recommender.print_repo_attack_recommendations(
+                    self.user_perms["scopes"], repo, self.finegrained_permissions
+                )
 
             return repo
         else:
@@ -240,7 +247,7 @@ class Enumerator:
                 "exist or the user does not have access."
             )
 
-    async def enumerate_commit(self, repo_name: str, sha: str):
+    async def enumerate_commit(self, repo_name: str, sha: str) -> Repository | None:
         """Enumerate a single commit of a repository.
 
         Workflow files from the commit are treated as if they are on the
@@ -251,22 +258,24 @@ class Enumerator:
             sha (str): Commit SHA to analyze.
 
         Returns:
-            Repository | bool: Repository wrapper populated with results or
-            False on failure.
+            Repository | None: Repository wrapper populated with results or
+            None on failure.
         """
         if not await self.__setup_user_info():
-            return False
+            return None
 
         repo_data = await self.api.get_repository(repo_name)
         if not repo_data:
             Output.warn(f"Unable to retrieve repository: {Output.bright(repo_name)}")
-            return False
+            return None
 
         repo = Repository(repo_data)
         CacheManager().set_repository(repo)
 
         workflows = await self.api.retrieve_workflow_ymls_ref(repo.name, sha)
         for workflow in workflows:
+            if not isinstance(workflow, Workflow):
+                continue
             # Override the branch to the default to "trick" graph into
             # thinking commit is merged to default.
             workflow.branch = repo.repo_data["default_branch"]
@@ -293,50 +302,58 @@ class Enumerator:
         tasks = [asyncio.create_task(sem_retrieve(repo)) for repo in repos]
         await asyncio.gather(*tasks)
 
-    async def validate_only(self) -> Organization:
+    async def validate_only(self) -> list[Organization] | None:
         """Validates the PAT access and exits."""
         if not await self.__setup_user_info():
-            return False
+            return None
+
+        if not self.user_perms:
+            return None
+
+        user_perms = self.user_perms
 
         if (
-            "repo" not in self.user_perms["scopes"]
-            and "public_repo" not in self.user_perms["scopes"]
+            "repo" not in user_perms["scopes"]
+            and "public_repo" not in user_perms["scopes"]
         ):
             Output.warn("Token does not have sufficient access to list orgs!")
-            return False
+            return None
 
         orgs = await self.api.check_organizations()
 
         Output.info(
-            f"The user {self.user_perms['user']} belongs to {len(orgs)} organizations!"
+            f"The user {user_perms['user']} belongs to {len(orgs)} organizations!"
         )
 
         for org in orgs:
             Output.tabbed(f"{Output.bright(org)}")
 
         return [
-            Organization({"login": org}, self.user_perms["scopes"], True)
-            for org in orgs
+            Organization({"login": org}, user_perms["scopes"], True) for org in orgs
         ]
 
-    async def self_enumeration(self) -> tuple[list[Organization], list[Repository]]:
+    async def self_enumeration(
+        self,
+    ) -> tuple[list[Organization], list[Repository]] | None:
         """Enumerates all organizations associated with the authenticated user.
 
         Returns:
-            bool: False if the PAT is not valid for enumeration.
+            None: If the PAT is not valid for enumeration.
             (list, list): Tuple containing list of orgs and list of repos.
         """
         await self.__setup_user_info()
 
         if not self.user_perms:
-            return False
+            return None
+
+        user_perms = self.user_perms
 
         if (
-            "repo" not in self.user_perms["scopes"]
-            and "public_repo" not in self.user_perms["scopes"]
+            "repo" not in user_perms["scopes"]
+            and "public_repo" not in user_perms["scopes"]
         ):
             Output.error("Self-enumeration requires the repo or public_repo scope!")
-            return False
+            return None
 
         Output.info("Enumerating user owned repositories!")
 
@@ -345,7 +362,7 @@ class Enumerator:
         orgs = await self.api.check_organizations()
 
         Output.info(
-            f"The user {self.user_perms['user']} belongs to {len(orgs)} organizations!"
+            f"The user {user_perms['user']} belongs to {len(orgs)} organizations!"
         )
 
         for org in orgs:
@@ -361,11 +378,11 @@ class Enumerator:
 
         return org_wrappers, repo_wrappers
 
-    async def enumerate_user(self, user: str):
+    async def enumerate_user(self, user: str) -> list[Repository] | None:
         """Enumerate a user's repositories."""
 
         if not await self.__setup_user_info():
-            return False
+            return None
 
         repos = await self.api.get_user_repos(user)
 
@@ -374,7 +391,7 @@ class Enumerator:
                 f"Unable to query the user: {Output.bright(user)}! Ensure the "
                 "user exists!"
             )
-            return False
+            return None
 
         Output.result(f"Enumerating the {Output.bright(user)} user!")
 
@@ -382,7 +399,7 @@ class Enumerator:
 
         return repo_wrappers
 
-    async def enumerate_organization(self, org: str) -> Organization:
+    async def enumerate_organization(self, org: str) -> Organization | None:
         """Enumerate an entire organization, and check everything relevant to
         self-hosted runner abuse that that the user has permissions to check.
 
@@ -390,11 +407,16 @@ class Enumerator:
             org (str): Organization to perform enumeration on.
 
         Returns:
-            bool: False if a failure occurred enumerating the organization.
+            Organization | None: Organization object or None on failure.
         """
 
         if not await self.__setup_user_info():
-            return False
+            return None
+
+        if not self.user_perms:
+            return None
+
+        user_perms = self.user_perms
 
         details = await self.api.get_organization_details(org)
 
@@ -403,16 +425,16 @@ class Enumerator:
                 f"Unable to query the org: {Output.bright(org)}! Ensure the "
                 "organization exists!"
             )
-            return False
+            return None
 
-        organization = Organization(details, self.user_perms["scopes"])
+        organization = Organization(details, user_perms["scopes"])
 
         Output.result(f"Enumerating the {Output.bright(org)} organization!")
 
         if organization.org_admin_user and organization.org_admin_scopes:
             await self.org_e.admin_enum(organization)
 
-        Recommender.print_org_findings(self.user_perms["scopes"], organization)
+        Recommender.print_org_findings(user_perms["scopes"], organization)
 
         Output.info("Querying repository list!")
         enum_list = await self.org_e.construct_repo_enum_list(organization)
@@ -442,11 +464,11 @@ class Enumerator:
                 if repo:
                     await self.repo_e.enumerate_repository(repo)
                     Recommender.print_repo_attack_recommendations(
-                        self.user_perms["scopes"], repo
+                        user_perms["scopes"], repo
                     )
                     await self.repo_e.enumerate_repository_secrets(repo)
                     Recommender.print_repo_secrets(
-                        self.user_perms["scopes"], repo.secrets + repo.org_secrets
+                        user_perms["scopes"], repo.secrets + repo.org_secrets
                     )
                     Recommender.print_repo_runner_info(repo)
                     organization.set_repository(repo)
@@ -493,9 +515,9 @@ class Enumerator:
 
         # Process results
         for visitor_class, results in zip(visitors, visitor_results, strict=False):
-            if results and not isinstance(results, Exception):
+            if results and not isinstance(results, BaseException):
                 await VisitorUtils.add_repo_results(results, self.api)
-            elif isinstance(results, Exception):
+            elif isinstance(results, BaseException):
                 logger.error(f"Error in {visitor_class[0].__name__}: {results}")
 
         if not self.skip_log:

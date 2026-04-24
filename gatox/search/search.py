@@ -17,9 +17,9 @@ class Searcher:
     def __init__(
         self,
         pat: str,
-        socks_proxy: str = None,
-        http_proxy: str = None,
-        github_url: str = None,
+        socks_proxy: str | None = None,
+        http_proxy: str | None = None,
+        github_url: str | None = None,
     ):
         self.api = Api(
             pat,
@@ -119,7 +119,7 @@ class Searcher:
                                 Output.error(
                                     f"Error: {Output.bright(event['description'])}"
                                 )
-                                return False
+                                return None
 
                             for element in event:
                                 if "repository" in element:
@@ -130,9 +130,11 @@ class Searcher:
             Output.warn(f"Request timed out: {str(e)}")
             pass
 
-        return sorted(results)
+        return results
 
-    async def use_search_api(self, organization: str, query=None) -> set[str] | None:
+    async def use_search_api(
+        self, organization: str | None = None, query=None
+    ) -> set[str] | None:
         """Use GitHub's code search API to try and identify repositories
         using self-hosted runners.
 
@@ -147,7 +149,7 @@ class Searcher:
         await self.__setup_user_info()
 
         if not self.user_perms:
-            return False
+            return None
 
         api_search = Search(self.api)
 
@@ -157,15 +159,15 @@ class Searcher:
             )
         else:
             Output.info(
-                f"Searching repositories within {Output.bright(organization)} "
+                f"Searching repositories within {Output.bright(organization or '')} "
                 "using the GitHub Code Search API for 'self-hosted' within "
                 "YAML files."
             )
         candidates = await api_search.search_enumeration(
-            organization, custom_query=query
+            organization, custom_query=query or ""
         )
 
-        return sorted(candidates)
+        return candidates
 
     def present_results(self, results, output_text=None):
         """Present search results and optionally write to file.

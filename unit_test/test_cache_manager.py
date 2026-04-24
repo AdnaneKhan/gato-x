@@ -66,7 +66,7 @@ def test_get_workflows_fail():
 
     cache.set_workflow("testOrg/testRepo3", "test.yml", mock_wf)
     cache.set_workflow("testOrg/testRepo3", "test2.yml", mock_wf2)
-    assert cache.get_workflows("testOrg/testRepoNone") == set()
+    assert cache.get_workflows("testOrg/testRepoNone") == []
 
 
 def test_set_get_repository():

@@ -28,6 +28,10 @@ class CacheManager:
     """
 
     _instance = None
+    repo_wf_lookup: dict[str, set[str]]
+    repo_store: dict[str, Repository]
+    workflow_cache: dict[str, Workflow]
+    action_cache: dict[str, str]
 
     def __new__(cls):
         """
@@ -50,7 +54,7 @@ class CacheManager:
         """
         return list(self.repo_store.keys())
 
-    def get_workflow(self, repo_slug: str, workflow_name: str) -> Workflow:
+    def get_workflow(self, repo_slug: str, workflow_name: str) -> Workflow | None:
         """
         Get a workflow from the in-memory dictionary.
 
@@ -108,7 +112,7 @@ class CacheManager:
                 self.workflow_cache[f"{repo_slug.lower()}:{key}"] for key in wf_keys
             ]
         else:
-            return set()
+            return []
 
     def get_action(self, repo_slug: str, action_path: str, ref: str):
         """
@@ -135,7 +139,7 @@ class CacheManager:
         key = repository.name.lower()
         self.repo_store[key] = repository
 
-    def get_repository(self, repo_slug: str) -> Repository:
+    def get_repository(self, repo_slug: str) -> Repository | None:
         """
         Get a repository from the in-memory dictionary.
 
@@ -192,5 +196,6 @@ class CacheManager:
         if not hasattr(output_stream, "write"):
             raise ValueError("Output stream must have a 'write' method.")
 
-        json.dump(self._instance.action_cache, output_stream, indent=2)
+        if self._instance is not None:
+            json.dump(self._instance.action_cache, output_stream, indent=2)
         output_stream.flush()

@@ -32,7 +32,9 @@ class C2Controller:
         self.user_perms = user_perms
         self.timeout = timeout
 
-    async def interact_webshell(self, c2_repo: str, runner_name: str = None) -> bool:
+    async def interact_webshell(
+        self, c2_repo: str, runner_name: str | None = None
+    ) -> bool:
         """
         Interacts with the webshell to issue commands.
 
@@ -59,7 +61,7 @@ class C2Controller:
             return False
 
         if not runner_name:
-            runner_name = runners[0]["name"]
+            runner_name = str(runners[0]["name"])
 
         # Display welcome message and commands
         self._display_welcome_message()

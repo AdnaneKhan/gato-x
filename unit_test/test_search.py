@@ -272,4 +272,4 @@ async def test_search_bad_token(mock_client, mock_time):
     gh_search_runner = Searcher("ghp_AAAA")
     res = await gh_search_runner.use_search_api("targetOrg")
 
-    assert res == []
+    assert res == set()

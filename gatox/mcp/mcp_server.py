@@ -120,9 +120,9 @@ def get_enumerator(params: MCPAuthParams):
         pat=params.pat,
         socks_proxy=params.socks_proxy,
         http_proxy=params.http_proxy,
-        skip_log=params.skip_runners,
+        skip_log=params.skip_runners or False,
         github_url=params.github_url,
-        ignore_workflow_run=params.ignore_workflow_run,
+        ignore_workflow_run=params.ignore_workflow_run or False,
     )
 
 
@@ -155,14 +155,14 @@ async def enumerate_organization(ctx: Context, params: EnumerateOrganizationInpu
     """
     with open("mcp_server_debug.log", "a") as debug_log:
         debug_log.write(f"enumerate_organization called with params: {params}\n")
-    ctx.info(f"Enumerating organization: {params.target}")
+    await ctx.info(f"Enumerating organization: {params.target}")
     try:
         enumerator = get_enumerator(params)
         org = await enumerator.enumerate_organization(params.target)
-        ctx.info(f"Enumeration complete for org: {params.target}")
-        return org.toJSON()
+        await ctx.info(f"Enumeration complete for org: {params.target}")
+        return org.toJSON() if org else {"error": "Enumeration failed"}
     except Exception as e:
-        ctx.error(f"Failed to enumerate organization {params.target}: {e}")
+        await ctx.error(f"Failed to enumerate organization {params.target}: {e}")
         return {"error": str(e), "details": getattr(e, "args", [])}
 
 
@@ -189,14 +189,14 @@ async def enumerate_repository(ctx: Context, params: EnumerateRepositoryInput):
     **Typical Use:**
     - Use this tool to perform a deep security review of a single repository, or to scan a specific commit for security issues.
     """
-    ctx.info(f"Enumerating repository: {params.repository}")
+    await ctx.info(f"Enumerating repository: {params.repository}")
     try:
         enumerator = get_enumerator(params)
         repo = await enumerator.enumerate_repo(params.repository)
-        ctx.info(f"Enumeration complete for repo: {params.repository}")
-        return repo.toJSON()
+        await ctx.info(f"Enumeration complete for repo: {params.repository}")
+        return repo.toJSON() if repo else {"error": "Enumeration failed"}
     except Exception as e:
-        ctx.error(f"Failed to enumerate repository {params.repository}: {e}")
+        await ctx.error(f"Failed to enumerate repository {params.repository}: {e}")
         return {"error": str(e), "details": getattr(e, "args", [])}
 
 
@@ -223,14 +223,14 @@ async def enumerate_repositories(ctx: Context, params: EnumerateRepositoriesInpu
     **Typical Use:**
     - Use this tool to enumerate multiple repositories at once, such as all repos in a file or list.
     """
-    ctx.info(f"Enumerating repositories: {params.repositories}")
+    await ctx.info(f"Enumerating repositories: {params.repositories}")
     try:
         enumerator = get_enumerator(params)
         repos = await enumerator.enumerate_repos(params.repositories)
-        ctx.info(f"Enumeration complete for repos: {params.repositories}")
+        await ctx.info(f"Enumeration complete for repos: {params.repositories}")
         return [r.toJSON() for r in repos]
     except Exception as e:
-        ctx.error(f"Failed to enumerate repositories {params.repositories}: {e}")
+        await ctx.error(f"Failed to enumerate repositories {params.repositories}: {e}")
         return {"error": str(e), "details": getattr(e, "args", [])}
 
 
@@ -256,17 +256,20 @@ async def self_enumeration(ctx: Context, params: SelfEnumerationInput):
     **Typical Use:**
     - Use this tool to enumerate everything the current token can access, for access reviews or attack surface mapping.
     """
-    ctx.info("Performing self-enumeration for authenticated user")
+    await ctx.info("Performing self-enumeration for authenticated user")
     try:
         enumerator = get_enumerator(params)
-        orgs, repos = await enumerator.self_enumeration()
-        ctx.info("Self-enumeration complete")
+        result = await enumerator.self_enumeration()
+        if not result:
+            return {"error": "Self-enumeration failed"}
+        orgs, repos = result
+        await ctx.info("Self-enumeration complete")
         return {
             "organizations": [o.toJSON() for o in orgs],
             "repositories": [r.toJSON() for r in repos],
         }
     except Exception as e:
-        ctx.error(f"Failed to perform self-enumeration: {e}")
+        await ctx.error(f"Failed to perform self-enumeration: {e}")
         return {"error": str(e), "details": getattr(e, "args", [])}
 
 
@@ -289,14 +292,14 @@ async def validate_pat(ctx: Context, params: ValidatePATInput):
     **Typical Use:**
     - Use this tool to check if a PAT is valid and to see which organizations it can enumerate.
     """
-    ctx.info("Validating GitHub PAT")
+    await ctx.info("Validating GitHub PAT")
     try:
         enumerator = get_enumerator(params)
         orgs = await enumerator.validate_only()
-        ctx.info("PAT validation complete")
-        return [org.toJSON() for org in orgs]
+        await ctx.info("PAT validation complete")
+        return [org.toJSON() for org in orgs] if orgs else []
     except Exception as e:
-        ctx.error(f"Failed to validate PAT: {e}")
+        await ctx.error(f"Failed to validate PAT: {e}")
         return {"error": str(e), "details": getattr(e, "args", [])}
 
 

@@ -27,12 +27,13 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "flake8",
     "pytest",
     "pytest-cov",
     "black",
     "pytest-asyncio",
-    "ruff"
+    "ruff",
+    "pyright",
+    "pre-commit"
 ]
 docs = [
     "mkdocs",
@@ -103,6 +104,14 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["gatox"]
+
+[tool.pyright]
+include = ["gatox"]
+exclude = ["unit_test", "test"]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = "venv"
 
 [project.scripts]
 gato-x = "gatox.main:entry"

@@ -110,7 +110,7 @@ class DataIngestor:
         # Wait for all tasks to complete and collect results
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for listing in results:
-            if listing:
+            if listing and not isinstance(listing, BaseException):
                 repos.extend([repo for repo in listing if not repo["archived"]])
 
         return repos

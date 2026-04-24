@@ -31,8 +31,8 @@ class RepositoryManager:
         target_repo: str,
         target_branch: str,
         source_branch: str,
-        author_name: str,
-        author_email: str,
+        author_name: str | None,
+        author_email: str | None,
     ) -> str | None:
         """
         Set up the target repository by forking and preparing the attack branch.
@@ -74,8 +74,8 @@ class RepositoryManager:
         source_branch: str,
         workflow_content: bytes,
         yaml_name: str,
-        commit_author: str,
-        commit_email: str,
+        commit_author: str | None,
+        commit_email: str | None,
     ) -> bool:
         """
         Deploy the attack workflow to the repository.

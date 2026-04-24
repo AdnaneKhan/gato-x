@@ -33,8 +33,9 @@ logger = logging.getLogger(__name__)
 
 class WorkflowGraphBuilder:
     _instance = None
-    _action_locks = None
-    _action_locks_lock = None
+    _action_locks: dict[str, asyncio.Lock] = {}
+    _action_locks_lock: asyncio.Lock = asyncio.Lock()
+    graph: TaggedGraph
 
     def __new__(cls):
         """
@@ -135,14 +136,18 @@ class WorkflowGraphBuilder:
             return False
 
         parsed_action = Composite(contents)
-        if parsed_action.composite:
+        if parsed_action.composite and parsed_action.parsed_yml:
             steps = parsed_action.parsed_yml["runs"].get("steps", [])
             if type(steps) is not list:
                 raise ValueError("Steps must be a list")
 
             prev_step_node = None
             for iter, step in enumerate(steps):
-                calling_name = parsed_action.parsed_yml.get("name", "EMPTY")
+                calling_name = (
+                    parsed_action.parsed_yml.get("name", "EMPTY")
+                    if parsed_action.parsed_yml
+                    else "EMPTY"
+                )
                 step_node = NodeFactory.create_step_node(
                     step,
                     ref,
@@ -213,9 +218,9 @@ class WorkflowGraphBuilder:
 
             await self.build_workflow_jobs(callee_wf, workflow)
 
-    def __transform_list_job(self, jobs: list):
+    def __transform_list_job(self, jobs: list) -> dict:
         """Transforms a list job into a dictionary job."""
-        jobs_dict = {}
+        jobs_dict: dict = {}
         for job in jobs:
             if type(job) is not dict:
                 raise ValueError("Job must be a dictionary")
@@ -223,9 +228,8 @@ class WorkflowGraphBuilder:
                 raise ValueError("Job in list format must have a name field")
             name = job.pop("name")  # Remove name field and use as key
             jobs_dict[name] = job
-        jobs = jobs_dict
 
-        return jobs
+        return jobs_dict
 
     async def build_graph_from_yaml(
         self, workflow_wrapper: Workflow, repo_wrapper: Repository
@@ -274,6 +278,10 @@ class WorkflowGraphBuilder:
     ):
         """Build workflow jobs from the parsed yaml file."""
         workflow = workflow_wrapper.parsed_yml
+        if workflow is None:
+            raise ValueError(
+                f"Parsed YAML is None for workflow: {workflow_wrapper.workflow_name}"
+            )
         jobs = workflow.get("jobs", {})
         if not jobs:
             raise ValueError(
