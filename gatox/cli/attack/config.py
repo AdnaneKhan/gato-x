@@ -1,3 +1,5 @@
+import argparse
+
 from gatox.cli.output import Output
 from gatox.util.arg_utils import ReadableFile, StringType
 
@@ -86,6 +88,43 @@ def configure_parser_attack(parser):
     )
 
     parser.add_argument(
+        "--runner-override",
+        "-ro",
+        metavar="LABEL",
+        help="One or more runner labels to use instead of ubuntu-latest.\n"
+        "Useful for targeting self-hosted runners.",
+        nargs="+",
+        type=StringType(256),
+    )
+
+    parser.add_argument(
+        "--environments",
+        "-ev",
+        metavar="ENVIRONMENT",
+        help="One or more GitHub Actions environments to target.\n"
+        "A job matrix is used so each environment runs independently,\n"
+        "and results are de-duplicated before display.",
+        nargs="+",
+        type=StringType(256),
+    )
+
+    parser.add_argument(
+        "--oidc",
+        "-oi",
+        help="Attack to demonstrate OIDC token exchange.",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--oidc-audience",
+        "-oa",
+        metavar="AUDIENCE",
+        help="OIDC audience value for the token request.\nDefaults to 'sigstore'",
+        default="sigstore",
+        type=StringType(256),
+    )
+
+    parser.add_argument(
         "--source-branch",
         "-sb",
         default="test",
@@ -116,9 +155,10 @@ def configure_parser_attack(parser):
     parser.add_argument(
         "--file-name",
         "-fn",
-        default="test",
+        default=argparse.SUPPRESS,
         help=f"Name of yaml file {Output.bright('without extension')} that will be\n"
-        "written as part of either attack type. Defaults to 'test'",
+        "written as part of either attack type. Defaults to 'test'.\n"
+        f"Required for {Output.bright('--oidc')} attacks.",
         type=StringType(64),
     )
 

@@ -349,7 +349,9 @@ class TestAppEnumerator:
 
         # Setup mock for enumerate_installation
         installation_result1 = Execution()
-        installation_result1.add_repositories([MagicMock(name="repo1"), MagicMock(name="repo2")])  # type: ignore[arg-type]
+        installation_result1.add_repositories(
+            [MagicMock(name="repo1"), MagicMock(name="repo2")]
+        )  # type: ignore[arg-type]
         installation_result1.set_user_details({"installation_id": 11111})
 
         installation_result2 = Execution()

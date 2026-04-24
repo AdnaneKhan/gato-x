@@ -109,7 +109,6 @@ async def test_process_single_path_with_permission_check(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -184,7 +183,6 @@ async def test_process_single_path_blocker_breaks_execution(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -260,7 +258,6 @@ async def test_process_single_path_approval_gate_affects_complexity(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -329,7 +326,6 @@ async def test_process_single_path_job_node_with_deployments(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -399,7 +395,6 @@ async def test_process_single_path_job_node_with_outputs_and_env_lookup(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -459,7 +454,6 @@ async def test_process_single_path_step_node_with_outputs_and_env(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -590,7 +584,6 @@ async def test_process_single_path_workflow_node_labeled_trigger(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -644,7 +637,6 @@ async def test_process_single_path_workflow_run_trigger(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -748,7 +740,6 @@ async def test_process_single_path_step_node_soft_gate(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -806,7 +797,6 @@ async def test_process_single_path_action_node_initialization(
         patch.object(VisitorUtils, "initialize_action_node") as mock_init_action,
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -861,7 +851,6 @@ async def test_process_single_path_checkout_with_env_metadata(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )
@@ -913,7 +902,6 @@ async def test_process_single_path_no_sinks_unknown_confidence(
         patch.object(VisitorUtils, "append_path"),
         patch.object(VisitorUtils, "_add_results") as mock_add_results,
     ):
-
         await PwnRequestVisitor._process_single_path(
             path, mock_graph, mock_api, rule_cache, results
         )

@@ -1171,6 +1171,40 @@ class Api:
 
         return files
 
+    async def retrieve_all_workflow_artifacts(
+        self, repo_name: str, workflow_id: int
+    ) -> dict:
+        """Download all artifacts for a workflow run and return their files.
+
+        Args:
+            repo_name (str): Repository name.
+            workflow_id (int): Workflow run ID.
+
+        Returns:
+            dict: {artifact_name: {filename: bytes}} for every artifact in the run.
+        """
+        result = {}
+
+        req = await self.call_get(
+            f"/repos/{repo_name}/actions/runs/{workflow_id}/artifacts"
+        )
+        if req.status_code != 200:
+            return result
+
+        for artifact in req.json().get("artifacts", []):
+            download_url = artifact["archive_download_url"]
+            archive = await self.call_get(
+                download_url.replace("https://api.github.com", "")
+            )
+            files = {}
+            with zipfile.ZipFile(io.BytesIO(archive.content)) as zf:
+                for zipinfo in zf.infolist():
+                    with zf.open(zipinfo) as f:
+                        files[zipinfo.filename] = f.read()
+            result[artifact["name"]] = files
+
+        return result
+
     async def download_workflow_artifact(
         self, repo_name: str, workflow_id: int, destination: str
     ):

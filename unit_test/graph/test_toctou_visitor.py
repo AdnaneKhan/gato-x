@@ -858,7 +858,6 @@ async def test_process_path_job_node_with_outputs(mock_graph, mock_api):
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.CacheManager"
         ) as mock_cache_manager,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         mock_visitor_utils.check_mutable_ref.return_value = True
         mock_visitor_utils.append_path.return_value = None
@@ -971,7 +970,6 @@ async def test_process_path_step_node_checkout_with_context_regex(mock_graph, mo
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         mock_regex.findall.return_value = ["inputs.pr_number"]
         mock_visitor_utils.check_mutable_ref.return_value = True
@@ -1021,7 +1019,6 @@ async def test_process_path_step_node_checkout_env_lookup(mock_graph, mock_api):
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         mock_visitor_utils.check_mutable_ref.return_value = True
         mock_visitor_utils._add_results.return_value = None
@@ -1071,7 +1068,6 @@ async def test_process_path_step_node_checkout_inputs_env_lookup(mock_graph, moc
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         mock_visitor_utils.check_mutable_ref.return_value = True
         mock_visitor_utils._add_results.return_value = None
@@ -1126,7 +1122,6 @@ async def test_process_path_step_node_checkout_dollar_brace_env_lookup(
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         # Mock CONTEXT_REGEX to extract the variable
         mock_regex.findall.return_value = ["inputs.pr_number"]
@@ -1383,7 +1378,6 @@ async def test_process_path_step_node_checkout_context_regex_empty_result(
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         # Mock CONTEXT_REGEX to return empty list
         mock_regex.findall.return_value = []
@@ -1442,7 +1436,6 @@ async def test_process_path_step_node_checkout_input_lookup(mock_graph, mock_api
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         # Mock CONTEXT_REGEX to extract and allow stripping inputs.
         mock_regex.findall.return_value = ["inputs.pr_ref"]
@@ -1495,7 +1488,6 @@ async def test_process_path_step_node_checkout_with_sinks(mock_graph, mock_api):
             "gatox.workflow_graph.visitors.dispatch_toctou_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_cache_manager.return_value.get_repository.return_value = mock_repo
         mock_visitor_utils.check_mutable_ref.return_value = True
         mock_visitor_utils.append_path.return_value = None
