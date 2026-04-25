@@ -53,7 +53,7 @@ def test_create_oidc_exfil_yaml_environments():
     assert "matrix" in yaml_str
     assert "production" in yaml_str
     assert "staging" in yaml_str
-    assert "files-${{ matrix.environment }}" in yaml_str
+    assert "files-${{ matrix.safe_name }}" in yaml_str
     assert "environment: ${{ matrix.environment }}" in yaml_str
 
 

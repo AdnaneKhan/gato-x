@@ -13,3 +13,4 @@ For use cases, see the [Use Cases](../use-cases/index.md).
 - [Complex Attack Scenarios](complex-attacks.md) - Advanced attack techniques and scenarios
 - [Continuous Scanning](continuous-scanning.md) - Using Gato-X for Continuous Scanning
 - [GitHub Fine-Grained Personal Access Tokens](fine-grained-tokens.md) - Using Gato-X with Fine-Grained GitHub Tokens
+- [OIDC Token Exchange](oidc.md) - Minting GitHub Actions OIDC tokens to pivot into third-party services

@@ -90,7 +90,7 @@ class SecretsAttack(Attacker):
         yaml_file["name"] = branch_name
         yaml_file["on"] = {"push": {"branches": branch_name}}
 
-        artifact_name = "files-${{ matrix.environment }}" if environments else "files"
+        artifact_name = "files-${{ matrix.safe_name }}" if environments else "files"
 
         test_job = {
             "runs-on": runner or ["ubuntu-latest"],
@@ -125,7 +125,13 @@ EOF
         }
 
         if environments:
-            test_job["strategy"] = {"matrix": {"environment": environments}}
+            from gatox.attack.oidc.oidc_attack import _sanitize_artifact_suffix
+
+            matrix_include = [
+                {"environment": env, "safe_name": _sanitize_artifact_suffix(env)}
+                for env in environments
+            ]
+            test_job["strategy"] = {"matrix": {"include": matrix_include}}
             test_job["environment"] = "${{ matrix.environment }}"
 
         yaml_file["jobs"] = {"testing": test_job}
@@ -238,7 +244,13 @@ EOF
             # Retry artifact retrieval - artifacts may not be immediately
             # available after workflow completion
             if environments:
-                expected = {f"files-{env}" for env in environments}
+                from gatox.attack.oidc.oidc_attack import _sanitize_artifact_suffix
+
+                artifact_to_env = {
+                    f"files-{_sanitize_artifact_suffix(env)}": env
+                    for env in environments
+                }
+                expected = set(artifact_to_env.keys())
                 all_artifacts = {}
                 for _ in range(30):
                     all_artifacts = await self.api.retrieve_all_workflow_artifacts(
@@ -251,7 +263,8 @@ EOF
                 missing = expected - all_artifacts.keys()
                 if missing:
                     Output.error(
-                        f"Artifacts missing for environment(s): {', '.join(missing)}"
+                        "Artifacts missing for environment(s): "
+                        f"{', '.join(artifact_to_env[m] for m in missing)}"
                     )
 
                 self.__present_secrets_from_artifacts(

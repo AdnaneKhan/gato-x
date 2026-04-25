@@ -17,6 +17,7 @@ limitations under the License.
 import asyncio
 import json
 import random
+import re
 import string
 from base64 import b64decode
 
@@ -24,6 +25,13 @@ import yaml
 
 from gatox.attack.attack import Attacker
 from gatox.cli.output import Output
+
+_INVALID_ARTIFACT_CHARS = re.compile(r'[":<>|*?\\/\r\n]')
+
+
+def _sanitize_artifact_suffix(value: str) -> str:
+    """Replace characters disallowed in GitHub artifact names with '_'."""
+    return _INVALID_ARTIFACT_CHARS.sub("_", value)
 
 
 class OIDCAttack(Attacker):
@@ -49,7 +57,7 @@ class OIDCAttack(Attacker):
         yaml_file["on"] = {"push": {"branches": branch_name}}
         yaml_file["permissions"] = {"id-token": "write", "contents": "read"}
 
-        artifact_name = "files-${{ matrix.environment }}" if environments else "files"
+        artifact_name = "files-${{ matrix.safe_name }}" if environments else "files"
 
         test_job = {
             "runs-on": runner or ["ubuntu-latest"],
@@ -74,7 +82,11 @@ class OIDCAttack(Attacker):
         }
 
         if environments:
-            test_job["strategy"] = {"matrix": {"environment": environments}}
+            matrix_include = [
+                {"environment": env, "safe_name": _sanitize_artifact_suffix(env)}
+                for env in environments
+            ]
+            test_job["strategy"] = {"matrix": {"include": matrix_include}}
             test_job["environment"] = "${{ matrix.environment }}"
 
         yaml_file["jobs"] = {"testing": test_job}
@@ -157,7 +169,11 @@ class OIDCAttack(Attacker):
                 return
 
             if environments:
-                expected = {f"files-{env}" for env in environments}
+                artifact_to_env = {
+                    f"files-{_sanitize_artifact_suffix(env)}": env
+                    for env in environments
+                }
+                expected = set(artifact_to_env.keys())
                 all_artifacts = {}
                 for _ in range(30):
                     all_artifacts = await self.api.retrieve_all_workflow_artifacts(
@@ -170,10 +186,13 @@ class OIDCAttack(Attacker):
                 missing = expected - all_artifacts.keys()
                 if missing:
                     Output.error(
-                        f"Artifacts missing for environment(s): {', '.join(missing)}"
+                        "Artifacts missing for environment(s): "
+                        f"{', '.join(artifact_to_env[m] for m in missing)}"
                     )
 
-                self.__present_tokens_from_artifacts(all_artifacts, expected - missing)
+                self.__present_tokens_from_artifacts(
+                    all_artifacts, expected - missing, artifact_to_env
+                )
             else:
                 artifact = None
                 for _ in range(30):
@@ -191,7 +210,9 @@ class OIDCAttack(Attacker):
                         "repository may not support OIDC."
                     )
                 else:
-                    self.__present_tokens_from_artifacts({"files": artifact}, {"files"})
+                    self.__present_tokens_from_artifacts(
+                        {"files": artifact}, {"files"}, {}
+                    )
 
             if delete_action and (
                 not finegrain_scopes or "actions:write" in finegrain_scopes
@@ -206,12 +227,16 @@ class OIDCAttack(Attacker):
                 "The user does not have the necessary scopes to conduct this attack!"
             )
 
-    def __present_tokens_from_artifacts(self, artifacts: dict, names: set):
+    def __present_tokens_from_artifacts(
+        self, artifacts: dict, names: set, artifact_to_env: dict
+    ):
         """Print de-duplicated OIDC tokens from the given artifacts.
 
         Args:
             artifacts (dict): {artifact_name: {filename: bytes}}
             names (set): Artifact names to process.
+            artifact_to_env (dict): Map from sanitized artifact name to the
+                original environment label for display.
         """
         seen_tokens: set[str] = set()
 
@@ -224,7 +249,7 @@ class OIDCAttack(Attacker):
                 continue
             seen_tokens.add(token)
 
-            env_label = name.removeprefix("files-") if name != "files" else None
+            env_label = artifact_to_env.get(name) if name != "files" else None
             header = (
                 f"OIDC Token [{Output.bright(env_label)}] Retrieved:"
                 if env_label
