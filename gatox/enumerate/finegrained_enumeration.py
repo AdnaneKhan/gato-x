@@ -412,7 +412,7 @@ class FineGrainedEnumerator(Enumerator):
             return [], {}
 
         public_repos = await self.api.get_own_repos(
-            affiliation="owner,collaborator", visibility="public"
+            affiliation="owner,collaborator,organization_member", visibility="public"
         )
         write_accessible_repos = []
         if public_repos:
