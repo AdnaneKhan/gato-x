@@ -320,12 +320,12 @@ async def test_add_repo_results_file_caching(monkeypatch):
     await VisitorUtils.add_repo_results(data, TrackingApi())
 
     # Verify that API was only called once for the file
-    assert (
-        api_call_count["get_file_last_updated"] == 1
-    ), "API should only be called once per file"
-    assert (
-        api_call_count["get_commit_merge_date"] == 1
-    ), "Merge date API should only be called once per file"
+    assert api_call_count["get_file_last_updated"] == 1, (
+        "API should only be called once per file"
+    )
+    assert api_call_count["get_commit_merge_date"] == 1, (
+        "Merge date API should only be called once per file"
+    )
 
 
 @pytest.mark.asyncio
@@ -391,6 +391,6 @@ async def test_add_repo_results_different_files_cache(monkeypatch):
     await VisitorUtils.add_repo_results(data, TrackingApi())
 
     # Verify that API was called for each different file
-    assert (
-        api_call_count["get_file_last_updated"] == 2
-    ), "API should be called once per unique file"
+    assert api_call_count["get_file_last_updated"] == 2, (
+        "API should be called once per unique file"
+    )

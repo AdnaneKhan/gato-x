@@ -111,7 +111,6 @@ class TestSlackWebhook:
             patch("httpx.AsyncClient") as mock_client,
             patch("asyncio.sleep") as mock_sleep,
         ):
-
             mock_context = AsyncMock()
             mock_client.return_value.__aenter__.return_value = mock_context
 
@@ -140,7 +139,6 @@ class TestSlackWebhook:
             patch("httpx.AsyncClient") as mock_client,
             patch("asyncio.sleep") as mock_sleep,
         ):
-
             mock_context = AsyncMock()
             mock_client.return_value.__aenter__.return_value = mock_context
             mock_context.post = AsyncMock(
@@ -273,7 +271,6 @@ class TestDiscordWebhook:
             patch("httpx.AsyncClient") as mock_client,
             patch("asyncio.sleep") as mock_sleep,
         ):
-
             mock_context = AsyncMock()
             mock_client.return_value.__aenter__.return_value = mock_context
 
@@ -302,7 +299,6 @@ class TestDiscordWebhook:
             patch("httpx.AsyncClient") as mock_client,
             patch("asyncio.sleep") as mock_sleep,
         ):
-
             mock_context = AsyncMock()
             mock_client.return_value.__aenter__.return_value = mock_context
             mock_context.post = AsyncMock(

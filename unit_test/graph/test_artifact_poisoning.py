@@ -249,7 +249,6 @@ class TestArtifactPoisoningVisitor:
             patch.object(VisitorUtils, "append_path") as mock_append,
             patch.object(VisitorUtils, "_add_results") as mock_add_results,
         ):
-
             await ArtifactPoisoningVisitor._ArtifactPoisoningVisitor__process_path(
                 path, mock_graph, mock_api, results
             )
@@ -295,7 +294,6 @@ class TestArtifactPoisoningVisitor:
             patch.object(VisitorUtils, "append_path") as mock_append,
             patch.object(VisitorUtils, "_add_results") as mock_add_results,
         ):
-
             await ArtifactPoisoningVisitor._ArtifactPoisoningVisitor__process_path(
                 path, mock_graph, mock_api, results
             )
@@ -331,7 +329,6 @@ class TestArtifactPoisoningVisitor:
             patch.object(VisitorUtils, "initialize_action_node") as mock_init,
             patch.object(VisitorUtils, "_add_results") as mock_add_results,
         ):
-
             await ArtifactPoisoningVisitor._ArtifactPoisoningVisitor__process_path(
                 path, mock_graph, mock_api, results
             )
@@ -379,7 +376,6 @@ class TestArtifactPoisoningVisitor:
             patch.object(VisitorUtils, "append_path") as _,
             patch.object(VisitorUtils, "_add_results") as mock_add_results,
         ):
-
             await ArtifactPoisoningVisitor._ArtifactPoisoningVisitor__process_path(
                 path, mock_graph, mock_api, results
             )
@@ -463,7 +459,6 @@ class TestArtifactPoisoningVisitor:
             patch.object(VisitorUtils, "append_path", return_value=path) as mock_append,
             patch.object(VisitorUtils, "_add_results") as mock_add_results,
         ):
-
             await ArtifactPoisoningVisitor._ArtifactPoisoningVisitor__process_path(
                 path, mock_graph, mock_api, results
             )

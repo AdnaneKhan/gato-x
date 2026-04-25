@@ -29,7 +29,6 @@ dependencies = [
 test = [
     "pytest",
     "pytest-cov",
-    "black",
     "pytest-asyncio",
     "ruff",
     "pyright",
@@ -60,27 +59,13 @@ source = ["gatox"]
 [tool.coverage.html]
 directory = "cov_html"
 
-[tool.black]
-line-length = 88
-target-version = ['py310']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.ruff.lint]
 select = [

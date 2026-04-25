@@ -518,9 +518,9 @@ class TestFineGrainedEnumeratorSimple:
         }
 
         # Check that we have write permissions (which means write probes succeeded)
-        assert expected_write_scopes.issubset(
-            result
-        ), f"Expected {expected_write_scopes} to be subset of {result}"
+        assert expected_write_scopes.issubset(result), (
+            f"Expected {expected_write_scopes} to be subset of {result}"
+        )
 
     async def test_enumerate_fine_grained_token_no_repos(self):
         """Test enumerate_fine_grained_token when token has no write+ public repos and no private repos."""

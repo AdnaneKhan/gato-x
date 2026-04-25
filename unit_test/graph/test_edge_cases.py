@@ -209,9 +209,9 @@ class TestDFSWithNonExistentNodes:
         # The DFS should find one path: start -> path2_middle -> target
         # The path through path1_middle should be blocked by the non_existent node
         assert len(paths) == 1, f"Expected 1 path, got {len(paths)} paths: {paths}"
-        assert (
-            len(paths[0]) == 3
-        ), f"Expected path length 3, got {len(paths[0])}: {paths[0]}"
+        assert len(paths[0]) == 3, (
+            f"Expected path length 3, got {len(paths[0])}: {paths[0]}"
+        )
         assert paths[0][0] == start
         assert paths[0][1] == path2_middle
         assert paths[0][2] == target
@@ -281,7 +281,6 @@ class TestGraphBuilderNonExistentHandling:
             ),
             patch("gatox.caching.cache_manager.CacheManager.set_workflow"),
         ):
-
             # Should mark as non-existent
             await builder._initialize_callee_node(workflow, mock_api)
 
@@ -317,7 +316,6 @@ class TestGraphBuilderNonExistentHandling:
             patch("gatox.caching.cache_manager.CacheManager.set_workflow"),
             patch.object(builder, "build_workflow_jobs", new_callable=AsyncMock),
         ):
-
             await builder._initialize_callee_node(workflow, mock_api)
 
         # Verify workflow is properly initialized

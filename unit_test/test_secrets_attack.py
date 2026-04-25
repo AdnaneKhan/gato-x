@@ -27,6 +27,23 @@ def test_create_secret_exil_yaml():
 
     assert "${{ toJSON(secrets)}}" in yaml
     assert "actions/upload-artifact@v4" in yaml
+    assert "name: files\n" in yaml
+    assert "matrix" not in yaml
+
+
+def test_create_secret_exfil_yaml_environments():
+    """Test YAML generation includes a matrix when environments are provided."""
+    priv, pub = SecretsAttack._SecretsAttack__create_private_key()
+
+    yaml_str = SecretsAttack.create_exfil_yaml(
+        pub, "evilBranch", ["production", "staging"]
+    )
+
+    assert "matrix" in yaml_str
+    assert "production" in yaml_str
+    assert "staging" in yaml_str
+    assert "files-${{ matrix.safe_name }}" in yaml_str
+    assert "environment: ${{ matrix.environment }}" in yaml_str
 
 
 @patch(
@@ -198,3 +215,68 @@ async def test_secrets_dump_branchfail(mock_api, capsys):
     print_output = captured.out
 
     assert "Failed to check for remote branch!" in escape_ansi(print_output)
+
+
+@patch(
+    "gatox.attack.secrets.secrets_attack.SecretsAttack._SecretsAttack__decrypt_secrets"
+)
+@patch(
+    "gatox.attack.secrets.secrets_attack.SecretsAttack._SecretsAttack__create_private_key"
+)
+@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+async def test_secrets_dump_environments(mock_api, mock_privkey, mock_dec, capsys):
+    """Test secrets dump with environment matrix de-duplicates results."""
+    mock_api.return_value.check_user.return_value = {
+        "user": "testUser",
+        "name": "test user",
+        "scopes": ["repo", "workflow"],
+    }
+    mock_api.return_value.get_secrets.return_value = [{"name": "TEST_SECRET"}]
+    mock_api.return_value.get_repo_org_secrets.return_value = []
+    mock_api.return_value.get_repo_branch.return_value = 0
+    mock_api.return_value.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.get_workflow_status.return_value = 1
+
+    mock_priv = MagicMock()
+    mock_privkey.return_value = (mock_priv, "PUBKEY")
+
+    # prod and staging share SECRET_A; staging has an extra SECRET_B
+    mock_dec.side_effect = [
+        b'{"SECRET_A":"shared_value","SECRET_B":"staging_only"}',
+        b'{"SECRET_A":"shared_value"}',
+    ]
+
+    mock_api.return_value.retrieve_all_workflow_artifacts.return_value = {
+        "files-staging": {
+            "lookup.txt": b"key",
+            "output_updated.json": b"enc",
+        },
+        "files-production": {
+            "lookup.txt": b"key",
+            "output_updated.json": b"enc",
+        },
+    }
+
+    gh_attacker = SecretsAttack(
+        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        socks_proxy=None,
+        http_proxy="localhost:8080",
+    )
+
+    await gh_attacker.secrets_dump(
+        "targetRepo",
+        None,
+        None,
+        False,
+        "exfil",
+        environments=["staging", "production"],
+    )
+
+    captured = capsys.readouterr()
+    output = escape_ansi(captured.out)
+
+    assert "Decrypted and Decoded Secrets:" in output
+    # SECRET_A appears in both envs with the same value — shown only once
+    assert output.count("SECRET_A=shared_value") == 1
+    # SECRET_B is unique to staging
+    assert "SECRET_B=staging_only" in output

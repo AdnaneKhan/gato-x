@@ -32,6 +32,7 @@ gato-x a [options]
 | `--workflow`, `-w` | Attack by pushing a workflow to a feature branch |
 | `--runner-on-runner`, `-pr` | Attack with Runner-on-Runner via a Fork Pull Request |
 | `--secrets`, `-sc` | Attack to exfiltrate pipeline secrets |
+| `--oidc`, `-oi` | Attack to mint a GitHub Actions OIDC token for a chosen audience |
 | `--interact` | Connect to a C2 repository and interact with connected runners |
 | `--payload-only` | Generate payloads for manually deploying runner on runner |
 
@@ -44,6 +45,15 @@ gato-x a [options]
 | `--file-name`, `-fn` | Name of yaml file without extension |
 | `--custom-file`, `-f` | Path to a yaml workflow to upload |
 | `--delete-run`, `-d` | Delete the resulting workflow run |
+
+### OIDC Attack Options
+
+| Option | Description |
+|--------|-------------|
+| `--oidc-audience`, `-oa` | OIDC audience value for the token request. Defaults to `sigstore` |
+| `--environments`, `-ev` | One or more GitHub Actions environments to mint tokens for (uses a job matrix) |
+| `--runner-override`, `-ro` | Runner labels to use instead of `ubuntu-latest` |
+| `--file-name`, `-fn` | Required for OIDC attacks — name of the workflow yaml without extension |
 
 ### Runner-on-Runner Options
 
@@ -76,6 +86,14 @@ gato-x a --workflow --target MyOrg/MyRepo --command "whoami"
 ```bash
 gato-x a --secrets --target MyOrg/MyRepo
 ```
+
+### Mint an OIDC Token for a Third-Party Audience
+
+```bash
+gato-x a --oidc -oa "npm:registry.npmjs.org" -t MyOrg/MyRepo --file-name release -d -ev "NPM | CLI" "Production"
+```
+
+This requests an OIDC token from each listed environment and prints the token plus its decoded claims. See [OIDC Token Exchange](../advanced/oidc.md) for details on how the token can be used after the workflow finishes.
 
 ### Generate Runner-on-Runner Payload Only
 

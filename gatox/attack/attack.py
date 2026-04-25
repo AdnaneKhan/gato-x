@@ -97,7 +97,7 @@ class Attacker:
         target_repo: str,
         branch: str,
         yaml_contents: str,
-        commit_message: str,
+        commit_message: str | None,
         yaml_name: str,
     ):
         """Utility method to wrap shared logic for pushing a workflow for a new
@@ -116,6 +116,7 @@ class Attacker:
         """
 
         workflow_id = None
+        message = commit_message or "Test Commit"
 
         if self.author_email and self.author_name:
             rev_hash = await self.api.commit_workflow(
@@ -125,7 +126,7 @@ class Attacker:
                 f"{yaml_name}.yml",
                 commit_author=self.author_name,
                 commit_email=self.author_email,
-                message=commit_message,
+                message=message,
             )
         else:
             rev_hash = await self.api.commit_workflow(
@@ -133,7 +134,7 @@ class Attacker:
                 branch,
                 yaml_contents.encode(),
                 f"{yaml_name}.yml",
-                message=commit_message,
+                message=message,
             )
 
         if not rev_hash:

@@ -7,6 +7,7 @@ from pathlib import Path
 from colorama import Fore, Style
 
 from gatox.attack.attack import Attacker
+from gatox.attack.oidc.oidc_attack import OIDCAttack
 from gatox.attack.persistence.persistence_attack import PersistenceAttack
 from gatox.attack.runner.webshell import WebShell
 from gatox.attack.secrets.secrets_attack import SecretsAttack
@@ -131,8 +132,7 @@ def validate_arguments(args, parser):
         # Regular commands need GH_TOKEN
         if "GH_TOKEN" not in os.environ:
             gh_token = input(
-                "No 'GH_TOKEN' environment variable set! Please enter a GitHub"
-                " PAT.\n"
+                "No 'GH_TOKEN' environment variable set! Please enter a GitHub PAT.\n"
             )
         else:
             gh_token = os.environ["GH_TOKEN"]
@@ -180,12 +180,13 @@ async def attack(args, parser):
         args.workflow
         or args.runner_on_runner
         or args.secrets
+        or args.oidc
         or args.interact
         or args.payload_only
     ):
         parser.error(
             f"{Fore.RED}[!] You must select one of the attack modes, "
-            "workflow, runner_on_runner, secrets, or interact."
+            "workflow, runner_on_runner, secrets, oidc, or interact."
         )
 
     if args.custom_file and (args.command or args.name):
@@ -197,6 +198,12 @@ async def attack(args, parser):
     if args.secrets and args.command:
         parser.error(f"{Fore.RED}[!] A command cannot be used with secrets exfil!.")
 
+    if args.oidc and args.command:
+        parser.error(f"{Fore.RED}[!] A command cannot be used with OIDC exfil!.")
+
+    if args.oidc and not hasattr(args, "file_name"):
+        parser.error(f"{Fore.RED}[!] --file-name is required for OIDC attacks.")
+
     if args.runner_on_runner and args.command:
         parser.error(
             f"{Fore.RED}[!] A command cannot be used with runner-on-runner attacks!."
@@ -205,6 +212,8 @@ async def attack(args, parser):
     if not args.custom_file:
         args.command = args.command if args.command else "whoami"
         args.name = args.name if args.name else "test"
+        if not hasattr(args, "file_name"):
+            args.file_name = "test"
 
     if args.runner_on_runner and not (args.target_os and args.target_arch):
         parser.error(
@@ -324,6 +333,46 @@ async def attack(args, parser):
             args.delete_run,
             args.file_name,
             scopes,
+            environments=args.environments,
+            runner=args.runner_override,
+        )
+
+    elif args.oidc:
+        scopes = None
+        if args.gh_token.startswith("github_pat_"):
+            gh_enumeration_runner = FineGrainedEnumerator(
+                pat=args.gh_token,
+                socks_proxy=args.socks_proxy,
+                http_proxy=args.http_proxy,
+                github_url=args.api_url,
+            )
+            scopes = await gh_enumeration_runner.detect_scopes(args.target)
+            if "contents:write" not in scopes and "workflows:write" not in scopes:
+                parser.error(
+                    f"{Fore.RED}[-]{Style.RESET_ALL} The provided fine-grained token does not have the necessary 'contents:write' and 'workflows:write' permission on the targeted repository!"
+                )
+                return
+
+        gh_attack_runner = OIDCAttack(
+            args.gh_token,
+            author_email=args.author_email,
+            author_name=args.author_name,
+            socks_proxy=args.socks_proxy,
+            http_proxy=args.http_proxy,
+            timeout=timeout,
+            github_url=args.api_url,
+        )
+
+        await gh_attack_runner.oidc_exfil(
+            args.target,
+            args.branch,
+            args.message,
+            args.delete_run,
+            args.file_name,
+            args.oidc_audience,
+            scopes,
+            environments=args.environments,
+            runner=args.runner_override,
         )
 
 

@@ -137,7 +137,6 @@ async def test_find_injections_step_node_injectable_with_unsafe_context(
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_get_token.return_value = "github.event.review.body"
         mock_pr_review_unsafe.return_value = True  # This is unsafe
         mock_visitor_utils._add_results.return_value = None
@@ -180,7 +179,6 @@ async def test_find_injections_step_node_injectable_with_body_context(
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_get_token.return_value = "some_body_value"  # Contains 'body'
         mock_pr_review_unsafe.return_value = False  # Not unsafe by prReviewUnsafe
         mock_visitor_utils._add_results.return_value = None
@@ -245,7 +243,6 @@ async def test_find_injections_job_node_with_env_vars_and_outputs(mock_api, mock
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_getToken.side_effect = lambda x: x
         mock_prReviewUnsafe.return_value = True
 
@@ -304,7 +301,6 @@ async def test_find_injections_step_node_with_inputs_context(mock_api, mock_grap
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_regex.findall.return_value = ["inputs.INPUT_VAR"]
         mock_getToken.side_effect = lambda x: x
         mock_prReviewUnsafe.return_value = True
@@ -361,7 +357,6 @@ async def test_find_injections_step_node_with_env_context(mock_api, mock_graph):
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_getToken.side_effect = lambda x: x
         mock_prReviewUnsafe.return_value = True
 
@@ -402,7 +397,6 @@ async def test_find_injections_step_node_safe_github_context(mock_api, mock_grap
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_getToken.side_effect = lambda x: x
         mock_prReviewUnsafe.return_value = False  # Safe context
 
@@ -444,7 +438,6 @@ async def test_find_injections_workflow_node_with_env_vars(mock_api, mock_graph)
             "gatox.workflow_graph.visitors.review_injection_visitor.VisitorUtils"
         ) as mock_visitor_utils,
     ):
-
         mock_getToken.side_effect = lambda x: x
         mock_prReviewUnsafe.return_value = True
 

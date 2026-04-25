@@ -22,6 +22,7 @@ nav:
           - Overview: user-guide/advanced/index.md
           - Understanding GitHub Actions Vulnerabilities: user-guide/advanced/vulnerabilities.md
           - Complex Attack Scenarios: user-guide/advanced/complex-attacks.md
+          - OIDC Token Exchange: user-guide/advanced/oidc.md
   - Quick Start: quick-start.md
   - Contribution Guide:
       - Overview: contribution-guide/contributions.md

