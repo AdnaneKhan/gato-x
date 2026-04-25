@@ -24,8 +24,10 @@ def build_workflow_source_map(workflow_yaml_node: yaml.Node) -> dict:
         return source_map
 
     valid_jobs = filter(
-        lambda item: isinstance(item[0], yaml.ScalarNode)
-        and isinstance(item[1], yaml.MappingNode),
+        lambda item: (
+            isinstance(item[0], yaml.ScalarNode)
+            and isinstance(item[1], yaml.MappingNode)
+        ),
         jobs_node.value,
     )
 
