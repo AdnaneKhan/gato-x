@@ -87,11 +87,24 @@ class OIDCAttack(Attacker):
                 for env in environments
             ]
             test_job["strategy"] = {"matrix": {"include": matrix_include}}
-            test_job["environment"] = "${{ matrix.environment }}"
+            test_job["environment"] = {
+                "name": "${{ matrix.environment }}",
+                "deployment": False,
+            }
 
         yaml_file["jobs"] = {"testing": test_job}
 
-        return yaml.dump(yaml_file, sort_keys=False)
+        class _OIDCDumper(yaml.Dumper):
+            pass
+
+        _OIDCDumper.add_representer(
+            bool,
+            lambda dumper, data: dumper.represent_scalar(
+                "tag:yaml.org,2002:str", "true" if data else "false", style=""
+            ),
+        )
+
+        return yaml.dump(yaml_file, sort_keys=False, Dumper=_OIDCDumper)
 
     @staticmethod
     def _decode_jwt_claims(token: str):
