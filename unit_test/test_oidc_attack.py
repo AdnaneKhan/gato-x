@@ -54,7 +54,8 @@ def test_create_oidc_exfil_yaml_environments():
     assert "production" in yaml_str
     assert "staging" in yaml_str
     assert "files-${{ matrix.safe_name }}" in yaml_str
-    assert "environment: ${{ matrix.environment }}" in yaml_str
+    assert "name: ${{ matrix.environment }}" in yaml_str
+    assert "deployment: false" in yaml_str
 
 
 def test_decode_jwt_claims():
