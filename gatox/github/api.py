@@ -206,6 +206,7 @@ class Api:
                                 if matches:
                                     runner_type = matches.group(1)
 
+
                             if "GITHUB_TOKEN Permission" in line:
                                 while "[endgroup]" not in content_lines[index + 1]:
                                     index += 1
@@ -227,6 +228,9 @@ class Api:
                         if not runner_name:
                             continue
 
+                        if not runner_type:
+                            runner_type = "Repository"
+                            
                         log_package = {
                             "requested_labels": labels,
                             "runner_name": runner_name,
