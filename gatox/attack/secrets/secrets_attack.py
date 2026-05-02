@@ -115,7 +115,7 @@ EOF
                 # This avoids the edge case where there is a secret set to a value that is in the Base64 (which breaks everything).
                 {
                     "name": "Upload artifacts",
-                    "uses": "actions/upload-artifact@v4",
+                    "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
                     "with": {
                         "name": artifact_name,
                         "path": " |\noutput_updated.json\nlookup.txt",
