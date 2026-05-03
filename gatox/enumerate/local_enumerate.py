@@ -26,6 +26,7 @@ from pathlib import Path
 from gatox.caching.cache_manager import CacheManager
 from gatox.cli.output import Output
 from gatox.enumerate.recommender import Recommender
+from gatox.github.api import Api
 from gatox.models.repository import Repository
 from gatox.models.workflow import Workflow
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
@@ -51,7 +52,7 @@ _GITHUB_ORIGIN_RE = re.compile(
 )
 
 
-class LocalApiStub:
+class LocalApiStub(Api):
     """No-op stand-in for ``gatox.github.api.Api`` used by the local enumerator.
 
     Every method that the workflow graph builder or visitors might call against
@@ -59,12 +60,28 @@ class LocalApiStub:
     never makes a network request. Each call emits a DEBUG-level log line
     naming the check that was skipped and increments a counter that the
     enumerator uses to report a summary banner.
+
+    Subclasses :class:`Api` so that the stub satisfies static type checks at
+    call sites that expect an ``Api`` instance (e.g.
+    ``VisitorUtils.add_repo_results``). The parent ``__init__`` is intentionally
+    bypassed because we never make network calls and don't want to construct an
+    ``httpx.AsyncClient`` or require a PAT.
     """
 
     def __init__(self):
+        # Skip ``Api.__init__`` on purpose — no network client is created in
+        # local mode. We still set the attributes that downstream code may
+        # touch so that attribute access doesn't surprise callers.
         self.skip_counter: Counter[str] = Counter()
         # Provide token-shape attributes that some callers inspect
         self.is_app = False
+        self.pat = ""
+        self.transport = None
+        self.verify_ssl = True
+        self.headers = {}
+        self.github_url = "https://api.github.com"
+        self.client = None  # type: ignore[assignment]
+        self.app_permissions = None
         # slug -> on-disk repository root. Populated by the LocalEnumerator as
         # repos are loaded so that intra-scan-set action / workflow references
         # can be resolved from the filesystem instead of being skipped.
