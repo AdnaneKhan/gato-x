@@ -32,11 +32,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install ".[test,mcp]"
       - name: Lint with ruff
-        uses: astral-sh/ruff-action@57714a7c8a2e59f32539362ba31877a1957dded1 # v3.5.1
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
         with:
           src: "./gatox"
       - name: Format check with ruff
-        uses: astral-sh/ruff-action@57714a7c8a2e59f32539362ba31877a1957dded1 # v3.5.1
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
         with:
           src: "./gatox"
           args: "format --check"
