@@ -47,8 +47,8 @@ class SecretsAttack(Attacker):
 
         secrets = []
         secret_names = []
-        repo_secret_list = await self.api.get_secrets(target_repo)
-        org_secret_list = await self.api.get_repo_org_secrets(target_repo)
+        repo_secret_list = await self.api.repo.get_secrets(target_repo)
+        org_secret_list = await self.api.repo.get_repo_org_secrets(target_repo)
 
         if repo_secret_list:
             secrets.extend(repo_secret_list)
@@ -224,7 +224,7 @@ EOF
             else:
                 branch = "".join(random.choices(string.ascii_lowercase, k=10))
 
-            res = await self.api.get_repo_branch(target_repo, branch)
+            res = await self.api.commit.get_repo_branch(target_repo, branch)
             if res == -1:
                 Output.error("Failed to check for remote branch!")
                 return
@@ -253,8 +253,10 @@ EOF
                 expected = set(artifact_to_env.keys())
                 all_artifacts = {}
                 for _ in range(30):
-                    all_artifacts = await self.api.retrieve_all_workflow_artifacts(
-                        target_repo, workflow_id
+                    all_artifacts = (
+                        await self.api.action.retrieve_all_workflow_artifacts(
+                            target_repo, workflow_id
+                        )
                     )
                     if expected.issubset(all_artifacts.keys()):
                         break
@@ -273,7 +275,7 @@ EOF
             else:
                 artifact = None
                 for _ in range(30):
-                    artifact = await self.api.retrieve_workflow_artifact(
+                    artifact = await self.api.action.retrieve_workflow_artifact(
                         target_repo, workflow_id
                     )
                     if (
@@ -299,7 +301,9 @@ EOF
             if delete_action and (
                 not finegrain_scopes or "actions:write" in finegrain_scopes
             ):
-                res = await self.api.delete_workflow_run(target_repo, workflow_id)
+                res = await self.api.action.delete_workflow_run(
+                    target_repo, workflow_id
+                )
                 if not res:
                     Output.error("Failed to delete workflow!")
                 else:

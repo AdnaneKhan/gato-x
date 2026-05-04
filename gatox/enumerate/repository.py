@@ -40,7 +40,9 @@ class RepositoryEnum:
         runner_detected = False
         wf_runs = []
 
-        wf_runs = await self.api.retrieve_run_logs(repository.name, workflows=workflows)
+        wf_runs = await self.api.action.retrieve_run_logs(
+            repository.name, workflows=workflows
+        )
 
         if wf_runs:
             for wf_run in wf_runs:
@@ -84,7 +86,7 @@ class RepositoryEnum:
         if repository.is_admin() and (
             not fine_grained or "administration:read" in fine_grained
         ):
-            runners = await self.api.get_repo_runners(repository.name)
+            runners = await self.api.action.get_repo_runners(repository.name)
             if runners:
                 repo_runners = [
                     Runner(
@@ -118,10 +120,10 @@ class RepositoryEnum:
             API and retrieving a repository.
         """
         if repository.can_push():
-            secrets = await self.api.get_secrets(repository.name)
+            secrets = await self.api.repo.get_secrets(repository.name)
             wrapped_env_secrets = []
             for environment in repository.repo_data["environments"]:
-                env_secrets = await self.api.get_environment_secrets(
+                env_secrets = await self.api.repo.get_environment_secrets(
                     repository.name, environment
                 )
                 for secret in env_secrets:
@@ -134,7 +136,7 @@ class RepositoryEnum:
             repo_secrets.extend(wrapped_env_secrets)
             repository.set_secrets(repo_secrets)
 
-            org_secrets = await self.api.get_repo_org_secrets(repository.name)
+            org_secrets = await self.api.repo.get_repo_org_secrets(repository.name)
             org_secrets = [
                 Secret(secret, repository.org_name) for secret in org_secrets
             ]

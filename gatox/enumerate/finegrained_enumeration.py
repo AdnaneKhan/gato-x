@@ -58,7 +58,7 @@ class FineGrainedEnumerator(Enumerator):
     async def __setup_user_info(self):
         """Sets up user/app token information."""
         if not self.user_perms:
-            self.user_perms = await self.api.check_user()
+            self.user_perms = await self.api.user.check_user()
             if not self.user_perms:
                 Output.error("This token cannot be used for enumeration!")
                 return False
@@ -411,7 +411,7 @@ class FineGrainedEnumerator(Enumerator):
         if not await self.validate_token_and_get_user():
             return [], {}
 
-        public_repos = await self.api.get_own_repos(
+        public_repos = await self.api.user.get_own_repos(
             affiliation="owner,collaborator,organization_member", visibility="public"
         )
         write_accessible_repos = []
@@ -423,7 +423,7 @@ class FineGrainedEnumerator(Enumerator):
         else:
             Output.info("No public repositories found")
 
-        private_repos = await self.api.get_own_repos(
+        private_repos = await self.api.user.get_own_repos(
             affiliation="owner,collaborator,organization_member", visibility="private"
         )
         has_private_access = len(private_repos) > 0

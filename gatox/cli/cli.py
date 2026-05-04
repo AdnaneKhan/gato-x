@@ -445,7 +445,10 @@ async def enumerate_classic(args, parser):
             orgs, repos = result
     elif args.target:
         # First, determine if the target is an organization or a repository.
-        if await gh_enumeration_runner.api.get_user_type(args.target) == "Organization":
+        if (
+            await gh_enumeration_runner.api.user.get_user_type(args.target)
+            == "Organization"
+        ):
             org = await gh_enumeration_runner.enumerate_organization(args.target)
             orgs = [org] if org else []
         else:

@@ -228,7 +228,7 @@ class WebShell(Attacker):
         await self.repository_manager.close_pull_request(repo_name, source_branch)
 
         # Get workflow status
-        status = await self.api.get_workflow_status(target_repo, workflow_id)
+        status = await self.api.action.get_workflow_status(target_repo, workflow_id)
         if status == -1:
             Output.warn("Workflow requires approval!")
             Output.warn("Waiting until timeout in case of approval via other means.")

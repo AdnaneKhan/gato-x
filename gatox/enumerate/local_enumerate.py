@@ -87,6 +87,18 @@ class LocalApiStub(Api):
         # can be resolved from the filesystem instead of being skipped.
         self._repo_roots: dict[str, Path] = {}
 
+        # ``Api`` was split into grouped sub-APIs (``self.api.repo``,
+        # ``self.api.action``, ...). Until ``LocalApiStub`` is replaced by
+        # per-group stubs (planned follow-up — see PR #144), alias each
+        # sub-API attribute to ``self`` so that ``stub.repo.foo(...)``
+        # resolves to the existing ``stub.foo(...)`` overrides.
+        self.repo = self  # type: ignore[assignment]
+        self.org = self  # type: ignore[assignment]
+        self.user = self  # type: ignore[assignment]
+        self.commit = self  # type: ignore[assignment]
+        self.action = self  # type: ignore[assignment]
+        self.app = self  # type: ignore[assignment]
+
     # --- Skip helpers -----------------------------------------------------
 
     def _skip(self, kind: str, detail: str) -> None:
@@ -589,7 +601,7 @@ class LocalEnumerator:
             The list of :class:`Repository` wrappers populated with findings.
         """
         # Establish the local "user" once so downstream Recommender calls work
-        self.user_perms = await self.api.check_user()
+        self.user_perms = await self.api.user.check_user()
 
         repo_dirs = discover_repos(self.local_path, recursive=self.recursive)
         if not repo_dirs:

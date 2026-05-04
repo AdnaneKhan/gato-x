@@ -50,7 +50,7 @@ class PersistenceAttack(Attacker):
         for collaborator in collaborators:
             Output.info(f"Inviting collaborator: {collaborator}")
 
-            result = await self.api.invite_collaborator(
+            result = await self.api.repo.invite_collaborator(
                 target_repo, collaborator, permission
             )
             if result:
@@ -116,7 +116,7 @@ class PersistenceAttack(Attacker):
             encryption_algorithm=serialization.NoEncryption(),
         ).decode("utf-8")
 
-        result = await self.api.create_deploy_key(
+        result = await self.api.repo.create_deploy_key(
             target_repo, key_title, ssh_public_key, read_only=False
         )
         if result:
