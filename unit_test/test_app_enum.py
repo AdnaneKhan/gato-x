@@ -215,7 +215,7 @@ class TestAppEnumerator:
         """Test successful app validation."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
+        mock_api_instance.app.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
         mock_api.return_value = mock_api_instance
 
         enumerator = AppEnumerator("12345", "/path/to/key.pem")
@@ -224,7 +224,7 @@ class TestAppEnumerator:
         result = await enumerator.validate_app()
 
         assert isinstance(result, dict)
-        mock_api_instance.get_app_info.assert_called_once()
+        mock_api_instance.app.get_app_info.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("gatox.github.api.Api")
@@ -232,7 +232,9 @@ class TestAppEnumerator:
         """Test app validation failure."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_info = AsyncMock(side_effect=Exception("API Error"))
+        mock_api_instance.app.get_app_info = AsyncMock(
+            side_effect=Exception("API Error")
+        )
         mock_api.return_value = mock_api_instance
 
         enumerator = AppEnumerator("12345", "/path/to/key.pem")
@@ -249,15 +251,15 @@ class TestAppEnumerator:
         """Test listing app installations."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_installations = AsyncMock(
+        mock_api_instance.app.get_app_installations = AsyncMock(
             return_value=MOCK_INSTALLATIONS
         )
-        mock_api_instance.get_installation_info = AsyncMock(
+        mock_api_instance.app.get_installation_info = AsyncMock(
             side_effect=lambda id: next(
                 (inst for inst in MOCK_INSTALLATIONS if inst["id"] == id), None
             )
         )
-        mock_api_instance.get_installation_repositories = AsyncMock(
+        mock_api_instance.app.get_installation_repositories = AsyncMock(
             return_value=MOCK_INSTALLATION_REPOS
         )
         mock_api.return_value = mock_api_instance
@@ -268,9 +270,9 @@ class TestAppEnumerator:
         installations = await enumerator.list_installations()
 
         assert len(installations) == 2
-        mock_api_instance.get_app_installations.assert_called_once()
-        assert mock_api_instance.get_installation_info.call_count == 2
-        assert mock_api_instance.get_installation_repositories.call_count == 2
+        mock_api_instance.app.get_app_installations.assert_called_once()
+        assert mock_api_instance.app.get_installation_info.call_count == 2
+        assert mock_api_instance.app.get_installation_repositories.call_count == 2
         mock_info.assert_called()
 
     @pytest.mark.asyncio
@@ -283,17 +285,17 @@ class TestAppEnumerator:
         """Test enumerating a specific installation."""
         # Setup mocks for the API
         mock_api_instance = AsyncMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
-        mock_api_instance.get_installation_info = AsyncMock(
+        mock_api_instance.app.get_installation_info = AsyncMock(
             return_value=MOCK_INSTALLATIONS[0]
         )
         mock_api_instance.close = AsyncMock()
 
         # Mock for installation API
         mock_installation_api = AsyncMock()
-        mock_installation_api.get_installation_repos = AsyncMock(
+        mock_installation_api.app.get_installation_repos = AsyncMock(
             return_value={
                 "total_count": len(MOCK_INSTALLATION_REPOS),
                 "repositories": MOCK_INSTALLATION_REPOS,
@@ -321,8 +323,10 @@ class TestAppEnumerator:
             result = await enumerator.enumerate_installation("11111")
 
         # Verify API calls
-        mock_api_instance.get_installation_access_token.assert_called_once_with("11111")
-        mock_installation_api.get_installation_repos.assert_called_once()
+        mock_api_instance.app.get_installation_access_token.assert_called_once_with(
+            "11111"
+        )
+        mock_installation_api.app.get_installation_repos.assert_called_once()
         mock_enumerator_instance.enumerate_repos.assert_called_once()
         assert result is not None
         # The method returns a list of Repository objects, not an Execution object
@@ -335,14 +339,14 @@ class TestAppEnumerator:
         """Test enumerating all installations."""
         # Setup mocks with proper AsyncMock methods
         mock_api_instance = AsyncMock()
-        mock_api_instance.get_app_installations = AsyncMock(
+        mock_api_instance.app.get_app_installations = AsyncMock(
             return_value=MOCK_INSTALLATIONS
         )
-        mock_api_instance.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
-        mock_api_instance.get_installation_info = AsyncMock(
+        mock_api_instance.app.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
+        mock_api_instance.app.get_installation_info = AsyncMock(
             return_value=MOCK_INSTALLATIONS[0]
         )
-        mock_api_instance.get_installation_repositories = AsyncMock(
+        mock_api_instance.app.get_installation_repositories = AsyncMock(
             return_value=MOCK_INSTALLATION_REPOS
         )
         mock_api_instance.close = AsyncMock()
@@ -375,8 +379,8 @@ class TestAppEnumerator:
             results = await enumerator.enumerate_all_installations()
 
         # Verify calls
-        mock_api_instance.get_app_installations.assert_called_once()
-        mock_api_instance.get_installation_repositories.assert_called()
+        mock_api_instance.app.get_app_installations.assert_called_once()
+        mock_api_instance.app.get_installation_repositories.assert_called()
         assert mock_enum_installation.call_count == 2
 
         # Verify that results is a list of execution objects
@@ -407,7 +411,7 @@ class TestAppEnumerator:
             "App does not have contents permissions, cannot enumerate repositories"
         )
         # Verify no API calls were made
-        mock_api_instance.get_installation_access_token.assert_not_called()
+        mock_api_instance.app.get_installation_access_token.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("gatox.cli.output.Output.info")
@@ -418,13 +422,13 @@ class TestAppEnumerator:
         """Test enumerate_installation succeeds with contents:read permission."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
         mock_api_instance.is_app_token = lambda: True  # Non-async method
 
         mock_installation_api = AsyncMock()
-        mock_installation_api.get_installation_repos = AsyncMock(
+        mock_installation_api.app.get_installation_repos = AsyncMock(
             return_value={
                 "total_count": 1,
                 "repositories": [MOCK_INSTALLATION_REPOS[0]],
@@ -467,7 +471,7 @@ class TestAppEnumerator:
 
                 # Verify success - just check that we got past the permission check
                 assert result is not None
-                mock_api_instance.get_installation_access_token.assert_called_once_with(
+                mock_api_instance.app.get_installation_access_token.assert_called_once_with(
                     "11111"
                 )
                 # Don't assert mock_error.assert_not_called() since there might be other validation errors
@@ -482,13 +486,13 @@ class TestAppEnumerator:
         """Test enumerate_installation succeeds with contents:write permission."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
         mock_api_instance.is_app_token = lambda: True  # Non-async method
 
         mock_installation_api = AsyncMock()
-        mock_installation_api.get_installation_repos = AsyncMock(
+        mock_installation_api.app.get_installation_repos = AsyncMock(
             return_value={
                 "total_count": 1,
                 "repositories": [MOCK_INSTALLATION_REPOS[0]],
@@ -531,7 +535,7 @@ class TestAppEnumerator:
 
                 # Verify success - just check that we got past the permission check
                 assert result is not None
-                mock_api_instance.get_installation_access_token.assert_called_once_with(
+                mock_api_instance.app.get_installation_access_token.assert_called_once_with(
                     "11111"
                 )
                 # Don't assert mock_error.assert_not_called() since there might be other validation errors
@@ -542,7 +546,9 @@ class TestAppEnumerator:
         """Test enumerate_installation fails when access token request fails."""
         # Setup API mock
         mock_api_instance = AsyncMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(return_value=None)
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
+            return_value=None
+        )
 
         # Create enumerator with proper permissions
         enumerator = AppEnumerator("12345", "/path/to/key.pem")
@@ -557,7 +563,9 @@ class TestAppEnumerator:
         mock_error.assert_called_with(
             "Failed to get access token for installation 11111"
         )
-        mock_api_instance.get_installation_access_token.assert_called_once_with("11111")
+        mock_api_instance.app.get_installation_access_token.assert_called_once_with(
+            "11111"
+        )
 
     @pytest.mark.asyncio
     @patch("gatox.cli.output.Output.info")
@@ -568,12 +576,12 @@ class TestAppEnumerator:
         """Test enumerate_installation fails when no repositories found."""
         # Setup mocks
         mock_api_instance = AsyncMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
 
         mock_installation_api = AsyncMock()
-        mock_installation_api.get_installation_repos = AsyncMock(return_value=None)
+        mock_installation_api.app.get_installation_repos = AsyncMock(return_value=None)
         mock_installation_api.close = AsyncMock()
 
         # Create enumerator with proper permissions
@@ -592,10 +600,10 @@ class TestAppEnumerator:
             mock_error.assert_called_with(
                 "No repositories found for installation 11111"
             )
-            mock_api_instance.get_installation_access_token.assert_called_once_with(
+            mock_api_instance.app.get_installation_access_token.assert_called_once_with(
                 "11111"
             )
-            mock_installation_api.get_installation_repos.assert_called_once()
+            mock_installation_api.app.get_installation_repos.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("gatox.github.api.Api")
@@ -607,7 +615,7 @@ class TestAppEnumerator:
         """Test successful app validation with permissions parsing."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
+        mock_api_instance.app.get_app_info = AsyncMock(return_value=MOCK_APP_INFO)
         mock_api.return_value = mock_api_instance
         mock_yellow.return_value = "mocked_yellow_text"
 
@@ -623,7 +631,7 @@ class TestAppEnumerator:
         # Verify result
         assert isinstance(result, dict)
         assert result == MOCK_APP_INFO
-        mock_api_instance.get_app_info.assert_called_once()
+        mock_api_instance.app.get_app_info.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("gatox.github.api.Api")
@@ -631,7 +639,7 @@ class TestAppEnumerator:
         """Test app validation failure when API returns None."""
         # Setup mocks
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_info = AsyncMock(return_value=None)
+        mock_api_instance.app.get_app_info = AsyncMock(return_value=None)
         mock_api.return_value = mock_api_instance
 
         enumerator = AppEnumerator("12345", "/path/to/key.pem")
@@ -643,7 +651,7 @@ class TestAppEnumerator:
         ):
             await enumerator.validate_app()
 
-        mock_api_instance.get_app_info.assert_called_once()
+        mock_api_instance.app.get_app_info.assert_called_once()
 
 
 class TestAppEnumeratorPermissionChecks:
@@ -704,12 +712,12 @@ class TestAppEnumeratorPermissionChecks:
         """Test enumerate_installation with contents:admin permission."""
         # Setup mocks
         mock_api_instance = AsyncMock()
-        mock_api_instance.get_installation_access_token = AsyncMock(
+        mock_api_instance.app.get_installation_access_token = AsyncMock(
             return_value=MOCK_ACCESS_TOKEN
         )
 
         mock_installation_api = AsyncMock()
-        mock_installation_api.get_installation_repos = AsyncMock(
+        mock_installation_api.app.get_installation_repos = AsyncMock(
             return_value={
                 "total_count": 1,
                 "repositories": [MOCK_INSTALLATION_REPOS[0]],
@@ -812,7 +820,7 @@ class TestAppEnumeratorErrorHandling:
         """Test handling of API errors."""
         # Setup mock API with error
         mock_api_instance = MagicMock()
-        mock_api_instance.get_app_installations = AsyncMock(
+        mock_api_instance.app.get_app_installations = AsyncMock(
             side_effect=httpx.HTTPStatusError(
                 "API Error", request=MagicMock(), response=MagicMock()
             )
@@ -828,4 +836,4 @@ class TestAppEnumeratorErrorHandling:
             await enumerator.list_installations()
 
         # Verify error was called
-        mock_api_instance.get_app_installations.assert_called_once()
+        mock_api_instance.app.get_app_installations.assert_called_once()

@@ -93,7 +93,7 @@ class WebShellUtils:
         """
 
         async def check_workflow():
-            return await api.get_recent_workflow(
+            return await api.action.get_recent_workflow(
                 repo, commit_sha, workflow_name, time_after=time_after
             )
 
@@ -131,7 +131,7 @@ class WebShellUtils:
         """
 
         async def check_status():
-            return await api.get_workflow_status(repo, workflow_id)
+            return await api.action.get_workflow_status(repo, workflow_id)
 
         def is_complete(status):
             return status == -1 or status == 1
@@ -163,7 +163,7 @@ class WebShellUtils:
         """
 
         async def check_repo():
-            return await api.get_repository(repo_name)
+            return await api.repo.get_repository(repo_name)
 
         status = await WebShellUtils.poll_with_timeout(check_repo, timeout)
 
@@ -190,7 +190,7 @@ class WebShellUtils:
         """
 
         async def check_runners():
-            return await api.get_repo_runners(c2_repo)
+            return await api.action.get_repo_runners(c2_repo)
 
         runners = await WebShellUtils.poll_with_timeout(check_runners, timeout)
 

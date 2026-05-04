@@ -5,7 +5,7 @@ import pytest
 from gatox.caching.cache_manager import CacheManager
 from gatox.cli.output import Output
 from gatox.enumerate.finegrained_enumeration import FineGrainedEnumerator
-from gatox.github.api import Api
+from unit_test.api_mock import make_api_mock
 
 Output(True)
 
@@ -21,7 +21,7 @@ def clear_cache():
 class TestFineGrainedEnumeratorSimple:
     """Simplified test suite for FineGrainedEnumerator class."""
 
-    @patch("gatox.enumerate.finegrained_enumeration.Api", return_value=AsyncMock(Api))
+    @patch("gatox.enumerate.finegrained_enumeration.Api", return_value=make_api_mock())
     def test_init(self, mock_api):
         """Test FineGrainedEnumerator initialization."""
         enumerator = FineGrainedEnumerator(
@@ -538,15 +538,15 @@ class TestFineGrainedEnumeratorSimple:
         enumerator.validate_token_and_get_user = AsyncMock(return_value=True)
 
         # Mock get_own_repos to return empty lists for both public and private repos
-        enumerator.api.get_own_repos = AsyncMock(return_value=[])
+        enumerator.api.user.get_own_repos = AsyncMock(return_value=[])
 
         repositories = await enumerator.enumerate_fine_grained_token()
 
         # Verify API calls were made with correct parameters
-        enumerator.api.get_own_repos.assert_any_call(
+        enumerator.api.user.get_own_repos.assert_any_call(
             affiliation="owner,collaborator,organization_member", visibility="public"
         )
-        enumerator.api.get_own_repos.assert_any_call(
+        enumerator.api.user.get_own_repos.assert_any_call(
             affiliation="owner,collaborator,organization_member", visibility="private"
         )
 

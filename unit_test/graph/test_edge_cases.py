@@ -270,7 +270,7 @@ class TestGraphBuilderNonExistentHandling:
 
         # Mock API to return None (file not found)
         mock_api = MagicMock()
-        mock_api.retrieve_repo_file = AsyncMock(return_value=None)
+        mock_api.repo.retrieve_repo_file = AsyncMock(return_value=None)
 
         with (
             patch.object(builder.graph, "remove_tags_from_node"),
@@ -304,7 +304,7 @@ class TestGraphBuilderNonExistentHandling:
         mock_workflow.parsed_yml = {"on": ["push"], "env": {"TEST": "value"}}
 
         mock_api = MagicMock()
-        mock_api.retrieve_repo_file = AsyncMock(return_value=mock_workflow)
+        mock_api.repo.retrieve_repo_file = AsyncMock(return_value=mock_workflow)
 
         with (
             patch.object(builder.graph, "remove_tags_from_node"),

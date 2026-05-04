@@ -77,7 +77,7 @@ async def test_cli_s2s_token_machine(mock_api, capfd):
     mock_api_instance = AsyncMock()
     mock_api_instance.user_perms = None
     mock_api_instance.is_app_token = lambda: True  # Non-async method
-    mock_api_instance.get_installation_repos = AsyncMock(
+    mock_api_instance.app.get_installation_repos = AsyncMock(
         return_value={"total_count": 1}
     )
 
@@ -112,13 +112,13 @@ async def test_cli_oauth_token(mock_enumerator, capfd):
     # Setup mock enumerator instance
     mock_instance = mock_enumerator.return_value
     mock_instance.api = mock.MagicMock()  # Use regular MagicMock for sync methods
-    mock_instance.api.check_user = AsyncMock(
+    mock_instance.api.user.check_user = AsyncMock(
         return_value={
             "user": "testUser",
             "scopes": ["repo", "workflow"],
         }
     )
-    mock_instance.api.get_user_type = AsyncMock(return_value="Organization")
+    mock_instance.api.user.get_user_type = AsyncMock(return_value="Organization")
     mock_instance.enumerate_organization = AsyncMock(return_value={"testOrg": "data"})
     mock_instance.user_perms = {"user": "testUser", "scopes": ["repo", "workflow"]}
 
@@ -136,13 +136,13 @@ async def test_cli_old_token(mock_enumerator, capfd):
     # Setup mock enumerator instance
     mock_instance = mock_enumerator.return_value
     mock_instance.api = mock.MagicMock()  # Use regular MagicMock for sync methods
-    mock_instance.api.check_user = AsyncMock(
+    mock_instance.api.user.check_user = AsyncMock(
         return_value={
             "user": "testUser",
             "scopes": ["repo", "workflow"],
         }
     )
-    mock_instance.api.get_user_type = AsyncMock(return_value="Organization")
+    mock_instance.api.user.get_user_type = AsyncMock(return_value="Organization")
     mock_instance.enumerate_organization = AsyncMock(return_value={"testOrg": "data"})
     mock_instance.user_perms = {"user": "testUser", "scopes": ["repo", "workflow"]}
 
@@ -159,7 +159,7 @@ async def test_cli_old_token(mock_enumerator, capfd):
     )
 
     # Verify the enumerate_organization method was called
-    mock_instance.api.get_user_type.assert_called_once_with("test")
+    mock_instance.api.user.get_user_type.assert_called_once_with("test")
     mock_instance.enumerate_organization.assert_called_once_with("test")
 
 
@@ -380,13 +380,13 @@ async def test_enum_org(mock_enumerator):
     # Setup mock enumerator instance
     mock_instance = mock_enumerator.return_value
     mock_instance.api = mock.MagicMock()  # Use regular MagicMock for sync methods
-    mock_instance.api.check_user = AsyncMock(
+    mock_instance.api.user.check_user = AsyncMock(
         return_value={
             "user": "testUser",
             "scopes": ["repo", "workflow"],
         }
     )
-    mock_instance.api.get_user_type = AsyncMock(return_value="Organization")
+    mock_instance.api.user.get_user_type = AsyncMock(return_value="Organization")
     mock_instance.enumerate_organization = AsyncMock(return_value={"testOrg": "data"})
     mock_instance.user_perms = {"user": "testUser", "scopes": ["repo", "workflow"]}
 
@@ -403,13 +403,13 @@ async def test_enum_user(mock_enumerator):
     # Setup mock enumerator instance
     mock_instance = mock_enumerator.return_value
     mock_instance.api = mock.MagicMock()  # Use regular MagicMock for sync methods
-    mock_instance.api.check_user = AsyncMock(
+    mock_instance.api.user.check_user = AsyncMock(
         return_value={
             "user": "testUser",
             "scopes": ["repo", "workflow"],
         }
     )
-    mock_instance.api.get_user_type = AsyncMock(return_value="User")
+    mock_instance.api.user.get_user_type = AsyncMock(return_value="User")
     mock_instance.enumerate_user = AsyncMock(return_value={"testUser": "data"})
     mock_instance.user_perms = {"user": "testUser", "scopes": ["repo", "workflow"]}
 

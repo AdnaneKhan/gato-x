@@ -10,7 +10,7 @@ from gatox.workflow_graph.visitors.injection_visitor import InjectionVisitor
 @pytest.fixture
 def mock_api():
     mock_api = Mock(spec=Api)
-    mock_api.get_all_environment_protection_rules = AsyncMock(return_value={})
+    mock_api.action.get_all_environment_protection_rules = AsyncMock(return_value={})
     return mock_api
 
 
@@ -131,7 +131,7 @@ class TestInjectionVisitor:
         ]
 
         # Mock environment protection rules
-        mock_api.get_all_environment_protection_rules.return_value = {
+        mock_api.action.get_all_environment_protection_rules.return_value = {
             "production": True
         }
 

@@ -157,14 +157,14 @@ class PayloadManager:
         random_name = "".join(random.choices(string.ascii_letters, k=10))
 
         # Create private repository in the user's personal account
-        repo_name = await self.api.create_repository(random_name)
+        repo_name = await self.api.user.create_repository(random_name)
 
         if not repo_name:
             Output.error("Unable to create C2 repository!")
             return None
 
         # Add webshell workflow to the repository
-        await self.api.commit_file(
+        await self.api.commit.commit_file(
             repo_name,
             "main",
             ".github/workflows/webshell.yml",

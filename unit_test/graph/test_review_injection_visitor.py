@@ -85,7 +85,7 @@ async def test_find_injections_job_node_with_deployments(mock_graph, mock_api):
     )
 
     # Mock API response for environment protection rules
-    mock_api.get_all_environment_protection_rules = AsyncMock(
+    mock_api.action.get_all_environment_protection_rules = AsyncMock(
         return_value={"production": {"required_reviewers": 1}}
     )
 

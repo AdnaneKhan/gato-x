@@ -1,9 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from gatox.cli.output import Output
-from gatox.github.api import Api
 from gatox.github.search import Search
 from gatox.search.search import Searcher
+from unit_test.api_mock import make_api_mock
 
 Output(True)
 
@@ -198,7 +198,7 @@ async def test_search_api_iniitalrl(mock_time, capfd):
 
 
 @patch("gatox.github.search.asyncio.sleep")
-@patch("gatox.search.search.Api", return_value=AsyncMock(Api))
+@patch("gatox.search.search.Api", return_value=make_api_mock())
 async def test_search(mock_client, mock_time):
     mock_client.return_value.transport = None
 
@@ -222,7 +222,7 @@ async def test_search(mock_client, mock_time):
 
 
 @patch("gatox.github.search.asyncio.sleep")
-@patch("gatox.search.search.Api", return_value=AsyncMock(Api))
+@patch("gatox.search.search.Api", return_value=make_api_mock())
 async def test_search_query(mock_client, mock_time, capfd):
     mock_client.return_value.transport = None
     mock_client.return_value.call_get.return_value = MagicMock(
@@ -246,7 +246,7 @@ async def test_search_query(mock_client, mock_time, capfd):
 
 
 @patch("gatox.github.search.asyncio.sleep")
-@patch("gatox.search.search.Api", return_value=AsyncMock(Api))
+@patch("gatox.search.search.Api", return_value=make_api_mock())
 async def test_search_bad_token(mock_client, mock_time):
     mock_client.return_value.transport = None
     mock_client.return_value.call_get.return_value = MagicMock(

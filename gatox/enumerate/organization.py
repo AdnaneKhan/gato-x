@@ -28,7 +28,7 @@ class OrganizationEnum:
 
         repos = []
         for visibility in visibilities:
-            raw_repos = await self.api.check_org_repos(organization, visibility)
+            raw_repos = await self.api.org.check_org_repos(organization, visibility)
             if raw_repos:
                 repos.extend([Repository(repo) for repo in raw_repos])
 
@@ -53,7 +53,7 @@ class OrganizationEnum:
         # We might legitimately have no private repos despite being a
         # member.
         if org_private_repos:
-            sso_enabled = await self.api.validate_sso(
+            sso_enabled = await self.api.org.validate_sso(
                 organization.name, org_private_repos[0].name
             )
             organization.sso_enabled = sso_enabled
@@ -74,7 +74,7 @@ class OrganizationEnum:
         token has the necessary scopes.
         """
         if organization.org_admin_scopes and organization.org_admin_user:
-            runners = await self.api.check_org_runners(organization.name)
+            runners = await self.api.org.check_org_runners(organization.name)
             if runners:
                 org_runners = [
                     Runner(
@@ -88,7 +88,7 @@ class OrganizationEnum:
                 ]
                 organization.set_runners(org_runners)
 
-            org_secrets = await self.api.get_org_secrets(organization.name)
+            org_secrets = await self.api.org.get_org_secrets(organization.name)
             if org_secrets:
                 org_secrets = [
                     Secret(secret, organization.name) for secret in org_secrets

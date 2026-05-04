@@ -1,8 +1,8 @@
 import re
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from gatox.attack.secrets.secrets_attack import SecretsAttack
-from gatox.github.api import Api
+from unit_test.api_mock import make_api_mock
 
 
 # From https://stackoverflow.com/questions/14693701/
@@ -52,17 +52,17 @@ def test_create_secret_exfil_yaml_environments():
 @patch(
     "gatox.attack.secrets.secrets_attack.SecretsAttack._SecretsAttack__create_private_key"
 )
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump(mock_api, mock_privkey, mock_dec, capsys):
     """Test secrets dump functionality."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_secrets.return_value = [{"name": "TEST_SECRET"}]
-    mock_api.return_value.get_repo_org_secrets.return_value = []
-    mock_api.return_value.get_repo_branch.return_value = 0
+    mock_api.return_value.repo.get_secrets.return_value = [{"name": "TEST_SECRET"}]
+    mock_api.return_value.repo.get_repo_org_secrets.return_value = []
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
     pub_mock = """
 -----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAuA+sy+VjSRn+2irScEhy
@@ -80,12 +80,12 @@ w1M8xrm+PUM5qaWCANScuX8CAwEAAQ==
 -----END PUBLIC KEY-----
     """
 
-    mock_api.return_value.retrieve_workflow_artifact.return_value = {
+    mock_api.return_value.action.retrieve_workflow_artifact.return_value = {
         "lookup.txt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         "output_updated.json": "A" * 100,
     }
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
     mock_priv = MagicMock()
     mock_priv.decrypt.return_value = "TestSymKey"
     mock_privkey.return_value = (mock_priv, pub_mock)
@@ -106,10 +106,10 @@ w1M8xrm+PUM5qaWCANScuX8CAwEAAQ==
     assert "Decrypted and Decoded Secrets:" in escape_ansi(print_output)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump_baduser(mock_api, capsys):
     """Test secrets dump functionality with bad permissions."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo"],
@@ -132,18 +132,18 @@ async def test_secrets_dump_baduser(mock_api, capsys):
     )
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump_nosecret(mock_api, capsys):
     """Test secrets dump where repo has no secrets."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.return_value.get_secrets.return_value = []
-    mock_api.return_value.get_repo_org_secrets.return_value = []
+    mock_api.return_value.repo.get_secrets.return_value = []
+    mock_api.return_value.repo.get_repo_org_secrets.return_value = []
 
     gh_attacker = SecretsAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -161,19 +161,19 @@ async def test_secrets_dump_nosecret(mock_api, capsys):
     )
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump_branchexist(mock_api, capsys):
     """Test secrets dump where exfil branch already exists."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.return_value.get_secrets.return_value = [{"name": "TEST_SECRET"}]
-    mock_api.return_value.get_repo_org_secrets.return_value = []
-    mock_api.return_value.get_repo_branch.return_value = 1
+    mock_api.return_value.repo.get_secrets.return_value = [{"name": "TEST_SECRET"}]
+    mock_api.return_value.repo.get_repo_org_secrets.return_value = []
+    mock_api.return_value.commit.get_repo_branch.return_value = 1
 
     gh_attacker = SecretsAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -189,19 +189,19 @@ async def test_secrets_dump_branchexist(mock_api, capsys):
     assert "Remote branch, exfilbranch, already exists!" in escape_ansi(print_output)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump_branchfail(mock_api, capsys):
     """Test secrets dump where branch check fails."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.return_value.get_secrets.return_value = [{"name": "TEST_SECRET"}]
-    mock_api.return_value.get_repo_org_secrets.return_value = []
-    mock_api.return_value.get_repo_branch.return_value = -1
+    mock_api.return_value.repo.get_secrets.return_value = [{"name": "TEST_SECRET"}]
+    mock_api.return_value.repo.get_repo_org_secrets.return_value = []
+    mock_api.return_value.commit.get_repo_branch.return_value = -1
 
     gh_attacker = SecretsAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -223,19 +223,19 @@ async def test_secrets_dump_branchfail(mock_api, capsys):
 @patch(
     "gatox.attack.secrets.secrets_attack.SecretsAttack._SecretsAttack__create_private_key"
 )
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_secrets_dump_environments(mock_api, mock_privkey, mock_dec, capsys):
     """Test secrets dump with environment matrix de-duplicates results."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_secrets.return_value = [{"name": "TEST_SECRET"}]
-    mock_api.return_value.get_repo_org_secrets.return_value = []
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
+    mock_api.return_value.repo.get_secrets.return_value = [{"name": "TEST_SECRET"}]
+    mock_api.return_value.repo.get_repo_org_secrets.return_value = []
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
 
     mock_priv = MagicMock()
     mock_privkey.return_value = (mock_priv, "PUBKEY")
@@ -246,7 +246,7 @@ async def test_secrets_dump_environments(mock_api, mock_privkey, mock_dec, capsy
         b'{"SECRET_A":"shared_value"}',
     ]
 
-    mock_api.return_value.retrieve_all_workflow_artifacts.return_value = {
+    mock_api.return_value.action.retrieve_all_workflow_artifacts.return_value = {
         "files-staging": {
             "lookup.txt": b"key",
             "output_updated.json": b"enc",

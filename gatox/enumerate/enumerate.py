@@ -91,7 +91,7 @@ class Enumerator:
     async def __setup_user_info(self):
         """Sets up user/app token information."""
         if not self.user_perms and self.api.is_app_token():
-            installation_info = await self.api.get_installation_repos()
+            installation_info = await self.api.app.get_installation_repos()
 
             if installation_info:
                 count = installation_info["total_count"]
@@ -107,7 +107,7 @@ class Enumerator:
                     return False
 
         if not self.user_perms:
-            self.user_perms = await self.api.check_user()
+            self.user_perms = await self.api.user.check_user()
             if not self.user_perms:
                 Output.error("This token cannot be used for enumeration!")
                 return False
@@ -170,13 +170,13 @@ class Enumerator:
         """ """
         repo = CacheManager().is_repo_cached(repo_name)
         if not repo:
-            repo_data = await self.api.get_repository(repo_name)
+            repo_data = await self.api.repo.get_repository(repo_name)
             if repo_data:
                 repo = Repository(repo_data)
                 CacheManager().set_repository(repo)
 
                 if repo:
-                    workflows = await self.api.retrieve_workflow_ymls(repo.name)
+                    workflows = await self.api.repo.retrieve_workflow_ymls(repo.name)
 
                     for workflow in workflows:
                         if not isinstance(workflow, Workflow):
@@ -205,7 +205,7 @@ class Enumerator:
         repo = CacheManager().get_repository(repo_name)
 
         if not repo:
-            repo_data = await self.api.get_repository(repo_name)
+            repo_data = await self.api.repo.get_repository(repo_name)
             if repo_data:
                 repo = Repository(repo_data)
                 CacheManager().set_repository(repo)
@@ -264,7 +264,7 @@ class Enumerator:
         if not await self.__setup_user_info():
             return None
 
-        repo_data = await self.api.get_repository(repo_name)
+        repo_data = await self.api.repo.get_repository(repo_name)
         if not repo_data:
             Output.warn(f"Unable to retrieve repository: {Output.bright(repo_name)}")
             return None
@@ -272,7 +272,7 @@ class Enumerator:
         repo = Repository(repo_data)
         CacheManager().set_repository(repo)
 
-        workflows = await self.api.retrieve_workflow_ymls_ref(repo.name, sha)
+        workflows = await self.api.repo.retrieve_workflow_ymls_ref(repo.name, sha)
         for workflow in workflows:
             if not isinstance(workflow, Workflow):
                 continue
@@ -319,7 +319,7 @@ class Enumerator:
             Output.warn("Token does not have sufficient access to list orgs!")
             return None
 
-        orgs = await self.api.check_organizations()
+        orgs = await self.api.user.check_organizations()
 
         Output.info(
             f"The user {user_perms['user']} belongs to {len(orgs)} organizations!"
@@ -357,9 +357,9 @@ class Enumerator:
 
         Output.info("Enumerating user owned repositories!")
 
-        repos = await self.api.get_own_repos()
+        repos = await self.api.user.get_own_repos()
         repo_wrappers = await self.enumerate_repos(repos)
-        orgs = await self.api.check_organizations()
+        orgs = await self.api.user.check_organizations()
 
         Output.info(
             f"The user {user_perms['user']} belongs to {len(orgs)} organizations!"
@@ -384,7 +384,7 @@ class Enumerator:
         if not await self.__setup_user_info():
             return None
 
-        repos = await self.api.get_user_repos(user)
+        repos = await self.api.user.get_user_repos(user)
 
         if not repos:
             Output.warn(
@@ -418,7 +418,7 @@ class Enumerator:
 
         user_perms = self.user_perms
 
-        details = await self.api.get_organization_details(org)
+        details = await self.api.org.get_organization_details(org)
 
         if not details:
             Output.warn(

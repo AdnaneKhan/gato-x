@@ -43,7 +43,7 @@ class Searcher:
             bool: If the PAT is associated with a valid user.
         """
         if not self.user_perms:
-            self.user_perms = await self.api.check_user()
+            self.user_perms = await self.api.user.check_user()
             if not self.user_perms:
                 Output.error("This token cannot be used for enumeration!")
                 return False

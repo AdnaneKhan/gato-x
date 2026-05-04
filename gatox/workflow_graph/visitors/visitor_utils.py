@@ -278,12 +278,16 @@ class VisitorUtils:
                         logger.debug(f"Using cached result for {cache_key}")
                     else:
                         # Make API call and cache the result
-                        commit_date, author, sha = await api.get_file_last_updated(
+                        (
+                            commit_date,
+                            author,
+                            sha,
+                        ) = await api.commit.get_file_last_updated(
                             flow.repo_name(),
                             file_path,
                         )
 
-                        merge_date = await api.get_commit_merge_date(
+                        merge_date = await api.commit.get_commit_merge_date(
                             flow.repo_name(), sha
                         )
                         if merge_date:
@@ -326,7 +330,9 @@ class VisitorUtils:
         if node.repo_name() in rule_cache:
             rules = rule_cache[node.repo_name()]
         else:
-            rules = await api.get_all_environment_protection_rules(node.repo_name())
+            rules = await api.action.get_all_environment_protection_rules(
+                node.repo_name()
+            )
             rule_cache[node.repo_name()] = rules
         for deployment in node.deployments:
             if isinstance(deployment, dict):

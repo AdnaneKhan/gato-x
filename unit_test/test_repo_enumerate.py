@@ -36,12 +36,12 @@ async def test_enumerate_repo():
 
     gh_enumeration_runner = RepositoryEnum(mock_api, False)
 
-    mock_api.check_user.return_value = {
+    mock_api.user.check_user.return_value = {
         "user": "testUser",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.retrieve_run_logs.return_value = [
+    mock_api.action.retrieve_run_logs.return_value = [
         {
             "machine_name": "unittest1",
             "runner_name": "much_unit_such_test",
@@ -70,12 +70,12 @@ async def test_enumerate_repo_admin():
 
     gh_enumeration_runner = RepositoryEnum(mock_api, False)
 
-    mock_api.check_user.return_value = {
+    mock_api.user.check_user.return_value = {
         "user": "testUser",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.retrieve_run_logs.return_value = [
+    mock_api.action.retrieve_run_logs.return_value = [
         {
             "machine_name": "unittest1",
             "runner_name": "much_unit_such_test",
@@ -102,12 +102,12 @@ async def test_enumerate_repo_secrets():
 
     gh_enumeration_runner = RepositoryEnum(mock_api, False)
 
-    mock_api.check_user.return_value = {
+    mock_api.user.check_user.return_value = {
         "user": "testUser",
         "scopes": ["repo", "workflow"],
     }
 
-    mock_api.get_secrets.return_value = [
+    mock_api.repo.get_secrets.return_value = [
         {
             "name": "GIST_ID",
             "created_at": "2019-08-10T14:59:22Z",

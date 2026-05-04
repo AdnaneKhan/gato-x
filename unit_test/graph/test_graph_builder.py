@@ -146,7 +146,7 @@ async def test_initialize_action_node(mock_cache, builder):
         "actions/checkout@v2", "main", "workflow.yml", "test/repo", {}
     )
     api = Mock()
-    api.retrieve_raw_action.return_value = """
+    api.repo.retrieve_raw_action.return_value = """
     name: 'Test Action'
     runs:
       steps:

@@ -66,7 +66,7 @@ class AppEnumerator:
             await self._initialize_api_with_jwt()
         assert self.api is not None
 
-        app_info = await self.api.get_app_info()
+        app_info = await self.api.app.get_app_info()
         if not app_info:
             raise ValueError(
                 "Failed to validate GitHub App - check App ID and private key"
@@ -106,7 +106,7 @@ class AppEnumerator:
             await self._initialize_api_with_jwt()
         assert self.api is not None
 
-        installations = await self.api.get_app_installations()
+        installations = await self.api.app.get_app_installations()
         if not installations:
             Output.error("No installations found or failed to retrieve installations")
             return []
@@ -116,10 +116,10 @@ class AppEnumerator:
         enhanced_installations = []
         for installation in installations:
             # Get detailed installation info
-            install_info = await self.api.get_installation_info(installation["id"])
+            install_info = await self.api.app.get_installation_info(installation["id"])
             if install_info:
                 # Get repositories for this installation
-                repos_info = await self.api.get_installation_repositories(
+                repos_info = await self.api.app.get_installation_repositories(
                     installation["id"]
                 )
                 install_info["accessible_repositories"] = repos_info
@@ -149,7 +149,7 @@ class AppEnumerator:
         Output.info(f"Enumerating installation {installation_id}")
 
         # Get installation access token
-        access_token_response = await self.api.get_installation_access_token(
+        access_token_response = await self.api.app.get_installation_access_token(
             installation_id
         )
         if not access_token_response:
@@ -168,7 +168,7 @@ class AppEnumerator:
         )
 
         # Get installation repositories
-        installation_repos = await installation_api.get_installation_repos()
+        installation_repos = await installation_api.app.get_installation_repos()
         if not installation_repos:
             Output.error(f"No repositories found for installation {installation_id}")
             return None

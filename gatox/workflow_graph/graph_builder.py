@@ -122,7 +122,7 @@ class WorkflowGraphBuilder:
             async with action_lock:
                 contents = CacheManager().get_action(repo, path, ref)
                 if not contents:
-                    contents = await api.retrieve_raw_action(repo, path, ref)
+                    contents = await api.repo.retrieve_raw_action(repo, path, ref)
                     if contents:
                         CacheManager().set_action(repo, path, ref, contents)
                 return contents
@@ -197,7 +197,7 @@ class WorkflowGraphBuilder:
             slug, ref, path = workflow.get_parts()
             callee_wf = CacheManager().get_workflow(slug, f"{path}:{ref}")
             if not callee_wf:
-                callee_wf = await api.retrieve_repo_file(slug, path, ref)
+                callee_wf = await api.repo.retrieve_repo_file(slug, path, ref)
                 if callee_wf:
                     CacheManager().set_workflow(slug, f"{path}:{ref}", callee_wf)
                 else:

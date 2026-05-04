@@ -1,8 +1,8 @@
 import re
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from gatox.attack.attack import Attacker
-from gatox.github.api import Api
+from unit_test.api_mock import make_api_mock
 
 
 # From https://stackoverflow.com/questions/14693701/
@@ -31,18 +31,18 @@ def test_init():
 #     """Test creating a malicious fork PR
 #     """
 
-#     mock_api.return_value.check_user.return_value = {
+#     mock_api.return_value.user.check_user.return_value = {
 #         "user": 'testUser',
 #         "name": 'test user',
 #         "scopes": ['repo','workflow']
 #     }
 
-#     mock_api.return_value.get_recent_workflow.return_value = \
+#     mock_api.return_value.action.get_recent_workflow.return_value = \
 #         12345
 
-#     mock_api.return_value.fork_repository.return_value = \
+#     mock_api.return_value.repo.fork_repository.return_value = \
 #         'testOrg/targetRepo'
-#     mock_api.return_value.create_fork_pr.return_value = \
+#     mock_api.return_value.repo.create_fork_pr.return_value = \
 #         'https://github.com/testOrg/targetRepo/pulls/12'
 
 #     mock_api.return_value.proxies = {
@@ -77,16 +77,16 @@ def test_init():
 #     """Test creating a malicious fork PR
 #     """
 
-#     mock_api.return_value.check_user.return_value = {
+#     mock_api.return_value.user.check_user.return_value = {
 #         "user": 'testUser',
 #         "name": 'test user',
 #         "scopes": ['repo','workflow']
 #     }
 
-#     mock_api.return_value.fork_repository.return_value = \
+#     mock_api.return_value.repo.fork_repository.return_value = \
 #         'testOrg/targetRepo'
 
-#     mock_api.return_value.get_repository.return_value = \
+#     mock_api.return_value.repo.get_repository.return_value = \
 #         None
 
 #     mock_api.return_value.proxies = {
@@ -120,7 +120,7 @@ def test_init():
 #     """Test creating a malicious fork PR
 #     """
 
-#     mock_api.return_value.check_user.return_value = {
+#     mock_api.return_value.user.check_user.return_value = {
 #         "user": 'testUser',
 #         "name": 'test user',
 #         "scopes": ['repo']
@@ -149,11 +149,11 @@ def test_init():
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -161,13 +161,13 @@ async def test_push_workflow_attack(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.create_branch.return_value = True
-    mock_api.return_value.commit_file.return_value = (
+    mock_api.return_value.commit.create_branch.return_value = True
+    mock_api.return_value.commit.commit_file.return_value = (
         "8933f8abb60e4e02ae1b8dd3f109bc7b6812e54f"
     )
-    mock_api.return_value.get_recent_workflow.return_value = 1
-    mock_api.return_value.get_workflow_status.return_value = 1
-    mock_api.return_value.delete_branch.return_value = True
+    mock_api.return_value.action.get_recent_workflow.return_value = 1
+    mock_api.return_value.action.get_workflow_status.return_value = 1
+    mock_api.return_value.commit.delete_branch.return_value = True
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -187,11 +187,11 @@ async def test_push_workflow_attack(mock_api, mock_time, capsys):
     assert "Workflow still incomplete but hit timeout!" not in escape_ansi(print_output)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_perm(mock_api, capsys):
     """Test executing shell workflow attack with invalid permissions."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo"],
@@ -217,11 +217,11 @@ async def test_push_workflow_attack_perm(mock_api, capsys):
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_fail_wf(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -229,13 +229,13 @@ async def test_push_workflow_attack_fail_wf(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.create_branch.return_value = True
-    mock_api.return_value.commit_file.return_value = (
+    mock_api.return_value.commit.create_branch.return_value = True
+    mock_api.return_value.commit.commit_file.return_value = (
         "8933f8abb60e4e02ae1b8dd3f109bc7b6812e54f"
     )
-    mock_api.return_value.get_recent_workflow.return_value = -1
-    mock_api.return_value.get_workflow_status.return_value = 0
-    mock_api.return_value.delete_branch.return_value = True
+    mock_api.return_value.action.get_recent_workflow.return_value = -1
+    mock_api.return_value.action.get_workflow_status.return_value = 0
+    mock_api.return_value.commit.delete_branch.return_value = True
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -255,11 +255,11 @@ async def test_push_workflow_attack_fail_wf(mock_api, mock_time, capsys):
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_fail_timeout(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -267,13 +267,13 @@ async def test_push_workflow_attack_fail_timeout(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.create_branch.return_value = True
-    mock_api.return_value.commit_file.return_value = (
+    mock_api.return_value.commit.create_branch.return_value = True
+    mock_api.return_value.commit.commit_file.return_value = (
         "8933f8abb60e4e02ae1b8dd3f109bc7b6812e54f"
     )
-    mock_api.return_value.get_recent_workflow.return_value = 0
-    mock_api.return_value.get_workflow_status.return_value = 0
-    mock_api.return_value.delete_branch.return_value = True
+    mock_api.return_value.action.get_recent_workflow.return_value = 0
+    mock_api.return_value.action.get_workflow_status.return_value = 0
+    mock_api.return_value.commit.delete_branch.return_value = True
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -293,11 +293,11 @@ async def test_push_workflow_attack_fail_timeout(mock_api, mock_time, capsys):
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_fail_timeout2(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -305,13 +305,13 @@ async def test_push_workflow_attack_fail_timeout2(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.create_branch.return_value = True
-    mock_api.return_value.commit_file.return_value = (
+    mock_api.return_value.commit.create_branch.return_value = True
+    mock_api.return_value.commit.commit_file.return_value = (
         "8933f8abb60e4e02ae1b8dd3f109bc7b6812e54f"
     )
-    mock_api.return_value.get_recent_workflow.return_value = 1
-    mock_api.return_value.get_workflow_status.return_value = 0
-    mock_api.return_value.delete_branch.return_value = True
+    mock_api.return_value.action.get_recent_workflow.return_value = 1
+    mock_api.return_value.action.get_workflow_status.return_value = 0
+    mock_api.return_value.commit.delete_branch.return_value = True
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -331,11 +331,11 @@ async def test_push_workflow_attack_fail_timeout2(mock_api, mock_time, capsys):
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_fail_branch(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -343,7 +343,7 @@ async def test_push_workflow_attack_fail_branch(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.get_repo_branch.return_value = -1
+    mock_api.return_value.commit.get_repo_branch.return_value = -1
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -363,11 +363,11 @@ async def test_push_workflow_attack_fail_branch(mock_api, mock_time, capsys):
 
 
 @patch("gatox.attack.attack.asyncio.sleep")
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_push_workflow_attack_fail_branch2(mock_api, mock_time, capsys):
     """Test the shell workflow attack."""
 
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
@@ -375,7 +375,7 @@ async def test_push_workflow_attack_fail_branch2(mock_api, mock_time, capsys):
 
     mock_api.return_value.proxies = {"https": "http://localhost:8080"}
 
-    mock_api.return_value.get_repo_branch.return_value = 1
+    mock_api.return_value.commit.get_repo_branch.return_value = 1
 
     gh_attacker = Attacker(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",

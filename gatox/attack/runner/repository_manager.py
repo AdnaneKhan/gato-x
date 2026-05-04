@@ -91,7 +91,7 @@ class RepositoryManager:
         Returns:
             True if successful, False otherwise
         """
-        status = await self.api.commit_workflow(
+        status = await self.api.commit.commit_workflow(
             repo_name,
             source_branch,
             workflow_content,
@@ -127,7 +127,7 @@ class RepositoryManager:
         Returns:
             Pull request URL or None if failed
         """
-        pull_url = await self.api.create_pull_request(
+        pull_url = await self.api.repo.create_pull_request(
             repo_name,
             source_branch,
             target_repo,
@@ -155,7 +155,7 @@ class RepositoryManager:
         Returns:
             True if successful, False otherwise
         """
-        close_res = await self.api.backtrack_head(repo_name, source_branch, 1)
+        close_res = await self.api.commit.backtrack_head(repo_name, source_branch, 1)
         if close_res:
             Output.result("Successfully closed pull request!")
             return True
@@ -167,7 +167,7 @@ class RepositoryManager:
         self, target_repo: str, target_branch: str
     ) -> bool:
         """Validate that the target branch exists."""
-        res = await self.api.get_repo_branch(target_repo, target_branch)
+        res = await self.api.commit.get_repo_branch(target_repo, target_branch)
         if res == 0:
             Output.error(f"Target branch, {target_branch}, does not exist!")
             return False
@@ -178,7 +178,7 @@ class RepositoryManager:
 
     async def _fork_repository(self, target_repo: str) -> str | None:
         """Fork the target repository."""
-        repo_name = await self.api.fork_repository(target_repo)
+        repo_name = await self.api.repo.fork_repository(target_repo)
         if not repo_name:
             Output.error("Error while forking repository!")
             return None
@@ -188,7 +188,7 @@ class RepositoryManager:
         self, repo_name: str, source_branch: str
     ) -> bool:
         """Handle conflicts when the source branch already exists in the fork."""
-        branch_exists = await self.api.get_repo_branch(repo_name, source_branch)
+        branch_exists = await self.api.commit.get_repo_branch(repo_name, source_branch)
 
         if branch_exists == 1:
             Output.warn(f"Branch '{source_branch}' already exists in the fork!")
@@ -200,7 +200,7 @@ class RepositoryManager:
                 user_choice = input("Enter your choice (1 or 2): ").strip()
                 if user_choice == "1":
                     Output.info(f"Deleting existing branch '{source_branch}'...")
-                    delete_success = await self.api.delete_branch(
+                    delete_success = await self.api.commit.delete_branch(
                         repo_name, source_branch
                     )
                     if delete_success:
