@@ -1,8 +1,8 @@
 import re
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from gatox.attack.oidc.oidc_attack import OIDCAttack
-from gatox.github.api import Api
+from unit_test.api_mock import make_api_mock
 
 
 def escape_ansi(line):
@@ -73,18 +73,18 @@ def test_decode_jwt_claims_invalid():
     assert OIDCAttack._decode_jwt_claims("onlytwoparts") is None
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil(mock_api, capsys):
     """Test OIDC exfil full flow."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
-    mock_api.return_value.retrieve_workflow_artifact.return_value = {
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
+    mock_api.return_value.action.retrieve_workflow_artifact.return_value = {
         "oidc_token.txt": MOCK_JWT.encode(),
     }
 
@@ -105,21 +105,21 @@ async def test_oidc_exfil(mock_api, capsys):
     assert MOCK_JWT in output
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_delete_run(mock_api, capsys):
     """Test OIDC exfil with workflow deletion."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
-    mock_api.return_value.retrieve_workflow_artifact.return_value = {
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
+    mock_api.return_value.action.retrieve_workflow_artifact.return_value = {
         "oidc_token.txt": MOCK_JWT.encode(),
     }
-    mock_api.return_value.delete_workflow_run.return_value = True
+    mock_api.return_value.action.delete_workflow_run.return_value = True
 
     gh_attacker = OIDCAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -131,13 +131,13 @@ async def test_oidc_exfil_delete_run(mock_api, capsys):
         "targetRepo", None, None, True, "oidc_exfil", "sigstore"
     )
 
-    mock_api.return_value.delete_workflow_run.assert_called_once()
+    mock_api.return_value.action.delete_workflow_run.assert_called_once()
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_baduser(mock_api, capsys):
     """Test OIDC exfil with insufficient token scopes."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo"],
@@ -157,15 +157,15 @@ async def test_oidc_exfil_baduser(mock_api, capsys):
     assert "does not have the necessary scopes" in escape_ansi(captured.out)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_branchexist(mock_api, capsys):
     """Test OIDC exfil where target branch already exists."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 1
+    mock_api.return_value.commit.get_repo_branch.return_value = 1
 
     gh_attacker = OIDCAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -181,15 +181,15 @@ async def test_oidc_exfil_branchexist(mock_api, capsys):
     assert "Remote branch, exfilbranch, already exists!" in escape_ansi(captured.out)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_branchfail(mock_api, capsys):
     """Test OIDC exfil where branch check fails."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = -1
+    mock_api.return_value.commit.get_repo_branch.return_value = -1
 
     gh_attacker = OIDCAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -205,18 +205,18 @@ async def test_oidc_exfil_branchfail(mock_api, capsys):
     assert "Failed to check for remote branch!" in escape_ansi(captured.out)
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_no_artifact(mock_api, capsys):
     """Test OIDC exfil when artifact retrieval fails."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
-    mock_api.return_value.retrieve_workflow_artifact.return_value = {}
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
+    mock_api.return_value.action.retrieve_workflow_artifact.return_value = {}
 
     gh_attacker = OIDCAttack(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -239,20 +239,20 @@ MOCK_JWT_2 = (
 )
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_environments(mock_api, capsys):
     """Test OIDC exfil with environments de-duplicates identical tokens."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
 
     # production has a unique token; staging has a different token
-    mock_api.return_value.retrieve_all_workflow_artifacts.return_value = {
+    mock_api.return_value.action.retrieve_all_workflow_artifacts.return_value = {
         "files-production": {"oidc_token.txt": MOCK_JWT.encode()},
         "files-staging": {"oidc_token.txt": MOCK_JWT_2.encode()},
     }
@@ -283,19 +283,19 @@ async def test_oidc_exfil_environments(mock_api, capsys):
     assert "staging" in output
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_oidc_exfil_environments_dedup(mock_api, capsys):
     """Test OIDC exfil de-duplicates when two environments return the same token."""
-    mock_api.return_value.check_user.return_value = {
+    mock_api.return_value.user.check_user.return_value = {
         "user": "testUser",
         "name": "test user",
         "scopes": ["repo", "workflow"],
     }
-    mock_api.return_value.get_repo_branch.return_value = 0
-    mock_api.return_value.get_recent_workflow.return_value = 11111111
-    mock_api.return_value.get_workflow_status.return_value = 1
+    mock_api.return_value.commit.get_repo_branch.return_value = 0
+    mock_api.return_value.action.get_recent_workflow.return_value = 11111111
+    mock_api.return_value.action.get_workflow_status.return_value = 1
 
-    mock_api.return_value.retrieve_all_workflow_artifacts.return_value = {
+    mock_api.return_value.action.retrieve_all_workflow_artifacts.return_value = {
         "files-production": {"oidc_token.txt": MOCK_JWT.encode()},
         "files-staging": {"oidc_token.txt": MOCK_JWT.encode()},
     }

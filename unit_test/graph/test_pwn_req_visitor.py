@@ -5,10 +5,10 @@ import pytest
 from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
-from gatox.github.api import Api
 from gatox.workflow_graph.graph.tagged_graph import TaggedGraph
 from gatox.workflow_graph.visitors.pwn_request_visitor import PwnRequestVisitor
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
+from unit_test.api_mock import make_api_mock
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def mock_graph():
 
 @pytest.fixture
 def mock_api():
-    return MagicMock(spec=Api)
+    return make_api_mock()
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ async def test_process_single_path_with_permission_check(
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
 
     # Mock API calls
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -171,7 +171,7 @@ async def test_process_single_path_blocker_breaks_execution(
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
 
     # Mock API calls
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -246,7 +246,7 @@ async def test_process_single_path_approval_gate_affects_complexity(
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
 
     # Mock API calls
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -312,7 +312,7 @@ async def test_process_single_path_job_node_with_deployments(
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
 
     # Mock API to return environment rules that include our deployment
-    mock_api.get_all_environment_protection_rules.return_value = {
+    mock_api.action.get_all_environment_protection_rules.return_value = {
         "production": {"required_reviewers": 1}
     }
 
@@ -331,7 +331,7 @@ async def test_process_single_path_job_node_with_deployments(
         )
 
         # Should call API to get environment protection rules
-        mock_api.get_all_environment_protection_rules.assert_called_once_with(
+        mock_api.action.get_all_environment_protection_rules.assert_called_once_with(
             "test/repo"
         )
 
@@ -384,7 +384,7 @@ async def test_process_single_path_job_node_with_outputs_and_env_lookup(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -443,7 +443,7 @@ async def test_process_single_path_step_node_with_outputs_and_env(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -491,7 +491,7 @@ async def test_process_single_path_workflow_node_fork_repository(mock_graph, moc
         path = [workflow_node, step_node]
 
         mock_graph.dfs_to_tag.return_value = []
-        mock_api.get_all_environment_protection_rules.return_value = {}
+        mock_api.action.get_all_environment_protection_rules.return_value = {}
 
         results = {}
         rule_cache = {}
@@ -524,7 +524,7 @@ async def test_process_single_path_workflow_node_excluded(
     path = [workflow_node, step_node]
 
     mock_graph.dfs_to_tag.return_value = []
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -573,7 +573,7 @@ async def test_process_single_path_workflow_node_labeled_trigger(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -626,7 +626,7 @@ async def test_process_single_path_workflow_run_trigger(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -676,7 +676,7 @@ async def test_process_single_path_step_node_hard_gate(
     path = [workflow_node, hard_gate_step, checkout_step]
 
     mock_graph.dfs_to_tag.return_value = []
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -729,7 +729,7 @@ async def test_process_single_path_step_node_soft_gate(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -785,7 +785,7 @@ async def test_process_single_path_action_node_initialization(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -840,7 +840,7 @@ async def test_process_single_path_checkout_with_env_metadata(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -891,7 +891,7 @@ async def test_process_single_path_no_sinks_unknown_confidence(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}
@@ -1008,7 +1008,7 @@ async def test_process_single_path_deployment_rule_substring_match(
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
     # The rule is 'prod', which is a substring of 'production'
-    mock_api.get_all_environment_protection_rules.return_value = ["prod"]
+    mock_api.action.get_all_environment_protection_rules.return_value = ["prod"]
 
     results = {}
     rule_cache = {}
@@ -1079,7 +1079,7 @@ async def test_process_single_path_multiple_triggers_partial_exclusion(
         return []
 
     mock_graph.dfs_to_tag.side_effect = mock_dfs_side_effect
-    mock_api.get_all_environment_protection_rules.return_value = {}
+    mock_api.action.get_all_environment_protection_rules.return_value = {}
 
     results = {}
     rule_cache = {}

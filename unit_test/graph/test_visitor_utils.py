@@ -1,5 +1,5 @@
 import types
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -8,7 +8,6 @@ from gatox.enumerate.results.complexity import Complexity
 from gatox.enumerate.results.confidence import Confidence
 from gatox.enumerate.results.issue_type import IssueType
 from gatox.enumerate.results.result_factory import ResultFactory
-from gatox.github.api import Api
 from gatox.models.workflow import Workflow
 from gatox.workflow_graph.graph_builder import WorkflowGraphBuilder
 from gatox.workflow_graph.nodes.action import ActionNode
@@ -16,6 +15,7 @@ from gatox.workflow_graph.nodes.job import JobNode
 from gatox.workflow_graph.nodes.step import StepNode
 from gatox.workflow_graph.nodes.workflow import WorkflowNode
 from gatox.workflow_graph.visitors.visitor_utils import VisitorUtils
+from unit_test.api_mock import make_api_mock
 
 
 class DummyNode:
@@ -74,7 +74,7 @@ class DummyCacheManager:
 
 @pytest.fixture
 def mock_api():
-    return MagicMock(spec=Api)
+    return make_api_mock()
 
 
 def test_add_results():
@@ -264,7 +264,7 @@ async def test_add_repo_results_file_caching(monkeypatch):
     # Create a mock API that counts calls
     api_call_count = {"get_file_last_updated": 0, "get_commit_merge_date": 0}
 
-    class TrackingApi:
+    class CommitNamespace:
         async def get_file_last_updated(self, repo, file_path):
             api_call_count["get_file_last_updated"] += 1
             return ("2025-05-16T12:00:00Z", "author", "sha123")
@@ -272,6 +272,9 @@ async def test_add_repo_results_file_caching(monkeypatch):
         async def get_commit_merge_date(self, repo, sha):
             api_call_count["get_commit_merge_date"] += 1
             return "2025-05-16T13:00:00Z"
+
+    class TrackingApi:
+        commit = CommitNamespace()
 
     # Create results that reference the same workflow file
     class SameFileResult:
@@ -335,13 +338,16 @@ async def test_add_repo_results_different_files_cache(monkeypatch):
     # Create a mock API that counts calls
     api_call_count = {"get_file_last_updated": 0}
 
-    class TrackingApi:
+    class CommitNamespace:
         async def get_file_last_updated(self, repo, file_path):
             api_call_count["get_file_last_updated"] += 1
             return ("2025-05-16T12:00:00Z", "author", "sha123")
 
         async def get_commit_merge_date(self, repo, sha):
             return "2025-05-16T13:00:00Z"
+
+    class TrackingApi:
+        commit = CommitNamespace()
 
     # Create results that reference different workflow files
     class DifferentFileResult:

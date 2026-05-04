@@ -41,13 +41,13 @@ async def test_assemble_repo_list():
     test_private_repodata["visibility"] = "private"
     test_private_repodata["private"] = True
 
-    mock_api.check_org_repos.side_effect = [
+    mock_api.org.check_org_repos.side_effect = [
         [test_private_repodata],
         [],
         [TEST_REPO_DATA],
     ]
 
-    mock_api.validate_sso.return_value = True
+    mock_api.org.validate_sso.return_value = True
 
     gh_enumeration_runner = OrganizationEnum(mock_api)
 
@@ -70,7 +70,7 @@ async def test_admin_enum():
         TEST_ORG_DATA, user_scopes=["repo", "workflow", "admin:org"]
     )
 
-    mock_api.check_org_runners.return_value = {
+    mock_api.org.check_org_runners.return_value = {
         "total_count": 1,
         "runners": [
             {
@@ -88,7 +88,7 @@ async def test_admin_enum():
         ],
     }
 
-    mock_api.get_org_secrets.return_value = [
+    mock_api.org.get_org_secrets.return_value = [
         {
             "name": "DEPLOY_TOKEN",
             "created_at": "2019-08-10T14:59:22Z",

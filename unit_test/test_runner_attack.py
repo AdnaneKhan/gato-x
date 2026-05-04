@@ -1,10 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from gatox.attack.runner.webshell import WebShell
-from gatox.github.api import Api
+from unit_test.api_mock import make_api_mock
 
 
-@patch("gatox.attack.attack.Api", return_value=AsyncMock(Api))
+@patch("gatox.attack.attack.Api", return_value=make_api_mock())
 async def test_shell_workflow_attack(mock_api):
     """
     Test the webshell attack on a workflow.
