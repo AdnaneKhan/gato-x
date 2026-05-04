@@ -128,6 +128,11 @@ def validate_arguments(args, parser):
     if hasattr(args, "app") and args.app is not None:
         # App command uses App ID + PEM file instead of GH_TOKEN
         gh_token = None  # App command doesn't use this
+    elif getattr(args, "local", None):
+        # Local-only enumeration: no GitHub token is required because the
+        # local enumerator never reaches out to the API. Allow it to be
+        # absent without prompting.
+        gh_token = os.environ.get("GH_TOKEN")
     else:
         # Regular commands need GH_TOKEN
         if "GH_TOKEN" not in os.environ:
@@ -494,8 +499,26 @@ async def enumerate_classic(args, parser):
 async def enumerate(args, parser):
     parser = parser.choices["enumerate"]
 
-    if not (
+    local_path = getattr(args, "local", None)
+
+    # --local is mutually exclusive with all GitHub-API enumeration modes.
+    if local_path and (
         args.target
+        or args.self_enumeration
+        or args.repository
+        or args.repositories
+        or args.validate
+        or args.commit
+    ):
+        parser.error(
+            f"{Fore.RED}[-]{Style.RESET_ALL} --local cannot be combined with "
+            "--target/-t, --repository/-r, --repositories/-R, "
+            "--self-enumeration, --validate or --commit."
+        )
+
+    if not (
+        local_path
+        or args.target
         or args.self_enumeration
         or args.repository
         or args.repositories
@@ -510,6 +533,7 @@ async def enumerate(args, parser):
     enumeration_count = sum(
         bool(x)
         for x in [
+            local_path,
             args.target,
             args.self_enumeration,
             args.repository or args.commit,  # repository and commit work together
@@ -527,10 +551,57 @@ async def enumerate(args, parser):
         LocalCacheFactory.load_cache_from_file(args.cache_restore_file)
         Output.info(f"Cache restored from file:{args.cache_restore_file}")
 
+    if local_path:
+        await enumerate_local(args, parser)
+        return
+
     if "github_pat" in args.gh_token:
         await enumerate_finegrained(args, parser)
     else:
         await enumerate_classic(args, parser)
+
+
+async def enumerate_local(args, parser):
+    """Drive the offline local-repository enumerator.
+
+    No network requests are issued; checks that depend on the GitHub API are
+    skipped and counted in a banner emitted when the run finishes. This
+    handler exists alongside the classic/fine-grained enumerators so the
+    existing code paths stay untouched.
+    """
+    from gatox.enumerate.local_enumerate import LocalEnumerator
+    from gatox.models.execution import Execution
+
+    runner = LocalEnumerator(
+        args.local,
+        recursive=getattr(args, "local_recursive", False),
+        ignore_workflow_run=args.ignore_workflow_run,
+    )
+
+    try:
+        repos = await runner.enumerate()
+    except (FileNotFoundError, NotADirectoryError) as e:
+        parser.error(f"{Fore.RED}[-]{Style.RESET_ALL} {e}")
+        return
+
+    if args.output_yaml:
+        save_workflow_ymls(args.output_yaml)
+
+    exec_wrapper = Execution()
+    exec_wrapper.set_user_details(runner.user_perms)
+    exec_wrapper.add_repositories(repos)
+
+    try:
+        if args.output_json:
+            Output.write_json(exec_wrapper, args.output_json)
+    except Exception:
+        Output.error(
+            "Encountered an error writing the output JSON, this is likely a Gato-X bug."
+        )
+
+    if args.cache_save_file:
+        LocalCacheFactory.dump_cache(args.cache_save_file)
+        Output.info(f"Cache saved to file:{args.cache_save_file}")
 
 
 async def search(args, parser):

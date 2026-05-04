@@ -128,3 +128,29 @@ def configure_parser_enumerate(parser):
         metavar="JSON_FILE",
         type=WritablePath(),
     )
+
+    parser.add_argument(
+        "--local",
+        "-L",
+        help=(
+            "Scan one or more local repository checkouts instead of calling\n"
+            "the GitHub API. PATH may point to a single repo (containing\n"
+            f".github/workflows/) or to a parent directory holding multiple\n"
+            "repository sub-directories. No network requests are made; checks\n"
+            "that require the GitHub API are skipped and counted in a banner.\n"
+            f"GH_TOKEN is {Output.bright('not')} required when only --local is used."
+        ),
+        metavar=f"{Fore.RED}PATH{Style.RESET_ALL}",
+        type=StringType(4096),
+    )
+
+    parser.add_argument(
+        "--local-recursive",
+        help=(
+            "When used with --local, recursively descend into the local PATH\n"
+            "looking for repositories with .github/workflows/ instead of only\n"
+            "checking immediate subdirectories."
+        ),
+        action="store_true",
+        default=False,
+    )
