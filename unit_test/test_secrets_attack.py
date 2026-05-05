@@ -26,7 +26,7 @@ def test_create_secret_exil_yaml():
     yaml = attacker.create_exfil_yaml(pub, "evilBranch")
 
     assert "${{ toJSON(secrets)}}" in yaml
-    assert "actions/upload-artifact@v4" in yaml
+    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in yaml
     assert "name: files\n" in yaml
     assert "matrix" not in yaml
 
