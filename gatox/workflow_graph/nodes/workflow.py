@@ -160,6 +160,8 @@ class WorkflowNode(Node):
                         ):
                             self.__excluded_triggers.add(trigger)
                         extracted_triggers.append(trigger)
+                elif trigger == "release":
+                    extracted_triggers.append(trigger)
                 else:
                     extracted_triggers.append(trigger)
 
