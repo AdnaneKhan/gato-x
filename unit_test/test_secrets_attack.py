@@ -1,5 +1,14 @@
+import hashlib
+import os
 import re
+import shutil
+import subprocess
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+import yaml as yaml_parser
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from gatox.attack.secrets.secrets_attack import SecretsAttack
 from gatox.github.api import Api
@@ -28,7 +37,23 @@ def test_create_secret_exil_yaml():
     assert "${{ toJSON(secrets)}}" in yaml
     assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in yaml
     assert "name: files\n" in yaml
+    assert "output_updated.hmac" in yaml
     assert "matrix" not in yaml
+
+
+def test_create_secret_exfil_yaml_uses_authenticated_encryption():
+    """Test generated workflow authenticates artifacts before exfil."""
+    _, pub = SecretsAttack._SecretsAttack__create_private_key()
+
+    yaml_str = SecretsAttack.create_exfil_yaml(pub, "evilBranch")
+
+    assert "openssl pkeyutl -encrypt" in yaml_str
+    assert "rsa_padding_mode:oaep" in yaml_str
+    assert "rsa_oaep_md:sha256" in yaml_str
+    assert "rsa_mgf1_md:sha256" in yaml_str
+    assert "openssl dgst -sha256 -mac HMAC" in yaml_str
+    assert "output_updated.hmac" in yaml_str
+    assert "rsautl" not in yaml_str
 
 
 def test_create_secret_exfil_yaml_environments():
@@ -44,6 +69,104 @@ def test_create_secret_exfil_yaml_environments():
     assert "staging" in yaml_str
     assert "files-${{ matrix.safe_name }}" in yaml_str
     assert "environment: ${{ matrix.environment }}" in yaml_str
+
+
+def _build_legacy_secrets_artifact(priv_key, payload):
+    """Build a legacy OpenSSL enc-compatible secrets artifact."""
+    salt = b"12345678"
+    sym_key = b"legacy-test-key"
+    derived_key = hashlib.pbkdf2_hmac("sha256", sym_key, salt, 10000, 48)
+    key = derived_key[0:32]
+    iv = derived_key[32:48]
+    padding_length = 16 - (len(payload) % 16)
+    padded_payload = payload + bytes([padding_length]) * padding_length
+
+    cipher = Cipher(algorithms.AES256(key), modes.CBC(iv))
+    encryptor = cipher.encryptor()
+    encrypted_payload = encryptor.update(padded_payload) + encryptor.finalize()
+
+    encrypted_key = priv_key.public_key().encrypt(sym_key, padding.PKCS1v15())
+    encrypted_secrets = b"Salted__" + salt + encrypted_payload
+
+    return encrypted_key, encrypted_secrets
+
+
+def test_decrypt_secrets_supports_legacy_artifact():
+    """Test existing legacy artifacts can still be decrypted."""
+    priv, _ = SecretsAttack._SecretsAttack__create_private_key()
+    payload = b'{"TEST_SECRET":"TEST_VALUE"}'
+    encrypted_key, encrypted_secrets = _build_legacy_secrets_artifact(priv, payload)
+
+    cleartext = SecretsAttack._SecretsAttack__decrypt_secrets(
+        priv,
+        encrypted_key,
+        encrypted_secrets,
+    )
+
+    assert cleartext == payload
+
+
+@pytest.mark.skipif(
+    shutil.which("bash") is None or shutil.which("openssl") is None,
+    reason="bash and openssl are required to exercise the generated workflow step",
+)
+def test_decrypt_secrets_round_trips_authenticated_openssl_artifact(tmp_path):
+    """Test generated OpenSSL commands produce decryptable authenticated artifacts."""
+    priv, pub = SecretsAttack._SecretsAttack__create_private_key()
+    payload = b'{"TEST_SECRET":"TEST_VALUE"}'
+    workflow = yaml_parser.safe_load(SecretsAttack.create_exfil_yaml(pub, "evilBranch"))
+    run_script = workflow["jobs"]["testing"]["steps"][1]["run"]
+
+    (tmp_path / "output.json").write_bytes(payload)
+    subprocess.run(
+        [shutil.which("bash"), "-c", f"set -euo pipefail\n{run_script}"],
+        cwd=tmp_path,
+        env={**os.environ, "PUBKEY": pub},
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    cleartext = SecretsAttack._SecretsAttack__decrypt_secrets(
+        priv,
+        (tmp_path / "lookup.txt").read_bytes(),
+        (tmp_path / "output_updated.json").read_bytes(),
+        (tmp_path / "output_updated.hmac").read_bytes(),
+    )
+
+    assert cleartext == payload
+
+
+@pytest.mark.skipif(
+    shutil.which("bash") is None or shutil.which("openssl") is None,
+    reason="bash and openssl are required to exercise the generated workflow step",
+)
+def test_decrypt_secrets_rejects_tampered_authenticated_artifact(tmp_path):
+    """Test authenticated artifacts fail closed when ciphertext changes."""
+    priv, pub = SecretsAttack._SecretsAttack__create_private_key()
+    workflow = yaml_parser.safe_load(SecretsAttack.create_exfil_yaml(pub, "evilBranch"))
+    run_script = workflow["jobs"]["testing"]["steps"][1]["run"]
+
+    (tmp_path / "output.json").write_bytes(b'{"TEST_SECRET":"TEST_VALUE"}')
+    subprocess.run(
+        [shutil.which("bash"), "-c", f"set -euo pipefail\n{run_script}"],
+        cwd=tmp_path,
+        env={**os.environ, "PUBKEY": pub},
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    encrypted_secrets = bytearray((tmp_path / "output_updated.json").read_bytes())
+    encrypted_secrets[-1] ^= 1
+
+    with pytest.raises(ValueError, match="HMAC"):
+        SecretsAttack._SecretsAttack__decrypt_secrets(
+            priv,
+            (tmp_path / "lookup.txt").read_bytes(),
+            bytes(encrypted_secrets),
+            (tmp_path / "output_updated.hmac").read_bytes(),
+        )
 
 
 @patch(
@@ -83,6 +206,7 @@ w1M8xrm+PUM5qaWCANScuX8CAwEAAQ==
     mock_api.return_value.retrieve_workflow_artifact.return_value = {
         "lookup.txt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         "output_updated.json": "A" * 100,
+        "output_updated.hmac": "B" * 32,
     }
     mock_api.return_value.get_recent_workflow.return_value = 11111111
     mock_api.return_value.get_workflow_status.return_value = 1
@@ -250,10 +374,12 @@ async def test_secrets_dump_environments(mock_api, mock_privkey, mock_dec, capsy
         "files-staging": {
             "lookup.txt": b"key",
             "output_updated.json": b"enc",
+            "output_updated.hmac": b"hmac",
         },
         "files-production": {
             "lookup.txt": b"key",
             "output_updated.json": b"enc",
+            "output_updated.hmac": b"hmac",
         },
     }
 

