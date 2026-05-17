@@ -95,7 +95,7 @@ jobs:
             ./dist/*.tar.gz
             ./dist/*.whl
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
         with:
           tag_name: v${{ needs.check_version.outputs.version }}
           name: Gato-X Release v${{ needs.check_version.outputs.version }}
