@@ -118,7 +118,8 @@ class DataIngestor:
     @classmethod
     async def perform_query(cls, api, work_query, batch):
         """
-        Performs a GraphQL query of repositories with up to 3 attempts, increasing the sleep timer from 4, 8, and then finally 16 seconds.
+        Performs a GraphQL query of repositories with up to 4 attempts,
+        increasing the sleep timer from 4, 8, and then finally 16 seconds.
 
         Args:
             api (object): The API client used to make the POST requests.
@@ -126,11 +127,13 @@ class DataIngestor:
             batch (int): The batch number for which the query is being performed.
 
         Returns:
-            list or dict: The nodes or values from the query result if successful, otherwise None.
-
-        Raises:
-            Exception: If an error occurs during the query execution.
+            dict with keys:
+                "success": bool - True if query returned data.
+                "data": list or None - The nodes/values from the result.
+                "should_split": bool - True if 502/503 errors suggest
+                    batch is too large and should be split.
         """
+        any_gateway_errors = False
         try:
             for _ in range(0, 4):
                 # We lock if another thread is sleeping due to a rate limit
@@ -150,12 +153,17 @@ class DataIngestor:
                     json_res = result.json()["data"]
                     await cls.update_count()
                     if "nodes" in json_res:
-                        return result.json()["data"]["nodes"]
+                        data = result.json()["data"]["nodes"]
                     else:
-                        return result.json()["data"].values()
+                        data = list(result.json()["data"].values())
+                    return {"success": True, "data": data, "should_split": False}
                 elif result.status_code == 403:
                     async with cls.__rl_lock:
                         await asyncio.sleep(15 + random.randint(0, 3))
+                elif result.status_code in (502, 503):
+                    # 502/503 suggest batch is too large
+                    any_gateway_errors = True
+                    await asyncio.sleep(10 + random.randint(0, 3))
                 else:
                     # Add some jitter
                     await asyncio.sleep(10 + random.randint(0, 3))
@@ -163,12 +171,18 @@ class DataIngestor:
             Output.warn(
                 f"GraphQL attempts failed for batch {str(batch)}, will revert to REST for impacted repos."
             )
+            return {
+                "success": False,
+                "data": None,
+                "should_split": any_gateway_errors,
+            }
         except Exception as e:
             Output.warn(
                 "Exception while running GraphQL query, will revert to REST "
                 "API workflow query for impacted repositories!"
             )
             logger.warning(f"{type(e)}: {str(e)}")
+            return {"success": False, "data": None, "should_split": False}
 
     @staticmethod
     async def construct_workflow_cache(yml_results):

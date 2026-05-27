@@ -161,30 +161,34 @@ class GqlQueries:
     """
 
     @staticmethod
-    def get_workflow_ymls_from_list(repos: list):
+    def get_workflow_ymls_from_list(repos: list, batch_size: int = 50):
         """
         Constructs a list of GraphQL queries to fetch workflow YAML
         files from a list of repositories.
 
         This method splits the list of repositories into chunks of
-        up to 100 repositories each, and constructs a separate
+        up to batch_size repositories each, and constructs a separate
         GraphQL query for each chunk. Each query fetches the workflow
         YAML files from the repositories in one chunk.
 
         Args:
             repos (list): A list of repository slugs, where each
             slug is a string in the format "owner/name".
+            batch_size (int, optional): Maximum number of repos per
+            GraphQL query. Defaults to 50.
 
         Returns:
-            list: A list of dictionaries, where each dictionary
-            contains a single GraphQL query in the format:
-            {"query": "<GraphQL query string>"}.
+            tuple: (queries, repo_groups) where:
+                queries (list): List of dicts with "query" key.
+                repo_groups (list): List of lists, where
+                repo_groups[i] contains the repo slugs from queries[i].
         """
 
         queries = []
+        repo_groups = []
 
-        for i in range(0, len(repos), 50):
-            chunk = repos[i : i + 50]
+        for i in range(0, len(repos), batch_size):
+            chunk = repos[i : i + batch_size]
             repo_queries = []
 
             for j, repo in enumerate(chunk):
@@ -204,32 +208,42 @@ class GqlQueries:
                     + "\n}"
                 }
             )
+            repo_groups.append(list(chunk))
 
-        return queries
+        return queries, repo_groups
 
     @staticmethod
-    def get_workflow_ymls(repos: list):
+    def get_workflow_ymls(repos: list, batch_size: int = 50):
         """Retrieve workflow yml files for each repository.
 
         Args:
             repos (List[Repository]): List of repository objects
+            batch_size (int, optional): Maximum number of repos per
+            GraphQL query. Defaults to 50.
+
         Returns:
-            (list): List of JSON post parameters for each graphQL query.
+            tuple: (queries, repo_groups) where:
+                queries (list): List of JSON post parameters for
+                each GraphQL query.
+                repo_groups (list): List of lists, where
+                repo_groups[i] contains the Repository objects
+                from queries[i].
         """
         queries = []
+        repo_groups = []
 
         if len(repos) == 0:
-            return queries
+            return queries, repo_groups
 
-        for i in range(0, (len(repos) // 100) + 1):
-            top_len = len(repos) if len(repos) < 100 * (i + 1) else 100 * (i + 1)
+        for i in range(0, len(repos), batch_size):
+            chunk = repos[i : i + batch_size]
             # Use reduce to accumulate node_ids and can_push in a single iteration
             node_ids, can_push = reduce(
                 lambda acc, repo: (
                     acc[0] + [repo.repo_data["node_id"]],
                     acc[1] or repo.can_push(),
                 ),
-                repos[100 * i : top_len],
+                chunk,
                 ([], False),
             )
 
@@ -241,4 +255,6 @@ class GqlQueries:
             }
 
             queries.append(query)
-        return queries
+            repo_groups.append(list(chunk))
+
+        return queries, repo_groups

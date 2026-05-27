@@ -143,40 +143,89 @@ class Enumerator:
 
         return True
 
-    async def __query_graphql_workflows(self, queries):
+    async def __query_graphql_workflows(self, queries, repo_groups=None):
         """
         Query workflows using the GitHub GraphQL API.
 
-        This method performs an IO-heavy operation by querying workflows in batches.
-        It utilizes a semaphore to limit concurrent execution to 4 workers.
+        This method performs an IO-heavy operation by querying workflows
+        in batches, with adaptive re-splitting when GitHub returns 502
+        errors (indicating the batch is too large). It utilizes a
+        semaphore to limit concurrent execution to 4 workers.
 
         Args:
-            queries (List[Any]): A list of GraphQL query objects to be executed.
+            queries (list): A list of GraphQL query dicts to execute.
+            repo_groups (list, optional): Parallel list where
+                repo_groups[i] contains the Repository objects or repo
+                slugs that were batched into queries[i]. Required for
+                adaptive re-splitting on 502 errors.
 
         Returns:
             None
-
-        Raises:
-            Exception: Propagates any exceptions raised during the query execution.
         """
+        if repo_groups is None:
+            repo_groups = [None] * len(queries)
+
         Output.info(f"Querying repositories in {len(queries)} batches!")
         semaphore = asyncio.Semaphore(4)
-        tasks = []
 
-        async def bounded_query(query, i):
+        async def bounded_query(query, idx):
             async with semaphore:
-                return await DataIngestor.perform_query(self.api, query, i)
+                result = await DataIngestor.perform_query(self.api, query, idx)
+                return idx, result
 
-        for i, wf_query in enumerate(queries):
-            tasks.append(bounded_query(wf_query, i))
+        tasks = [bounded_query(wf_query, i) for i, wf_query in enumerate(queries)]
+        total_batches = len(queries)
 
         for coro in asyncio.as_completed(tasks):
-            result = await coro
+            i, result = await coro
             Output.info(
-                f"Processed {DataIngestor.check_status()}/{len(queries)} batches.",
+                f"Processed {DataIngestor.check_status()}/{total_batches} batches.",
                 end="\r",
             )
-            await DataIngestor.construct_workflow_cache(result)
+
+            if result["success"]:
+                await DataIngestor.construct_workflow_cache(result["data"])
+            elif result["should_split"] and repo_groups[i] is not None:
+                repos = repo_groups[i]
+                if len(repos) <= 3:
+                    Output.warn(
+                        f"GraphQL batch of {len(repos)} repos failed "
+                        "with 502 but batch is already at minimum "
+                        "size. Falling back to REST for these repos."
+                    )
+                    await DataIngestor.construct_workflow_cache(None)
+                    continue
+
+                mid = len(repos) // 2
+                half1 = repos[:mid]
+                half2 = repos[mid:]
+
+                Output.info(
+                    f"Batch {i} returned 502, splitting "
+                    f"{len(repos)} repos into smaller batches..."
+                )
+
+                # Determine whether repos are Repository objects or
+                # string slugs and call the appropriate query builder.
+                if isinstance(half1[0], Repository):
+                    sub_queries, sub_groups = GqlQueries.get_workflow_ymls(
+                        half1, batch_size=len(half1)
+                    )
+                else:
+                    sub_queries, sub_groups = GqlQueries.get_workflow_ymls_from_list(
+                        half1, batch_size=len(half1)
+                    )
+                await self.__query_graphql_workflows(sub_queries, sub_groups)
+
+                if isinstance(half2[0], Repository):
+                    sub_queries, sub_groups = GqlQueries.get_workflow_ymls(
+                        half2, batch_size=len(half2)
+                    )
+                else:
+                    sub_queries, sub_groups = GqlQueries.get_workflow_ymls_from_list(
+                        half2, batch_size=len(half2)
+                    )
+                await self.__query_graphql_workflows(sub_queries, sub_groups)
 
     async def __retrieve_missing_ymls(self, repo_name: str):
         """ """
@@ -463,8 +512,8 @@ class Enumerator:
         )
 
         Output.info("Querying and caching workflow YAML files!")
-        wf_queries = GqlQueries.get_workflow_ymls(enum_list)
-        await self.__query_graphql_workflows(wf_queries)
+        wf_queries, wf_repo_groups = GqlQueries.get_workflow_ymls(enum_list)
+        await self.__query_graphql_workflows(wf_queries, wf_repo_groups)
         await self.__finalize_caches(enum_list)
 
         await self.process_graph()
@@ -558,8 +607,8 @@ class Enumerator:
             f"Querying and caching workflow YAML files "
             f"from {len(repo_names)} repositories!"
         )
-        queries = GqlQueries.get_workflow_ymls_from_list(repo_names)
-        await self.__query_graphql_workflows(queries)
+        queries, repo_groups = GqlQueries.get_workflow_ymls_from_list(repo_names)
+        await self.__query_graphql_workflows(queries, repo_groups)
         for repo in repo_names:
             await self.__retrieve_missing_ymls(repo)
 
