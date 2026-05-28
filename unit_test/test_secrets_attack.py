@@ -31,6 +31,33 @@ def test_create_secret_exil_yaml():
     assert "matrix" not in yaml
 
 
+def test_exfil_yaml_does_not_write_plaintext_to_disk():
+    """Regression: plaintext secrets must never be written to the runner workspace.
+
+    An earlier version wrote ${{ toJSON(secrets) }} to output.json via
+    `cat <<EOF > output.json` and never removed it; on a self-hosted runner
+    the workspace persists between jobs, so the plaintext was readable by
+    later jobs / anyone with runner shell access. The fix pipes $VALUES
+    directly into openssl enc via stdin.
+    """
+    import yaml as _yaml
+
+    _priv, pub = SecretsAttack._SecretsAttack__create_private_key()
+    yaml_str = SecretsAttack.create_exfil_yaml(pub, "evilBranch")
+    workflow = _yaml.safe_load(yaml_str)
+    steps = workflow["jobs"]["testing"]["steps"]
+    run_commands = " ".join(s["run"] for s in steps if "run" in s)
+
+    assert (
+        "output.json" not in run_commands
+    ), "plaintext file output.json must not appear in any run command"
+    assert (
+        "cat <<EOF" not in run_commands
+    ), "heredoc-to-file pattern leaks plaintext on the runner"
+    # Ciphertext piped via stdin — plaintext stays in process memory only.
+    assert 'printf %s "$VALUES" | openssl enc' in run_commands
+
+
 def test_create_secret_exfil_yaml_environments():
     """Test YAML generation includes a matrix when environments are provided."""
     priv, pub = SecretsAttack._SecretsAttack__create_private_key()

