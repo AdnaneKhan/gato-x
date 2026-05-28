@@ -7,6 +7,7 @@ from pathlib import Path
 from colorama import Fore, Style
 
 from gatox.attack.attack import Attacker
+from gatox.attack.cicd.release_booby_trap import ReleaseBoobyTrapAttack
 from gatox.attack.oidc.oidc_attack import OIDCAttack
 from gatox.attack.persistence.persistence_attack import PersistenceAttack
 from gatox.attack.runner.webshell import WebShell
@@ -186,12 +187,13 @@ async def attack(args, parser):
         or args.runner_on_runner
         or args.secrets
         or args.oidc
+        or args.release_booby_trap
         or args.interact
         or args.payload_only
     ):
         parser.error(
             f"{Fore.RED}[!] You must select one of the attack modes, "
-            "workflow, runner_on_runner, secrets, oidc, or interact."
+            "workflow, runner_on_runner, secrets, oidc, release_booby_trap, or interact."
         )
 
     if args.custom_file and (args.command or args.name):
@@ -340,6 +342,28 @@ async def attack(args, parser):
             scopes,
             environments=args.environments,
             runner=args.runner_override,
+        )
+
+    elif args.release_booby_trap:
+        gh_attack_runner = ReleaseBoobyTrapAttack(
+            args.gh_token,
+            author_email=args.author_email,
+            author_name=args.author_name,
+            socks_proxy=args.socks_proxy,
+            http_proxy=args.http_proxy,
+            timeout=timeout,
+            github_url=args.api_url,
+        )
+
+        payload_path = None
+        if args.booby_payload:
+            payload_path = args.booby_payload
+
+        await gh_attack_runner.plant_release_booby_trap(
+            target_repo=args.target,
+            payload_path=payload_path,
+            publish=args.booby_publish,
+            dry_run=args.dry_run,
         )
 
     elif args.oidc:

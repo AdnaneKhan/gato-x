@@ -243,3 +243,38 @@ def configure_parser_attack(parser):
         default=False,
         action="store_true",
     )
+
+    parser.add_argument(
+        "--release-booby-trap",
+        "-rbt",
+        help="Plant a Release Booby Trap in the target repository. Tree-splices a\n"
+        "malicious workflow into an orphan commit and creates a release pointing at\n"
+        "it. When a non-bot actor edits or deletes the release, the planted workflow\n"
+        "fires — bypassing GitHub Actions loop prevention.",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--booby-payload",
+        "-bp",
+        metavar="PATH/TO/PAYLOAD.YML",
+        help="Path to a custom workflow YAML to use as the booby trap payload.\n"
+        "If not specified, a built-in OIDC-exfil template is used.",
+        type=ReadableFile(),
+    )
+
+    parser.add_argument(
+        "--booby-publish",
+        help="Publish the release after planting (set draft=false).\n"
+        "The trap still fires on edit/delete, not on publish itself.",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        help="Print the API calls that would be made without executing them.\n"
+        "Useful for reviewing the attack plan before execution.",
+        action="store_true",
+        default=False,
+    )
