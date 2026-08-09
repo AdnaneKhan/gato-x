@@ -45,15 +45,15 @@ class Search:
                 f"self-hosted org:{organization} language:yaml path:.github/workflows"
             )
 
-        next_page = (
-            f"/search/code?q={query['q']}&sort={query['sort']}"
-            f"&per_page={query['per_page']}&page={query['page']}"
-        )
+        next_page = "/search/code"
+        next_page_params = query
 
         Output.info("Searching", end="", flush=True)
         candidates = set()
         while next_page:
-            result = await self.api_accessor.call_get(next_page)
+            result = await self.api_accessor.call_get(
+                next_page, params=next_page_params
+            )
             print(".", end="", flush=True)
             code = result.status_code
             data = result.json()
@@ -97,6 +97,7 @@ class Search:
                 candidates.add(entry["repository"]["full_name"])
 
             next_page = result.links.get("next", {}).get("url")
+            next_page_params = None
             if next_page:
                 link = urlparse(next_page)
                 next_page = f"{link.path}?{link.query}"
