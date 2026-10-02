@@ -202,9 +202,8 @@ class WorkflowNode(Node):
         """
         if trigger is not None:
             return trigger in self.__excluded_triggers
-        # If no trigger specified, check if all triggers are excluded
-        return len(self.__excluded_triggers) > 0 and len(self.__triggers) == len(
-            self.__excluded_triggers
+        return bool(self.__excluded_triggers) and all(
+            trigger in self.__excluded_triggers for trigger in self.__triggers
         )
 
     def get_env_vars(self):

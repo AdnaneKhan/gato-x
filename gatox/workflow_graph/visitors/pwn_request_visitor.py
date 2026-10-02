@@ -182,24 +182,7 @@ class PwnRequestVisitor:
                     if repo and repo.is_fork():
                         break
 
-                    # Determine the trigger for this path
-                    path_trigger = None
-                    for tag in tags:
-                        if tag in [
-                            "pull_request_target",
-                            "pull_request_target:labeled",
-                            "issue_comment",
-                            "workflow_run",
-                            "workflow_dispatch",
-                        ]:
-                            path_trigger = tag
-                            break
-
-                    # Check if this specific trigger is excluded
-                    if path_trigger and node.excluded(path_trigger):
-                        break
-                    # If we couldn't determine the trigger, fall back to checking all triggers
-                    elif not path_trigger and node.excluded():
+                    if node.excluded():
                         break
 
                     if "pull_request_target:labeled" in tags:
